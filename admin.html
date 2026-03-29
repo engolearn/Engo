@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - EngoLearn</title>
     <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <script>
@@ -22,9 +23,30 @@
     <main>
         <section id="admin-panel">
             <h2>إدارة الدورات والدروس والاختبارات</h2>
-            <div id="forms-container">
-                <!-- سيتم تعبئتها عبر JS -->
+
+            <div>
+                <h3>إضافة دورة جديدة</h3>
+                <input type="text" id="course-name" placeholder="اسم الدورة">
+                <input type="text" id="course-desc" placeholder="وصف الدورة">
+                <button onclick="addCourse()">إضافة الدورة</button>
             </div>
+
+            <div>
+                <h3>إضافة درس جديد</h3>
+                <input type="text" id="lesson-name" placeholder="اسم الدرس">
+                <input type="text" id="lesson-course-id" placeholder="ID الدورة">
+                <textarea id="lesson-content" placeholder="شرح الدرس"></textarea>
+                <button onclick="addLesson()">إضافة الدرس</button>
+            </div>
+
+            <div>
+                <h3>إضافة سؤال/اختبار</h3>
+                <input type="text" id="quiz-lesson-id" placeholder="ID الدرس">
+                <textarea id="quiz-question" placeholder="السؤال"></textarea>
+                <textarea id="quiz-answer" placeholder="الإجابة"></textarea>
+                <button onclick="addQuiz()">إضافة الاختبار</button>
+            </div>
+
         </section>
     </main>
 
