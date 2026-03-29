@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<style>
+body{font-family:sans-serif; padding:20px;}
+input, textarea, select{display:block;margin:5px 0;width:300px;}
+button{margin:5px 0;padding:5px 10px;}
+</style>
+</head>
+<body>
+
+<h2>إضافة دورة جديدة</h2>
+<input id="courseName" placeholder="اسم الدورة">
+<textarea id="courseDesc" placeholder="وصف الدورة"></textarea>
+<button onclick="addCourse()">أضف الدورة</button>
+
+<hr>
+
+<h2>إضافة درس جديد</h2>
+<select id="courseSelect"></select>
+<input id="lessonTitle" placeholder="عنوان الدرس">
+<textarea id="lessonContent" placeholder="شرح الدرس"></textarea>
+<input id="lessonYoutube" placeholder="رابط يوتيوب">
+<button onclick="addLesson()">أضف الدرس</button>
+
+<hr>
+
+<h2>إضافة كلمة جديدة</h2>
+<select id="wordCourseSelect"></select>
+<select id="wordLessonSelect"></select>
+<input id="wordText" placeholder="الكلمة">
+<input id="wordMeaning" placeholder="المعنى">
+<input id="wordPron" placeholder="النطق">
+<button onclick="addWord()">أضف الكلمة</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin.js"></script>
+</body>
+</html>
