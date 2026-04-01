@@ -15,8 +15,8 @@
         .btn-logout { background: #e53e3e; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer; }
         .admin-container { max-width: 1400px; margin: 2rem auto; padding: 0 20px; }
         .admin-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 20px; margin-bottom: 2rem; }
-        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-        .tab-btn { background: white; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; font-size: 1rem; transition: all 0.3s; }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .tab-btn { background: transparent; border: none; padding: 10px 20px; cursor: pointer; font-size: 1rem; transition: all 0.3s; border-radius: 25px; }
         .tab-btn.active { background: #667eea; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -27,18 +27,56 @@
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo', sans-serif; }
         .btn-primary { background: #667eea; color: white; padding: 10px 25px; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem; }
         .btn-danger { background: #e53e3e; color: white; padding: 5px 15px; border: none; border-radius: 10px; cursor: pointer; }
-        .btn-warning { background: #ed8936; color: white; padding: 5px 15px; border: none; border-radius: 10px; cursor: pointer; }
         .table { width: 100%; border-collapse: collapse; }
         .table th, .table td { padding: 12px; text-align: right; border-bottom: 1px solid #e2e8f0; }
         .table th { background: #f7fafc; }
-        .alert { padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: none; }
+        .alert { padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px; text-align: center; }
         .alert-success { background: #c6f6d5; color: #22543d; }
         .alert-error { background: #fed7d7; color: #742a2a; }
         .course-card { background: #f7fafc; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; }
-        .lesson-item { background: white; padding: 1rem; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; }
+        .lesson-item { background: white; padding: 1rem; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
         .inline-buttons { display: flex; gap: 0.5rem; }
-        select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
-        @media (max-width: 768px) { .tabs { flex-direction: column; } .table { font-size: 0.8rem; } }
+        .loading { text-align: center; padding: 2rem; color: #667eea; }
+        .empty-message { text-align: center; padding: 2rem; color: #718096; }
+        .question-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .question-type-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .remove-question {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .question-field { margin-bottom: 0.8rem; }
+        .question-field label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem; color: #4a5568; }
+        .question-field input, .question-field textarea { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .sentence-item { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+        .sentence-item input { flex: 1; }
+        .btn-sm { padding: 4px 12px; font-size: 0.8rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 768px) { .tabs { flex-direction: column; } .table { font-size: 0.8rem; } .form-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -50,7 +88,10 @@
     </nav>
 
     <div class="admin-container">
-        <div class="admin-header"><h1><i class="fas fa-crown"></i> لوحة تحكم الأدمن</h1><p>إدارة الدورات والدروس والاختبارات</p></div>
+        <div class="admin-header">
+            <h1><i class="fas fa-crown"></i> لوحة تحكم الأدمن</h1>
+            <p>إدارة الدورات والدروس والاختبارات والمستخدمين</p>
+        </div>
         <div id="alert" class="alert"></div>
 
         <div class="tabs">
@@ -75,516 +116,61 @@
                     <button type="submit" class="btn-primary">➕ إضافة الدورة</button>
                 </form>
             </div>
-            <div class="admin-section"><h2><i class="fas fa-list"></i> قائمة الدورات</h2><div id="coursesList"></div></div>
+            <div class="admin-section">
+                <h2><i class="fas fa-list"></i> قائمة الدورات</h2>
+                <div id="coursesList"><div class="loading">جاري تحميل الدورات...</div></div>
+            </div>
         </div>
 
-        <!-- تبويب الدروس - نسخة محسنة مع واجب متعدد الأسئلة -->
-<div id="lessonsTab" class="tab-content">
-    <div class="admin-section">
-        <h2><i class="fas fa-plus-circle"></i> إضافة درس جديد</h2>
-        <form id="addLessonForm">
-            <div class="form-group">
-                <label>اختر الدورة *</label>
-                <select id="lessonCourse" required>
-                    <option value="">-- اختر الدورة --</option>
-                </select>
-            </div>
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label>رقم الدرس *</label>
-                    <input type="number" id="lessonNumber" required>
-                </div>
-                <div class="form-group">
-                    <label>عنوان الدرس *</label>
-                    <input type="text" id="lessonTitle" required>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>محتوى الدرس (اكتب النص العادي أو HTML)</label>
-                <textarea id="lessonContent" rows="5" placeholder="أدخل محتوى الدرس هنا..."></textarea>
-            </div>
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label>رابط فيديو (YouTube)</label>
-                    <input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=...">
-                </div>
-                <div class="form-group">
-                    <label>رابط صوتي</label>
-                    <input type="text" id="lessonAudio" placeholder="رابط ملف صوتي">
-                </div>
-            </div>
-            
-            <!-- قسم الواجب المحسن -->
-            <div style="background: #f7fafc; border-radius: 15px; padding: 1.5rem; margin-top: 1.5rem;">
-                <h3><i class="fas fa-tasks"></i> إعدادات الواجب</h3>
-                
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <!-- تبويب الدروس -->
+        <div id="lessonsTab" class="tab-content">
+            <div class="admin-section">
+                <h2><i class="fas fa-plus-circle"></i> إضافة درس جديد</h2>
+                <form id="addLessonForm">
                     <div class="form-group">
-                        <label>عنوان الواجب</label>
-                        <input type="text" id="assignmentTitle" placeholder="واجب الدرس" value="واجب الدرس">
+                        <label>اختر الدورة *</label>
+                        <select id="lessonCourse" required><option value="">-- اختر الدورة --</option></select>
                     </div>
-                    <div class="form-group">
-                        <label>نسبة النجاح (%)</label>
-                        <input type="number" id="passingScore" value="70">
+                    <div class="form-row">
+                        <div class="form-group"><label>رقم الدرس *</label><input type="number" id="lessonNumber" required></div>
+                        <div class="form-group"><label>عنوان الدرس *</label><input type="text" id="lessonTitle" required></div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>وصف الواجب (اختياري)</label>
-                    <textarea id="assignmentDescription" rows="2" placeholder="وصف مختصر للواجب"></textarea>
-                </div>
-                
-                <hr style="margin: 1.5rem 0;">
-                
-                <h4><i class="fas fa-question-circle"></i> أسئلة الواجب</h4>
-                <div id="questionsList" style="margin-bottom: 1rem;"></div>
-                
-                <div class="form-group">
-                    <label>إضافة سؤال جديد</label>
-                    <select id="questionTypeSelect" style="width: auto; display: inline-block; margin-left: 10px;">
-                        <option value="sentence_arrangement">📝 ترتيب جمل</option>
-                        <option value="word_match">🔤 اختيار الكلمة ومعناها</option>
-                        <option value="fill_blank">✏️ اكمل الفراغات</option>
-                        <option value="multiple_choice">✅ اختيار من متعدد</option>
-                        <option value="true_false">⚖️ صح أو خطأ</option>
-                    </select>
-                    <button type="button" class="btn-primary" onclick="addNewQuestion()" style="padding: 8px 20px;">➕ إضافة سؤال</button>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">➕ إضافة الدرس</button>
-        </form>
-    </div>
-    
-    <div class="admin-section">
-        <h2><i class="fas fa-list"></i> دروس الدورة</h2>
-        <select id="courseForLessons" onchange="loadLessonsForCourse()">
-            <option value="">اختر دورة لعرض دروسها</option>
-        </select>
-        <div id="lessonsList" style="margin-top: 1rem;"></div>
-    </div>
-</div>
-
-<style>
-    .question-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        position: relative;
-    }
-    .question-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    .question-type-badge {
-        background: #667eea;
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-    }
-    .remove-question {
-        background: #e53e3e;
-        color: white;
-        border: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-    }
-    .question-field {
-        margin-bottom: 0.8rem;
-    }
-    .question-field label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 0.3rem;
-        font-size: 0.85rem;
-        color: #4a5568;
-    }
-    .question-field input, .question-field textarea {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-    }
-    .sentence-item {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
-        align-items: center;
-    }
-    .sentence-item input {
-        flex: 1;
-    }
-    .btn-sm {
-        padding: 4px 12px;
-        font-size: 0.8rem;
-    }
-</style>
-
-<script>
-    let questions = [];
-    let questionCounter = 0;
-    
-    // إضافة سؤال جديد
-    function addNewQuestion() {
-        const type = document.getElementById('questionTypeSelect').value;
-        const id = 'q_' + Date.now() + '_' + (++questionCounter);
-        
-        const newQuestion = {
-            id: id,
-            type: type,
-            title: '',
-            points: 10
-        };
-        
-        // إضافة حقول حسب النوع
-        switch(type) {
-            case 'sentence_arrangement':
-                newQuestion.sentences = ['', '', ''];
-                newQuestion.correctOrder = [0, 1, 2];
-                break;
-            case 'word_match':
-                newQuestion.pairs = [{ word: '', meaning: '' }];
-                break;
-            case 'fill_blank':
-                newQuestion.text = '';
-                newQuestion.correctAnswer = '';
-                break;
-            case 'multiple_choice':
-                newQuestion.question = '';
-                newQuestion.options = ['', '', ''];
-                newQuestion.correctOption = 0;
-                break;
-            case 'true_false':
-                newQuestion.statement = '';
-                newQuestion.isTrue = true;
-                break;
-        }
-        
-        questions.push(newQuestion);
-        renderQuestions();
-    }
-    
-    // حذف سؤال
-    function removeQuestion(id) {
-        questions = questions.filter(q => q.id !== id);
-        renderQuestions();
-    }
-    
-    // تحديث بيانات السؤال
-    function updateQuestion(id, field, value, index, subIndex) {
-        const question = questions.find(q => q.id === id);
-        if (question) {
-            if (field === 'points') {
-                question.points = parseInt(value) || 0;
-            } else if (field === 'title') {
-                question.title = value;
-            } else if (field === 'sentences' && index !== undefined) {
-                question.sentences[index] = value;
-            } else if (field === 'order' && index !== undefined) {
-                question.correctOrder[index] = parseInt(value);
-            } else if (field === 'pairs_word' && index !== undefined) {
-                question.pairs[index].word = value;
-            } else if (field === 'pairs_meaning' && index !== undefined) {
-                question.pairs[index].meaning = value;
-            } else if (field === 'text') {
-                question.text = value;
-            } else if (field === 'correctAnswer') {
-                question.correctAnswer = value;
-            } else if (field === 'question') {
-                question.question = value;
-            } else if (field === 'options' && index !== undefined) {
-                question.options[index] = value;
-            } else if (field === 'correctOption') {
-                question.correctOption = parseInt(value);
-            } else if (field === 'statement') {
-                question.statement = value;
-            } else if (field === 'isTrue') {
-                question.isTrue = value === 'true';
-            }
-        }
-        renderQuestions();
-    }
-    
-    // إضافة عنصر جديد (جملة، زوج كلمات، خيار)
-    function addItem(questionId, type) {
-        const question = questions.find(q => q.id === questionId);
-        if (question) {
-            if (type === 'sentence') {
-                question.sentences.push('');
-                question.correctOrder.push(question.sentences.length - 1);
-            } else if (type === 'pair') {
-                question.pairs.push({ word: '', meaning: '' });
-            } else if (type === 'option') {
-                question.options.push('');
-            }
-            renderQuestions();
-        }
-    }
-    
-    // حذف عنصر
-    function removeItem(questionId, type, index) {
-        const question = questions.find(q => q.id === questionId);
-        if (question) {
-            if (type === 'sentence') {
-                question.sentences.splice(index, 1);
-                question.correctOrder = question.correctOrder.filter(o => o !== index).map(o => o > index ? o - 1 : o);
-            } else if (type === 'pair') {
-                question.pairs.splice(index, 1);
-            } else if (type === 'option') {
-                question.options.splice(index, 1);
-            }
-            renderQuestions();
-        }
-    }
-    
-    // عرض جميع الأسئلة
-    function renderQuestions() {
-        const container = document.getElementById('questionsList');
-        if (!container) return;
-        
-        if (questions.length === 0) {
-            container.innerHTML = '<p style="color: #718096; text-align: center; padding: 2rem;">لا توجد أسئلة بعد. أضف سؤالاً جديداً</p>';
-            return;
-        }
-        
-        container.innerHTML = questions.map(q => {
-            let fieldsHtml = '';
-            
-            switch(q.type) {
-                case 'sentence_arrangement':
-                    fieldsHtml = `
-                        <div class="question-field">
-                            <label>الجمل (رتبها بالترتيب الصحيح)</label>
-                            ${q.sentences.map((s, i) => `
-                                <div class="sentence-item">
-                                    <input type="text" value="${escapeHtml(s)}" placeholder="جملة ${i+1}" 
-                                        onchange="updateQuestion('${q.id}', 'sentences', this.value, ${i})">
-                                    <input type="number" style="width: 80px;" value="${q.correctOrder[i]}" placeholder="ترتيب ${i+1}"
-                                        onchange="updateQuestion('${q.id}', 'order', this.value, ${i})">
-                                    <button type="button" class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'sentence', ${i})">✖</button>
-                                </div>
-                            `).join('')}
-                            <button type="button" class="btn-primary btn-sm" onclick="addItem('${q.id}', 'sentence')">+ إضافة جملة</button>
-                        </div>
-                    `;
-                    break;
+                    <div class="form-group"><label>محتوى الدرس</label><textarea id="lessonContent" rows="5" placeholder="أدخل محتوى الدرس هنا..."></textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>رابط فيديو (YouTube)</label><input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=..."></div>
+                        <div class="form-group"><label>رابط صوتي</label><input type="text" id="lessonAudio" placeholder="رابط ملف صوتي"></div>
+                    </div>
                     
-                case 'word_match':
-                    fieldsHtml = `
-                        <div class="question-field">
-                            <label>الكلمات ومعانيها</label>
-                            ${q.pairs.map((p, i) => `
-                                <div class="sentence-item">
-                                    <input type="text" value="${escapeHtml(p.word)}" placeholder="كلمة" 
-                                        onchange="updateQuestion('${q.id}', 'pairs_word', this.value, ${i})">
-                                    <input type="text" value="${escapeHtml(p.meaning)}" placeholder="المعنى"
-                                        onchange="updateQuestion('${q.id}', 'pairs_meaning', this.value, ${i})">
-                                    <button type="button" class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'pair', ${i})">✖</button>
-                                </div>
-                            `).join('')}
-                            <button type="button" class="btn-primary btn-sm" onclick="addItem('${q.id}', 'pair')">+ إضافة زوج</button>
+                    <div style="background: #f7fafc; border-radius: 15px; padding: 1.5rem; margin-top: 1.5rem;">
+                        <h3><i class="fas fa-tasks"></i> إعدادات الواجب</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>عنوان الواجب</label><input type="text" id="assignmentTitle" value="واجب الدرس"></div>
+                            <div class="form-group"><label>نسبة النجاح (%)</label><input type="number" id="passingScore" value="70"></div>
                         </div>
-                    `;
-                    break;
-                    
-                case 'fill_blank':
-                    fieldsHtml = `
-                        <div class="question-field">
-                            <label>النص (استخدم ____ للفراغ)</label>
-                            <textarea rows="2" placeholder="مثال: السماء ____ زرقاء، والشمس ____ مشرقة"
-                                onchange="updateQuestion('${q.id}', 'text', this.value)">${escapeHtml(q.text || '')}</textarea>
-                        </div>
-                        <div class="question-field">
-                            <label>الإجابة الصحيحة (للإجابة المفردة) أو الإجابات مفصولة بفواصل</label>
-                            <input type="text" value="${escapeHtml(q.correctAnswer || '')}" 
-                                onchange="updateQuestion('${q.id}', 'correctAnswer', this.value)">
-                        </div>
-                    `;
-                    break;
-                    
-                case 'multiple_choice':
-                    fieldsHtml = `
-                        <div class="question-field">
-                            <label>السؤال</label>
-                            <input type="text" value="${escapeHtml(q.question || '')}" 
-                                onchange="updateQuestion('${q.id}', 'question', this.value)">
-                        </div>
-                        <div class="question-field">
-                            <label>الخيارات</label>
-                            ${q.options.map((opt, i) => `
-                                <div class="sentence-item">
-                                    <input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${i+1}"
-                                        onchange="updateQuestion('${q.id}', 'options', this.value, ${i})">
-                                    <button type="button" class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'option', ${i})">✖</button>
-                                </div>
-                            `).join('')}
-                            <button type="button" class="btn-primary btn-sm" onclick="addItem('${q.id}', 'option')">+ إضافة خيار</button>
-                        </div>
-                        <div class="question-field">
-                            <label>رقم الإجابة الصحيحة (0 للخيار الأول، 1 للثاني...)</label>
-                            <input type="number" value="${q.correctOption || 0}" 
-                                onchange="updateQuestion('${q.id}', 'correctOption', this.value)">
-                        </div>
-                    `;
-                    break;
-                    
-                case 'true_false':
-                    fieldsHtml = `
-                        <div class="question-field">
-                            <label>العبارة</label>
-                            <input type="text" value="${escapeHtml(q.statement || '')}" 
-                                onchange="updateQuestion('${q.id}', 'statement', this.value)">
-                        </div>
-                        <div class="question-field">
-                            <label>الإجابة الصحيحة</label>
-                            <select onchange="updateQuestion('${q.id}', 'isTrue', this.value)">
-                                <option value="true" ${q.isTrue === true ? 'selected' : ''}>✅ صح</option>
-                                <option value="false" ${q.isTrue === false ? 'selected' : ''}>❌ خطأ</option>
+                        <div class="form-group"><label>وصف الواجب</label><textarea id="assignmentDescription" rows="2"></textarea></div>
+                        <hr style="margin: 1rem 0;">
+                        <h4><i class="fas fa-question-circle"></i> أسئلة الواجب</h4>
+                        <div id="questionsList" style="margin-bottom: 1rem;"></div>
+                        <div class="form-group">
+                            <select id="questionTypeSelect" style="width: auto; display: inline-block;">
+                                <option value="sentence_arrangement">📝 ترتيب جمل</option>
+                                <option value="word_match">🔤 كلمة ومعناها</option>
+                                <option value="fill_blank">✏️ اكمل الفراغات</option>
+                                <option value="multiple_choice">✅ اختيار من متعدد</option>
+                                <option value="true_false">⚖️ صح أو خطأ</option>
                             </select>
+                            <button type="button" class="btn-primary" onclick="addNewQuestion()">➕ إضافة سؤال</button>
                         </div>
-                    `;
-                    break;
-            }
-            
-            return `
-                <div class="question-card">
-                    <div class="question-header">
-                        <div>
-                            <span class="question-type-badge">${getQuestionTypeName(q.type)}</span>
-                            <span style="margin-right: 10px; color: #718096;">${q.points} نقطة</span>
-                        </div>
-                        <button type="button" class="remove-question" onclick="removeQuestion('${q.id}')">✖</button>
                     </div>
-                    <div class="question-field">
-                        <label>عنوان السؤال (اختياري)</label>
-                        <input type="text" value="${escapeHtml(q.title || '')}" placeholder="عنوان السؤال"
-                            onchange="updateQuestion('${q.id}', 'title', this.value)">
-                    </div>
-                    <div class="question-field">
-                        <label>عدد النقاط</label>
-                        <input type="number" value="${q.points}" style="width: 100px;" 
-                            onchange="updateQuestion('${q.id}', 'points', this.value)">
-                    </div>
-                    ${fieldsHtml}
-                </div>
-            `;
-        }).join('');
-    }
-    
-    function getQuestionTypeName(type) {
-        const names = {
-            'sentence_arrangement': '📝 ترتيب جمل',
-            'word_match': '🔤 كلمة ومعناها',
-            'fill_blank': '✏️ اكمل الفراغ',
-            'multiple_choice': '✅ اختيار من متعدد',
-            'true_false': '⚖️ صح أو خطأ'
-        };
-        return names[type] || type;
-    }
-    
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    // تحديث دالة إضافة الدرس لترسل الأسئلة
-    document.getElementById('addLessonForm').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        const token = localStorage.getItem('token');
-        const courseId = document.getElementById('lessonCourse').value;
-        
-        if (!courseId) {
-            showAlert('❌ يرجى اختيار الدورة أولاً', 'error');
-            return;
-        }
-        
-        // تجهيز بيانات الواجب
-        const assignmentData = {
-            title: document.getElementById('assignmentTitle')?.value || 'واجب الدرس',
-            description: document.getElementById('assignmentDescription')?.value || '',
-            passingScore: parseInt(document.getElementById('passingScore')?.value || 70),
-            questions: questions.map(q => ({
-                id: q.id,
-                type: q.type,
-                title: q.title || '',
-                points: q.points || 10,
-                ...(q.type === 'sentence_arrangement' && {
-                    sentences: q.sentences,
-                    correctOrder: q.correctOrder
-                }),
-                ...(q.type === 'word_match' && {
-                    pairs: q.pairs
-                }),
-                ...(q.type === 'fill_blank' && {
-                    text: q.text,
-                    correctAnswer: q.correctAnswer
-                }),
-                ...(q.type === 'multiple_choice' && {
-                    question: q.question,
-                    options: q.options,
-                    correctOption: q.correctOption
-                }),
-                ...(q.type === 'true_false' && {
-                    statement: q.statement,
-                    isTrue: q.isTrue
-                })
-            }))
-        };
-        
-        const lessonData = {
-            title: document.getElementById('lessonTitle').value,
-            content: document.getElementById('lessonContent').value,
-            videoUrl: document.getElementById('lessonVideo').value || null,
-            audioUrl: document.getElementById('lessonAudio').value || null,
-            lessonNumber: parseInt(document.getElementById('lessonNumber').value),
-            courseId: courseId,
-            assignment: questions.length > 0 ? assignmentData : null
-        };
-        
-        console.log('Sending lesson data:', lessonData);
-        
-        try {
-            const res = await fetch(API_URL + '/admin/lessons', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': 'Bearer ' + token 
-                },
-                body: JSON.stringify(lessonData)
-            });
-            
-            const result = await res.json();
-            
-            if (res.ok) {
-                showAlert('✅ تم إضافة الدرس بنجاح', 'success');
-                // إعادة تعيين النموذج
-                document.getElementById('addLessonForm').reset();
-                questions = [];
-                renderQuestions();
-                loadLessonsForCourse();
-            } else {
-                showAlert('❌ خطأ: ' + (result.message || 'فشل إضافة الدرس'), 'error');
-            }
-        } catch (error) {
-            console.error('Network error:', error);
-            showAlert('❌ خطأ في الاتصال بالخادم', 'error');
-        }
-    };
-</script>
+                    <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">➕ إضافة الدرس</button>
+                </form>
+            </div>
+            <div class="admin-section">
+                <h2><i class="fas fa-list"></i> دروس الدورة</h2>
+                <select id="courseForLessons" onchange="loadLessonsForCourse()"><option value="">اختر دورة لعرض دروسها</option></select>
+                <div id="lessonsList" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
 
         <!-- تبويب الاختبارات -->
         <div id="quizzesTab" class="tab-content">
@@ -592,31 +178,34 @@
                 <h2><i class="fas fa-plus-circle"></i> إضافة اختبار</h2>
                 <form id="addQuizForm">
                     <div class="form-group"><label>نوع الاختبار</label><select id="quizType"><option value="midterm">اختبار نصفي</option><option value="final">اختبار نهائي</option><option value="level_test">اختبار تحديد المستوى</option></select></div>
-                    <div class="form-group"><label>اختر الدورة (للاختبارات النصفي والنهائي)</label><select id="quizCourse"><option value="">اختر دورة</option></select></div>
-                    <div class="form-group"><label>نسبة النجاح (%)</label><input type="number" id="passingScore" value="70"></div>
-                    <div id="questionsContainer"><div class="form-group"><label>السؤال 1</label><input type="text" id="q1" placeholder="السؤال"><input type="text" id="q1_opts" placeholder="الخيارات (مفصولة بفاصلة)"><input type="number" id="q1_correct" placeholder="رقم الإجابة الصحيحة (0,1,2...)"></div></div>
-                    <button type="button" class="btn-primary" onclick="addQuestion()">➕ إضافة سؤال</button>
+                    <div class="form-group"><label>اختر الدورة</label><select id="quizCourse"><option value="">اختر دورة</option></select></div>
+                    <div class="form-group"><label>نسبة النجاح (%)</label><input type="number" id="quizPassingScore" value="70"></div>
+                    <div id="questionsContainer"></div>
+                    <button type="button" class="btn-primary" onclick="addQuizQuestion()">➕ إضافة سؤال</button>
                     <button type="submit" class="btn-primary">💾 حفظ الاختبار</button>
                 </form>
             </div>
-            <div class="admin-section"><h2><i class="fas fa-list"></i> قائمة الاختبارات</h2><div id="quizzesList"></div></div>
+            <div class="admin-section"><h2><i class="fas fa-list"></i> قائمة الاختبارات</h2><div id="quizzesList"><div class="loading">جاري التحميل...</div></div></div>
         </div>
 
         <!-- تبويب المستخدمين -->
         <div id="usersTab" class="tab-content">
-            <div class="admin-section"><h2><i class="fas fa-users"></i> قائمة المستخدمين</h2><div id="usersList"></div></div>
+            <div class="admin-section"><h2><i class="fas fa-users"></i> قائمة المستخدمين</h2><div id="usersList"><div class="loading">جاري تحميل المستخدمين...</div></div></div>
         </div>
 
         <!-- تبويب طلبات الدفع -->
         <div id="paymentsTab" class="tab-content">
-            <div class="admin-section"><h2><i class="fas fa-credit-card"></i> طلبات الدفع المعلقة</h2><div id="paymentsList"></div></div>
+            <div class="admin-section"><h2><i class="fas fa-credit-card"></i> طلبات الدفع المعلقة</h2><div id="paymentsList"><div class="loading">جاري التحميل...</div></div></div>
         </div>
     </div>
 
     <script>
         const API_URL = window.location.origin + '/api';
-        let currentQuestions = [];
+        let questions = [];
+        let questionCounter = 0;
+        let quizQuestionCount = 1;
 
+        // ==================== Helper Functions ====================
         function showAlert(message, type) {
             const alertDiv = document.getElementById('alert');
             alertDiv.className = `alert alert-${type}`;
@@ -625,30 +214,69 @@
             setTimeout(() => { alertDiv.style.display = 'none'; }, 3000);
         }
 
-        function showTab(tab) {
+        function showTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
-            if (tab === 'lessons') loadCoursesForSelect();
-            if (tab === 'quizzes') loadQuizzes();
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            if (tabName === 'courses') loadCourses();
+            if (tabName === 'users') loadUsers();
+            if (tabName === 'payments') loadPayments();
+            if (tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
+            if (tabName === 'quizzes') { loadCoursesForQuiz(); loadQuizzes(); }
         }
 
         async function checkAdmin() {
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (!token || !user.id || user.role !== 'admin') { window.location.href = '/'; return false; }
+            if (!token || !user.id || user.role !== 'admin') { 
+                window.location.href = '/'; 
+                return false; 
+            }
             return true;
         }
 
-        // ==================== Courses ====================
+        // ==================== Courses Functions ====================
         async function loadCourses() {
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_URL + '/admin/courses', { headers: { 'Authorization': 'Bearer ' + token } });
-            const courses = await res.json();
-            const container = document.getElementById('coursesList');
-            if (courses.length === 0) { container.innerHTML = '<p>لا توجد دورات</p>'; return; }
-            container.innerHTML = `<table class="table"><thead><tr><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الإجراءات</th></tr></thead><tbody>${courses.map(c => `<tr><td>${c.title}</td><td>${c.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</td><td>${c.isPremium ? c.price + ' ريال' : 'مجاني'}</td><td>${c.totalLessons || 0}</td><td class="inline-buttons"><button class="btn-danger" onclick="deleteCourse('${c._id}')">حذف</button></td></tr>`).join('')}</tbody></table>`;
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/admin/courses', { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                
+                if (!res.ok) throw new Error('Failed to load courses');
+                
+                const courses = await res.json();
+                const container = document.getElementById('coursesList');
+                
+                if (!courses || courses.length === 0) {
+                    container.innerHTML = '<div class="empty-message">📚 لا توجد دورات حالياً</div>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <table class="table">
+                        <thead>
+                            <tr><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الإجراءات</th>
+                        </thead>
+                        <tbody>
+                            ${courses.map(c => `
+                                <tr>
+                                    <td><strong>${c.title}</strong><br><small style="color:#718096">${c.description.substring(0, 50)}...</small></td>
+                                    <td>${c.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</td>
+                                    <td>${c.isPremium ? c.price + ' ريال' : 'مجاني'}</td>
+                                    <td>${c.totalLessons || 0}</td>
+                                    <td><button class="btn-danger" onclick="deleteCourse('${c._id}')">حذف</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                document.getElementById('coursesList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+            }
         }
 
         document.getElementById('addCourseForm').onsubmit = async (e) => {
@@ -662,308 +290,416 @@
                 isPremium: document.getElementById('coursePremium').checked,
                 freeLessons: parseInt(document.getElementById('freeLessons').value)
             };
-            const res = await fetch(API_URL + '/admin/courses', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) { showAlert('✅ تم إضافة الدورة', 'success'); e.target.reset(); loadCourses(); loadCoursesForSelect(); }
-            else showAlert('❌ خطأ', 'error');
+            
+            try {
+                const res = await fetch(API_URL + '/admin/courses', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) { 
+                    showAlert('✅ تم إضافة الدورة بنجاح', 'success'); 
+                    e.target.reset(); 
+                    loadCourses(); 
+                    loadCoursesForSelect();
+                    loadCoursesForSelect2();
+                    loadCoursesForQuiz();
+                } else {
+                    const err = await res.json();
+                    showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+                }
+            } catch (error) {
+                showAlert('❌ خطأ في الاتصال', 'error');
+            }
         };
 
         window.deleteCourse = async (id) => {
-            if (!confirm('هل أنت متأكد؟')) return;
+            if (!confirm('هل أنت متأكد من حذف هذه الدورة؟')) return;
             const token = localStorage.getItem('token');
-            await fetch(API_URL + '/admin/courses/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
-            showAlert('✅ تم الحذف', 'success');
-            loadCourses();
-            loadCoursesForSelect();
+            try {
+                const res = await fetch(API_URL + '/admin/courses/' + id, { 
+                    method: 'DELETE', 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                if (res.ok) {
+                    showAlert('✅ تم حذف الدورة', 'success');
+                    loadCourses();
+                    loadCoursesForSelect();
+                    loadCoursesForSelect2();
+                    loadCoursesForQuiz();
+                }
+            } catch (error) {
+                showAlert('❌ خطأ في الحذف', 'error');
+            }
         };
 
-        // ==================== Lessons ====================
-async function loadCoursesForSelect() {
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL + '/admin/courses', { 
-            headers: { 'Authorization': 'Bearer ' + token },
-            method: 'GET'
-        });
-        
-        if (!res.ok) {
-            console.error('Failed to load courses:', res.status);
-            return;
-        }
-        
-        const courses = await res.json();
-        const select = document.getElementById('lessonCourse');
-        const courseSelect = document.getElementById('courseForLessons');
-        
-        if (select) {
-            select.innerHTML = '<option value="">اختر الدورة</option>' + 
-                courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
-        }
-        
-        if (courseSelect) {
-            courseSelect.innerHTML = '<option value="">اختر دورة لعرض دروسها</option>' + 
-                courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
-        }
-    } catch (error) {
-        console.error('Error loading courses:', error);
-        showAlert('خطأ في تحميل الدورات', 'error');
-    }
-}
-
-async function loadLessonsForCourse() {
-    const courseId = document.getElementById('courseForLessons').value;
-    if (!courseId) return;
-    
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL + '/admin/courses/' + courseId + '/lessons', { 
-            headers: { 'Authorization': 'Bearer ' + token },
-            method: 'GET'
-        });
-        
-        if (!res.ok) {
-            console.error('Failed to load lessons:', res.status);
-            return;
-        }
-        
-        const lessons = await res.json();
-        const container = document.getElementById('lessonsList');
-        
-        if (!lessons || lessons.length === 0) {
-            container.innerHTML = '<p>لا توجد دروس في هذه الدورة</p>';
-            return;
-        }
-        
-        container.innerHTML = lessons.map(l => `
-            <div class="lesson-item">
-                <strong>${l.lessonNumber}. ${l.title}</strong>
-                <button class="btn-danger" style="float:left" onclick="deleteLesson('${l._id}')">حذف</button>
-                <div style="clear:both"></div>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading lessons:', error);
-        showAlert('خطأ في تحميل الدروس', 'error');
-    }
-}
-
-window.deleteLesson = async (id) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الدرس؟')) return;
-    
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL + '/admin/lessons/' + id, { 
-            method: 'DELETE', 
-            headers: { 'Authorization': 'Bearer ' + token } 
-        });
-        
-        if (res.ok) {
-            showAlert('✅ تم حذف الدرس', 'success');
-            loadLessonsForCourse();
-        } else {
-            showAlert('❌ خطأ في الحذف', 'error');
-        }
-    } catch (error) {
-        console.error('Error deleting lesson:', error);
-        showAlert('❌ خطأ في الحذف', 'error');
-    }
-};
-
-// إعدادات الواجب
-document.getElementById('assignmentType').onchange = function() {
-    const fields = document.getElementById('assignmentFields');
-    const type = this.value;
-    
-    if (type === 'none') {
-        fields.style.display = 'none';
-        return;
-    }
-    
-    fields.style.display = 'block';
-    
-    if (type === 'sentence_arrangement') {
-        fields.innerHTML = `
-            <div class="form-group">
-                <label>الجمل (مفصولة بفواصل)</label>
-                <input type="text" id="assignmentSentences" placeholder="مثال: أنا أحب اللغة العربية, اللغة العربية جميلة, أتعلم اللغة العربية">
-                <small>أدخل الجمل مفصولة بفواصل</small>
-            </div>
-            <div class="form-group">
-                <label>الترتيب الصحيح (أرقام مفصولة بفواصل)</label>
-                <input type="text" id="assignmentOrder" placeholder="مثال: 0,1,2">
-                <small>الترتيب الصحيح للجمل (يبدأ من 0)</small>
-            </div>
-        `;
-    } 
-    else if (type === 'word_match') {
-        fields.innerHTML = `
-            <div class="form-group">
-                <label>الكلمات والمعاني (كلمة:معنى,كلمة2:معنى2)</label>
-                <input type="text" id="assignmentPairs" placeholder="مثال: book:كتاب,pen:قلم,school:مدرسة">
-                <small>أدخل كل زوج كلمة:معنى مفصول بفاصلة</small>
-            </div>
-        `;
-    }
-    else if (type === 'fill_blank') {
-        fields.innerHTML = `
-            <div class="form-group">
-                <label>النص مع ____ للفراغ</label>
-                <input type="text" id="assignmentText" placeholder="مثال: السماء ____ زرقاء.">
-            </div>
-            <div class="form-group">
-                <label>الإجابة الصحيحة</label>
-                <input type="text" id="assignmentAnswer" placeholder="مثال: لونها">
-            </div>
-        `;
-    }
-};
-
-// إضافة درس
-document.getElementById('addLessonForm').onsubmit = async (e) => {
-    e.preventDefault();
-    
-    const token = localStorage.getItem('token');
-    const courseId = document.getElementById('lessonCourse').value;
-    
-    if (!courseId) {
-        showAlert('❌ يرجى اختيار الدورة أولاً', 'error');
-        return;
-    }
-    
-    let assignment = null;
-    const type = document.getElementById('assignmentType').value;
-    
-    if (type !== 'none') {
-        try {
-            if (type === 'sentence_arrangement') {
-                const sentences = document.getElementById('assignmentSentences').value.split(',').map(s => s.trim());
-                const correctOrder = document.getElementById('assignmentOrder').value.split(',').map(n => parseInt(n.trim()));
-                assignment = { 
-                    type, 
-                    question: 'رتب الجمل التالية بالترتيب الصحيح:',
-                    sentences, 
-                    correctOrder 
-                };
-            }
-            else if (type === 'word_match') {
-                const pairsInput = document.getElementById('assignmentPairs').value;
-                const pairs = pairsInput.split(',').map(p => {
-                    const [word, meaning] = p.split(':');
-                    return { word: word.trim(), meaning: meaning.trim() };
+        // ==================== Lessons Functions ====================
+        async function loadCoursesForSelect() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/admin/courses', { 
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
-                assignment = { 
-                    type, 
-                    pairs, 
-                    questions: pairs.map(p => p.word) 
-                };
+                const courses = await res.json();
+                const select = document.getElementById('lessonCourse');
+                select.innerHTML = '<option value="">-- اختر الدورة --</option>' + 
+                    courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+            } catch (error) {
+                console.error('Error:', error);
             }
-            else if (type === 'fill_blank') {
-                assignment = { 
-                    type, 
-                    text: document.getElementById('assignmentText').value, 
-                    correctAnswer: document.getElementById('assignmentAnswer').value 
-                };
+        }
+
+        async function loadCoursesForSelect2() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/admin/courses', { 
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const courses = await res.json();
+                const select = document.getElementById('courseForLessons');
+                select.innerHTML = '<option value="">اختر دورة لعرض دروسها</option>' + 
+                    courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+            } catch (error) {
+                console.error('Error:', error);
             }
-        } catch (err) {
-            console.error('Error creating assignment:', err);
-            showAlert('❌ خطأ في بيانات الواجب', 'error');
-            return;
         }
-    }
-    
-    const lessonData = {
-        title: document.getElementById('lessonTitle').value,
-        content: document.getElementById('lessonContent').value,
-        videoUrl: document.getElementById('lessonVideo').value || null,
-        audioUrl: document.getElementById('lessonAudio').value || null,
-        lessonNumber: parseInt(document.getElementById('lessonNumber').value),
-        courseId: courseId,
-        assignment: assignment
-    };
-    
-    console.log('Sending lesson data:', lessonData);
-    
-    try {
-        const res = await fetch(API_URL + '/admin/lessons', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': 'Bearer ' + token 
-            },
-            body: JSON.stringify(lessonData)
-        });
-        
-        const result = await res.json();
-        
-        if (res.ok) {
-            showAlert('✅ تم إضافة الدرس بنجاح', 'success');
-            document.getElementById('addLessonForm').reset();
-            document.getElementById('assignmentFields').style.display = 'none';
-            document.getElementById('assignmentType').value = 'none';
-            loadLessonsForCourse();
-        } else {
-            console.error('Server error:', result);
-            showAlert('❌ خطأ: ' + (result.message || 'فشل إضافة الدرس'), 'error');
+
+        async function loadLessonsForCourse() {
+            const courseId = document.getElementById('courseForLessons').value;
+            if (!courseId) return;
+            
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/admin/courses/' + courseId + '/lessons', { 
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const lessons = await res.json();
+                const container = document.getElementById('lessonsList');
+                
+                if (!lessons || lessons.length === 0) {
+                    container.innerHTML = '<div class="empty-message">📖 لا توجد دروس في هذه الدورة</div>';
+                    return;
+                }
+                
+                container.innerHTML = lessons.map(l => `
+                    <div class="lesson-item">
+                        <span><strong>${l.lessonNumber}. ${l.title}</strong></span>
+                        <button class="btn-danger" onclick="deleteLesson('${l._id}')">حذف</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
-    } catch (error) {
-        console.error('Network error:', error);
-        showAlert('❌ خطأ في الاتصال بالخادم', 'error');
-    }
-};
 
-        // ==================== Quizzes ====================
-        let questionCount = 1;
-        function addQuestion() { questionCount++; const container = document.getElementById('questionsContainer'); container.innerHTML += `<div class="form-group"><label>السؤال ${questionCount}</label><input type="text" id="q${questionCount}" placeholder="السؤال"><input type="text" id="q${questionCount}_opts" placeholder="الخيارات (مفصولة بفاصلة)"><input type="number" id="q${questionCount}_correct" placeholder="رقم الإجابة الصحيحة (0,1,2...)"></div>`; }
+        window.deleteLesson = async (id) => {
+            if (!confirm('هل أنت متأكد من حذف هذا الدرس؟')) return;
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(API_URL + '/admin/lessons/' + id, { 
+                    method: 'DELETE', 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                if (res.ok) {
+                    showAlert('✅ تم حذف الدرس', 'success');
+                    loadLessonsForCourse();
+                }
+            } catch (error) {
+                showAlert('❌ خطأ في الحذف', 'error');
+            }
+        };
 
-        document.getElementById('addQuizForm').onsubmit = async (e) => {
+        // ==================== Assignment Questions Functions ====================
+        function addNewQuestion() {
+            const type = document.getElementById('questionTypeSelect').value;
+            const id = 'q_' + Date.now() + '_' + (++questionCounter);
+            
+            const newQuestion = { id, type, title: '', points: 10 };
+            
+            switch(type) {
+                case 'sentence_arrangement':
+                    newQuestion.sentences = ['', '', ''];
+                    newQuestion.correctOrder = [0, 1, 2];
+                    break;
+                case 'word_match':
+                    newQuestion.pairs = [{ word: '', meaning: '' }];
+                    break;
+                case 'fill_blank':
+                    newQuestion.text = '';
+                    newQuestion.correctAnswer = '';
+                    break;
+                case 'multiple_choice':
+                    newQuestion.question = '';
+                    newQuestion.options = ['', '', ''];
+                    newQuestion.correctOption = 0;
+                    break;
+                case 'true_false':
+                    newQuestion.statement = '';
+                    newQuestion.isTrue = true;
+                    break;
+            }
+            
+            questions.push(newQuestion);
+            renderQuestions();
+        }
+
+        function removeQuestion(id) {
+            questions = questions.filter(q => q.id !== id);
+            renderQuestions();
+        }
+
+        function updateQuestion(id, field, value, index) {
+            const question = questions.find(q => q.id === id);
+            if (question) {
+                if (field === 'points') question.points = parseInt(value) || 0;
+                else if (field === 'title') question.title = value;
+                else if (field === 'sentences' && index !== undefined) question.sentences[index] = value;
+                else if (field === 'order' && index !== undefined) question.correctOrder[index] = parseInt(value);
+                else if (field === 'pairs_word' && index !== undefined) question.pairs[index].word = value;
+                else if (field === 'pairs_meaning' && index !== undefined) question.pairs[index].meaning = value;
+                else if (field === 'text') question.text = value;
+                else if (field === 'correctAnswer') question.correctAnswer = value;
+                else if (field === 'question') question.question = value;
+                else if (field === 'options' && index !== undefined) question.options[index] = value;
+                else if (field === 'correctOption') question.correctOption = parseInt(value);
+                else if (field === 'statement') question.statement = value;
+                else if (field === 'isTrue') question.isTrue = value === 'true';
+            }
+            renderQuestions();
+        }
+
+        function addItem(questionId, type) {
+            const question = questions.find(q => q.id === questionId);
+            if (question) {
+                if (type === 'sentence') {
+                    question.sentences.push('');
+                    question.correctOrder.push(question.sentences.length - 1);
+                } else if (type === 'pair') {
+                    question.pairs.push({ word: '', meaning: '' });
+                } else if (type === 'option') {
+                    question.options.push('');
+                }
+                renderQuestions();
+            }
+        }
+
+        function removeItem(questionId, type, index) {
+            const question = questions.find(q => q.id === questionId);
+            if (question) {
+                if (type === 'sentence') {
+                    question.sentences.splice(index, 1);
+                    question.correctOrder = question.correctOrder.filter(o => o !== index).map(o => o > index ? o - 1 : o);
+                } else if (type === 'pair') {
+                    question.pairs.splice(index, 1);
+                } else if (type === 'option') {
+                    question.options.splice(index, 1);
+                }
+                renderQuestions();
+            }
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsList');
+            if (!container) return;
+            
+            if (questions.length === 0) {
+                container.innerHTML = '<div class="empty-message">لا توجد أسئلة. أضف سؤالاً جديداً</div>';
+                return;
+            }
+            
+            container.innerHTML = questions.map(q => {
+                let fieldsHtml = '';
+                
+                switch(q.type) {
+                    case 'sentence_arrangement':
+                        fieldsHtml = `
+                            <div class="question-field">
+                                <label>الجمل (رتبها بالترتيب الصحيح)</label>
+                                ${q.sentences.map((s, i) => `
+                                    <div class="sentence-item">
+                                        <input type="text" value="${escapeHtml(s)}" placeholder="جملة ${i+1}" 
+                                            onchange="updateQuestion('${q.id}', 'sentences', this.value, ${i})">
+                                        <input type="number" style="width: 80px;" value="${q.correctOrder[i]}" placeholder="ترتيب"
+                                            onchange="updateQuestion('${q.id}', 'order', this.value, ${i})">
+                                        <button class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'sentence', ${i})">✖</button>
+                                    </div>
+                                `).join('')}
+                                <button class="btn-primary btn-sm" onclick="addItem('${q.id}', 'sentence')">+ إضافة جملة</button>
+                            </div>
+                        `;
+                        break;
+                    case 'word_match':
+                        fieldsHtml = `
+                            <div class="question-field">
+                                <label>الكلمات ومعانيها</label>
+                                ${q.pairs.map((p, i) => `
+                                    <div class="sentence-item">
+                                        <input type="text" value="${escapeHtml(p.word)}" placeholder="كلمة" 
+                                            onchange="updateQuestion('${q.id}', 'pairs_word', this.value, ${i})">
+                                        <input type="text" value="${escapeHtml(p.meaning)}" placeholder="المعنى"
+                                            onchange="updateQuestion('${q.id}', 'pairs_meaning', this.value, ${i})">
+                                        <button class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'pair', ${i})">✖</button>
+                                    </div>
+                                `).join('')}
+                                <button class="btn-primary btn-sm" onclick="addItem('${q.id}', 'pair')">+ إضافة زوج</button>
+                            </div>
+                        `;
+                        break;
+                    case 'fill_blank':
+                        fieldsHtml = `
+                            <div class="question-field"><label>النص (استخدم ____ للفراغ)</label><textarea rows="2" onchange="updateQuestion('${q.id}', 'text', this.value)">${escapeHtml(q.text || '')}</textarea></div>
+                            <div class="question-field"><label>الإجابة الصحيحة</label><input type="text" value="${escapeHtml(q.correctAnswer || '')}" onchange="updateQuestion('${q.id}', 'correctAnswer', this.value)"></div>
+                        `;
+                        break;
+                    case 'multiple_choice':
+                        fieldsHtml = `
+                            <div class="question-field"><label>السؤال</label><input type="text" value="${escapeHtml(q.question || '')}" onchange="updateQuestion('${q.id}', 'question', this.value)"></div>
+                            <div class="question-field"><label>الخيارات</label>
+                                ${q.options.map((opt, i) => `
+                                    <div class="sentence-item"><input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${i+1}" onchange="updateQuestion('${q.id}', 'options', this.value, ${i})"><button class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'option', ${i})">✖</button></div>
+                                `).join('')}
+                                <button class="btn-primary btn-sm" onclick="addItem('${q.id}', 'option')">+ إضافة خيار</button>
+                            </div>
+                            <div class="question-field"><label>رقم الإجابة الصحيحة (0,1,2...)</label><input type="number" value="${q.correctOption || 0}" onchange="updateQuestion('${q.id}', 'correctOption', this.value)"></div>
+                        `;
+                        break;
+                    case 'true_false':
+                        fieldsHtml = `
+                            <div class="question-field"><label>العبارة</label><input type="text" value="${escapeHtml(q.statement || '')}" onchange="updateQuestion('${q.id}', 'statement', this.value)"></div>
+                            <div class="question-field"><label>الإجابة الصحيحة</label><select onchange="updateQuestion('${q.id}', 'isTrue', this.value)"><option value="true" ${q.isTrue === true ? 'selected' : ''}>✅ صح</option><option value="false" ${q.isTrue === false ? 'selected' : ''}>❌ خطأ</option></select></div>
+                        `;
+                        break;
+                }
+                
+                return `
+                    <div class="question-card">
+                        <div class="question-header">
+                            <div><span class="question-type-badge">${getQuestionTypeName(q.type)}</span><span style="margin-right:10px;">${q.points} نقطة</span></div>
+                            <button class="remove-question" onclick="removeQuestion('${q.id}')">✖</button>
+                        </div>
+                        <div class="question-field"><label>عنوان السؤال</label><input type="text" value="${escapeHtml(q.title)}" onchange="updateQuestion('${q.id}', 'title', this.value)"></div>
+                        <div class="question-field"><label>عدد النقاط</label><input type="number" value="${q.points}" style="width:100px" onchange="updateQuestion('${q.id}', 'points', this.value)"></div>
+                        ${fieldsHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getQuestionTypeName(type) {
+            const names = { 'sentence_arrangement': '📝 ترتيب جمل', 'word_match': '🔤 كلمة ومعناها', 'fill_blank': '✏️ اكمل الفراغ', 'multiple_choice': '✅ اختيار من متعدد', 'true_false': '⚖️ صح أو خطأ' };
+            return names[type] || type;
+        }
+
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+
+        // إضافة درس
+        document.getElementById('addLessonForm').onsubmit = async (e) => {
             e.preventDefault();
             const token = localStorage.getItem('token');
-            const questions = [];
-            for (let i = 1; i <= questionCount; i++) {
-                const q = document.getElementById(`q${i}`);
-                if (q && q.value) {
-                    questions.push({
-                        question: q.value,
-                        options: document.getElementById(`q${i}_opts`).value.split(','),
-                        correctAnswer: parseInt(document.getElementById(`q${i}_correct`).value)
-                    });
-                }
-            }
-            const data = {
-                title: document.getElementById('quizType').value,
-                courseId: document.getElementById('quizCourse').value || null,
-                questions,
-                passingScore: parseInt(document.getElementById('passingScore').value)
+            const courseId = document.getElementById('lessonCourse').value;
+            
+            if (!courseId) { showAlert('❌ يرجى اختيار الدورة أولاً', 'error'); return; }
+            
+            const assignmentData = {
+                title: document.getElementById('assignmentTitle')?.value || 'واجب الدرس',
+                description: document.getElementById('assignmentDescription')?.value || '',
+                passingScore: parseInt(document.getElementById('passingScore')?.value || 70),
+                questions: questions.map(q => ({ ...q }))
             };
-            const res = await fetch(API_URL + '/admin/quizzes', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) { showAlert('✅ تم إضافة الاختبار', 'success'); loadQuizzes(); }
-            else showAlert('❌ خطأ', 'error');
+            
+            const lessonData = {
+                title: document.getElementById('lessonTitle').value,
+                content: document.getElementById('lessonContent').value,
+                videoUrl: document.getElementById('lessonVideo').value || null,
+                audioUrl: document.getElementById('lessonAudio').value || null,
+                lessonNumber: parseInt(document.getElementById('lessonNumber').value),
+                courseId: courseId,
+                assignment: questions.length > 0 ? assignmentData : null
+            };
+            
+            try {
+                const res = await fetch(API_URL + '/admin/lessons', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(lessonData)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    showAlert('✅ تم إضافة الدرس بنجاح', 'success');
+                    document.getElementById('addLessonForm').reset();
+                    questions = [];
+                    renderQuestions();
+                    loadLessonsForCourse();
+                } else {
+                    showAlert('❌ ' + (result.message || 'فشل إضافة الدرس'), 'error');
+                }
+            } catch (error) {
+                showAlert('❌ خطأ في الاتصال', 'error');
+            }
         };
 
-        async function loadQuizzes() {
-            // سيتم إضافة قائمة الاختبارات لاحقاً
-        }
-
-        // ==================== Users ====================
+        // ==================== Users Functions ====================
         async function loadUsers() {
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_URL + '/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
-            const users = await res.json();
-            const container = document.getElementById('usersList');
-            container.innerHTML = `<table class="table"><thead><tr><th>الاسم</th><th>البريد</th><th>الصلاحية</th><th>المستوى</th></tr></thead><tbody>${users.map(u => `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</td><td>${u.level || 'غير محدد'}</td></tr>`).join('')}</tbody></table>`;
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/admin/users', { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                
+                if (!res.ok) throw new Error('Failed to load users');
+                
+                const users = await res.json();
+                const container = document.getElementById('usersList');
+                
+                if (!users || users.length === 0) {
+                    container.innerHTML = '<div class="empty-message">👥 لا يوجد مستخدمين</div>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <table class="table">
+                        <thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>الصلاحية</th><th>المستوى</th></tr></thead>
+                        <tbody>
+                            ${users.map(u => `
+                                <tr>
+                                    <td>${u.name || '-'}</td>
+                                    <td>${u.email}</td>
+                                    <td>${u.role === 'admin' ? '👑 أدمن' : '👤 مستخدم'}</td>
+                                    <td>${u.level === 'beginner' ? 'مبتدئ' : (u.level === 'advanced' ? 'متقدم' : 'غير محدد')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('usersList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل المستخدمين</div>';
+            }
         }
 
-        // ==================== Payments ====================
+        // ==================== Payments Functions ====================
         function loadPayments() {
             const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]').filter(p => p.status === 'pending');
             const container = document.getElementById('paymentsList');
-            if (payments.length === 0) { container.innerHTML = '<p>لا توجد طلبات دفع معلقة</p>'; return; }
-            container.innerHTML = payments.map(p => `<div class="course-card"><strong>${p.userName}</strong><br>${p.userEmail}<br><strong>الدورة:</strong> ${p.courseTitle}<br><strong>المبلغ:</strong> ${p.amount} ريال<br><strong>رقم العملية:</strong> ${p.transactionId}<br>${p.paymentImage ? `<img src="${p.paymentImage}" style="max-width:100px">` : ''}<br><button class="btn-primary" onclick="approvePayment(${p.requestId})">✅ قبول</button> <button class="btn-danger" onclick="rejectPayment(${p.requestId})">❌ رفض</button></div>`).join('');
+            
+            if (payments.length === 0) {
+                container.innerHTML = '<div class="empty-message">💰 لا توجد طلبات دفع معلقة</div>';
+                return;
+            }
+            
+            container.innerHTML = payments.map(p => `
+                <div class="course-card">
+                    <strong>${p.userName}</strong><br>
+                    ${p.userEmail}<br>
+                    <strong>الدورة:</strong> ${p.courseTitle}<br>
+                    <strong>المبلغ:</strong> ${p.amount} ريال<br>
+                    <strong>رقم العملية:</strong> ${p.transactionId}<br>
+                    ${p.paymentImage ? `<img src="${p.paymentImage}" style="max-width:100px; margin-top:10px;">` : ''}<br>
+                    <button class="btn-primary" style="margin-top:10px;" onclick="approvePayment(${p.requestId})">✅ قبول</button>
+                    <button class="btn-danger" onclick="rejectPayment(${p.requestId})">❌ رفض</button>
+                </div>
+            `).join('');
         }
 
         window.approvePayment = (id) => {
@@ -982,16 +718,109 @@ document.getElementById('addLessonForm').onsubmit = async (e) => {
             loadPayments();
         };
 
-        function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/'; }
+        // ==================== Quiz Functions ====================
+        async function loadCoursesForQuiz() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/admin/courses', { 
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const courses = await res.json();
+                const select = document.getElementById('quizCourse');
+                select.innerHTML = '<option value="">اختر دورة</option>' + 
+                    courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function addQuizQuestion() {
+            const container = document.getElementById('questionsContainer');
+            const qNum = quizQuestionCount++;
+            container.innerHTML += `
+                <div class="question-card" id="quizQ${qNum}">
+                    <div class="question-header"><span class="question-type-badge">سؤال ${qNum}</span><button class="remove-question" onclick="removeQuizQuestion(${qNum})">✖</button></div>
+                    <div class="question-field"><label>السؤال</label><input type="text" id="quizQ${qNum}_text" placeholder="أدخل السؤال"></div>
+                    <div class="question-field"><label>الخيارات (مفصولة بفواصل)</label><input type="text" id="quizQ${qNum}_options" placeholder="خيار1,خيار2,خيار3"></div>
+                    <div class="question-field"><label>رقم الإجابة الصحيحة (0,1,2...)</label><input type="number" id="quizQ${qNum}_correct" value="0"></div>
+                </div>
+            `;
+        }
+
+        function removeQuizQuestion(num) {
+            document.getElementById(`quizQ${num}`)?.remove();
+        }
+
+        document.getElementById('addQuizForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const questions = [];
+            
+            for (let i = 1; i < quizQuestionCount; i++) {
+                const qText = document.getElementById(`quizQ${i}_text`);
+                if (qText && qText.value) {
+                    questions.push({
+                        question: qText.value,
+                        options: document.getElementById(`quizQ${i}_options`).value.split(','),
+                        correctAnswer: parseInt(document.getElementById(`quizQ${i}_correct`).value)
+                    });
+                }
+            }
+            
+            if (questions.length === 0) {
+                showAlert('❌ يرجى إضافة أسئلة للاختبار', 'error');
+                return;
+            }
+            
+            const data = {
+                title: document.getElementById('quizType').value,
+                courseId: document.getElementById('quizCourse').value || null,
+                questions: questions,
+                passingScore: parseInt(document.getElementById('quizPassingScore').value)
+            };
+            
+            try {
+                const res = await fetch(API_URL + '/admin/quizzes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showAlert('✅ تم إضافة الاختبار', 'success');
+                    document.getElementById('addQuizForm').reset();
+                    document.getElementById('questionsContainer').innerHTML = '';
+                    quizQuestionCount = 1;
+                    loadQuizzes();
+                } else {
+                    const err = await res.json();
+                    showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+                }
+            } catch (error) {
+                showAlert('❌ خطأ في الاتصال', 'error');
+            }
+        };
+
+        async function loadQuizzes() {
+            document.getElementById('quizzesList').innerHTML = '<div class="empty-message">📝 سيتم إضافة قائمة الاختبارات قريباً</div>';
+        }
+
+        function logout() { 
+            localStorage.removeItem('token'); 
+            localStorage.removeItem('user'); 
+            window.location.href = '/'; 
+        }
 
         // ==================== Init ====================
         async function init() {
             if (!await checkAdmin()) return;
-            loadCourses();
-            loadUsers();
+            await loadCourses();
+            await loadUsers();
             loadPayments();
             await loadCoursesForSelect();
+            await loadCoursesForSelect2();
+            await loadCoursesForQuiz();
         }
+        
         init();
     </script>
 </body>
