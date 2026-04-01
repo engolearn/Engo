@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الأدمن - EnGo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f7fafc;
+        }
+        
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .navbar .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .logo i {
+            margin-left: 8px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #4a5568;
+            margin-right: 20px;
+            cursor: pointer;
+        }
+        
+        .btn-logout {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        
+        /* Admin Panel */
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+        
+        .admin-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card i {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card h3 {
+            font-size: 1.8rem;
+            color: #2d3748;
+        }
+        
+        .admin-section {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .admin-section h2 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+            padding: 5px 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .courses-table, .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .courses-table th,
+        .courses-table td,
+        .users-table th,
+        .users-table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .courses-table th,
+        .users-table th {
+            background: #f7fafc;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .status-premium {
+            background: #fed7d7;
+            color: #e53e3e;
+        }
+        
+        .status-free {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .payment-request {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .payment-request img {
+            max-width: 100px;
+            border-radius: 5px;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-stats {
+                grid-template-columns: 1fr;
+            }
+            .courses-table, .users-table {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-language"></i>
+                <span>EnGo Admin</span>
+            </div>
+            <div class="nav-links">
+                <a href="/">الرئيسية</a>
+            </div>
+            <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1><i class="fas fa-crown"></i> لوحة تحكم الأدمن</h1>
+            <p>مرحباً بك في لوحة التحكم - يمكنك من هنا إدارة الموقع بالكامل</p>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <!-- إحصائيات -->
+        <div class="admin-stats" id="stats">
+            <div class="stat-card">
+                <i class="fas fa-book"></i>
+                <h3 id="coursesCount">0</h3>
+                <p>إجمالي الدورات</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3 id="usersCount">0</h3>
+                <p>عدد المستخدمين</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-dollar-sign"></i>
+                <h3 id="paymentsCount">0</h3>
+                <p>طلبات الدفع</p>
+            </div>
+        </div>
+
+        <!-- إضافة دورة -->
+        <div class="admin-section">
+            <h2><i class="fas fa-plus-circle"></i> إضافة دورة جديدة</h2>
+            <form id="addCourseForm">
+                <div class="form-group">
+                    <label>عنوان الدورة</label>
+                    <input type="text" id="courseTitle" required placeholder="مثال: دورة اللغة الإنجليزية للمبتدئين">
+                </div>
+                <div class="form-group">
+                    <label>وصف الدورة</label>
+                    <textarea id="courseDescription" rows="3" required placeholder="وصف مختصر للدورة"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>المستوى</label>
+                    <select id="courseLevel">
+                        <option value="beginner">مبتدئ</option>
+                        <option value="advanced">متقدم</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>السعر (ريال)</label>
+                    <input type="number" id="coursePrice" value="0">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="coursePremium"> دورة مدفوعة
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">➕ إضافة الدورة</button>
+            </form>
+        </div>
+
+        <!-- قائمة الدورات -->
+        <div class="admin-section">
+            <h2><i class="fas fa-list"></i> قائمة الدورات</h2>
+            <div id="coursesList"></div>
+        </div>
+
+        <!-- طلبات الدفع -->
+        <div class="admin-section">
+            <h2><i class="fas fa-credit-card"></i> طلبات الدفع المعلقة</h2>
+            <div id="paymentsList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin + '/api';
+        
+        // التحقق من صلاحية الأدمن
+        async function checkAdminAccess() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!token || !user.id) {
+                window.location.href = '/';
+                return false;
+            }
+            
+            if (user.role !== 'admin') {
+                alert('❌ غير مصرح لك بالدخول إلى لوحة التحكم');
+                window.location.href = '/';
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // عرض رسالة
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            alertDiv.style.display = 'block';
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // تحميل الإحصائيات
+        async function loadStats() {
+            try {
+                const courses = await getAllCoursesAdmin();
+                const users = await getAllUsers();
+                const payments = getPendingPayments();
+                
+                document.getElementById('coursesCount').innerText = courses.length;
+                document.getElementById('usersCount').innerText = users.length;
+                document.getElementById('paymentsCount').innerText = payments.length;
+            } catch(err) {
+                console.error(err);
+            }
+        }
+        
+        // جلب جميع المستخدمين
+        async function getAllUsers() {
+            const token = localStorage.getItem('token');
+            const res = await fetch(API_URL + '/admin/users', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            return res.ok ? await res.json() : [];
+        }
+        
+        // جلب جميع الدورات
+        async function getAllCoursesAdmin() {
+            const token = localStorage.getItem('token');
+            const res = await fetch(API_URL + '/admin/courses', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            return res.ok ? await res.json() : [];
+        }
+        
+        // جلب طلبات الدفع
+        function getPendingPayments() {
+            const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
+            return payments.filter(p => p.status === 'pending');
+        }
+        
+        // عرض الدورات
+        async function displayCourses() {
+            const courses = await getAllCoursesAdmin();
+            const container = document.getElementById('coursesList');
+            
+            if (courses.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:2rem;">لا توجد دورات حالياً</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="courses-table">
+                    <thead>
+                        <tr><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr>
+                    </thead>
+                    <tbody>
+                        ${courses.map(course => `
+                            <tr>
+                                <td>${course.title}</td>
+                                <td>${course.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</td>
+                                <td>${course.isPremium ? course.price + ' ريال' : 'مجاني'}</td>
+                                <td><span class="status-badge ${course.isPremium ? 'status-premium' : 'status-free'}">${course.isPremium ? 'مدفوعة' : 'مجانية'}</span></td>
+                                <td><button class="btn-danger" onclick="deleteCourse('${course._id}')">حذف</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        // عرض طلبات الدفع
+        function displayPayments() {
+            const payments = getPendingPayments();
+            const container = document.getElementById('paymentsList');
+            
+            if (payments.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:2rem;">لا توجد طلبات دفع معلقة</p>';
+                return;
+            }
+            
+            container.innerHTML = payments.map(p => `
+                <div class="payment-request">
+                    <div>
+                        <strong>${p.userName}</strong><br>
+                        <small>${p.userEmail}</small><br>
+                        <strong>الدورة:</strong> ${p.courseTitle}<br>
+                        <strong>المبلغ:</strong> ${p.amount} ريال<br>
+                        <strong>رقم العملية:</strong> ${p.transactionId}<br>
+                        ${p.paymentImage ? `<img src="${p.paymentImage}" alt="إيصال">` : ''}
+                    </div>
+                    <div>
+                        <button class="btn-primary" onclick="approvePayment(${p.requestId}, '${p.userId}', '${p.courseId}')" style="background:#48bb78">✅ قبول</button>
+                        <button class="btn-danger" onclick="rejectPayment(${p.requestId})" style="margin-top:10px;">❌ رفض</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // إضافة دورة
+        document.getElementById('addCourseForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            
+            const data = {
+                title: document.getElementById('courseTitle').value,
+                description: document.getElementById('courseDescription').value,
+                level: document.getElementById('courseLevel').value,
+                price: parseInt(document.getElementById('coursePrice').value),
+                isPremium: document.getElementById('coursePremium').checked
+            };
+            
+            const res = await fetch(API_URL + '/admin/courses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (res.ok) {
+                showAlert('✅ تم إضافة الدورة بنجاح', 'success');
+                document.getElementById('addCourseForm').reset();
+                displayCourses();
+                loadStats();
+            } else {
+                const err = await res.json();
+                showAlert('❌ ' + err.message, 'error');
+            }
+        };
+        
+        // حذف دورة
+        window.deleteCourse = async (id) => {
+            if (!confirm('هل أنت متأكد من حذف هذه الدورة؟')) return;
+            const token = localStorage.getItem('token');
+            const res = await fetch(API_URL + '/admin/courses/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                showAlert('✅ تم حذف الدورة', 'success');
+                displayCourses();
+                loadStats();
+            }
+        };
+        
+        // قبول طلب دفع
+        window.approvePayment = (requestId, userId, courseId) => {
+            let payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
+            payments = payments.filter(p => p.requestId !== requestId);
+            localStorage.setItem('pendingPayments', JSON.stringify(payments));
+            
+            // تحديث مشتريات المستخدم
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.id === userId) {
+                const purchased = user.purchasedCourses || [];
+                if (!purchased.includes(courseId)) {
+                    purchased.push(courseId);
+                    user.purchasedCourses = purchased;
+                    localStorage.setItem('user', JSON.stringify(user));
+                }
+            }
+            
+            showAlert('✅ تم قبول الطلب وفتح الدورة', 'success');
+            displayPayments();
+            loadStats();
+        };
+        
+        // رفض طلب دفع
+        window.rejectPayment = (requestId) => {
+            let payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
+            payments = payments.filter(p => p.requestId !== requestId);
+            localStorage.setItem('pendingPayments', JSON.stringify(payments));
+            showAlert('❌ تم رفض الطلب', 'success');
+            displayPayments();
+            loadStats();
+        };
+        
+        // تسجيل الخروج
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+        
+        // تحميل الصفحة
+        async function init() {
+            const isAdmin = await checkAdminAccess();
+            if (!isAdmin) return;
+            
+            await displayCourses();
+            displayPayments();
+            loadStats();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
