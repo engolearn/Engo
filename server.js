@@ -344,6 +344,25 @@ app.get('/api/progress/:courseId', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// Get lessons for a specific course (admin only)
+app.get('/api/admin/courses/:courseId/lessons', auth, adminAuth, async (req, res) => {
+    try {
+        const lessons = await Lesson.find({ courseId: req.params.courseId }).sort({ lessonNumber: 1 });
+        res.json(lessons);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get all users (admin only)
+app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 app.post('/api/progress/:courseId/lessons/:lessonId/complete', auth, async (req, res) => {
     try {
