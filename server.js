@@ -366,6 +366,15 @@ app.post('/api/progress/:courseId/lessons/:lessonId/complete', auth, async (req,
     }
 });
 
+// Get all users (admin only)
+app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 // ==================== Serve Pages ====================
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'frontend', 'index.html')); });
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'frontend', 'admin.html')); });
