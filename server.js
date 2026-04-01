@@ -32,7 +32,48 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // ==================== Routes ====================
+// Get all users (admin only)
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ message: 'Unauthorized' });
+        
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+        const admin = await User.findById(decoded.userId);
+        
+        if (!admin || admin.role !== 'admin') {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+        
+        const users = await User.find().select('-password');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
+// Delete course
+app.delete('/api/admin/courses/:id', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ message: 'Unauthorized' });
+        
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+        const admin = await User.findById(decoded.userId);
+        
+        if (!admin || admin.role !== 'admin') {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+        
+        const Course = mongoose.model('Course');
+        await Course.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Course deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 // Register
 app.post('/api/auth/register', async (req, res) => {
     try {
