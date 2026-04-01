@@ -1,23 +1,29 @@
+// frontend/js/auth.js
+const API_URL = 'https://engo.koyeb.app/api';
+
 // التحقق من حالة تسجيل الدخول
 function checkAuth() {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     
-    if (token && user) {
-        document.getElementById('authButtons').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'flex';
-        document.getElementById('userName').textContent = user.name || user.email;
+    const authButtons = document.getElementById('authButtons');
+    const userInfo = document.getElementById('userInfo');
+    const userName = document.getElementById('userName');
+    const adminPanelLink = document.getElementById('adminPanelLink');
+    
+    if (token && user.id) {
+        if (authButtons) authButtons.style.display = 'none';
+        if (userInfo) userInfo.style.display = 'flex';
+        if (userName) userName.innerText = user.name || user.email;
         
-        // عرض رابط الأدمن إذا كان المستخدم أدمن
-        if (user.role === 'admin') {
-            document.getElementById('adminPanelLink').style.display = 'block';
-            document.getElementById('adminPanelLink').href = 'admin.html';
+        if (user.role === 'admin' && adminPanelLink) {
+            adminPanelLink.style.display = 'block';
+            adminPanelLink.href = '/admin';
         }
-        
         return user;
     } else {
-        document.getElementById('authButtons').style.display = 'flex';
-        document.getElementById('userInfo').style.display = 'none';
+        if (authButtons) authButtons.style.display = 'flex';
+        if (userInfo) userInfo.style.display = 'none';
         return null;
     }
 }
@@ -25,40 +31,48 @@ function checkAuth() {
 // تسجيل الدخول
 async function login(email, password) {
     try {
-        const data = await loginUser(email, password);
+        const res = await fetch(API_URL + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.message);
+        
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        showAlert('تم تسجيل الدخول بنجاح!', 'success');
+        alert('✅ تم تسجيل الدخول بنجاح');
+        location.reload();
         
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-        
-        return data;
-    } catch (error) {
-        showAlert(error.message, 'error');
-        throw error;
+    } catch (err) {
+        alert('❌ ' + err.message);
     }
 }
 
 // إنشاء حساب
 async function register(name, email, password) {
     try {
-        const data = await registerUser(name, email, password);
+        const res = await fetch(API_URL + '/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.message);
+        
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        showAlert('تم إنشاء الحساب بنجاح!', 'success');
+        alert('✅ تم إنشاء الحساب بنجاح');
+        location.reload();
         
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-        
-        return data;
-    } catch (error) {
-        showAlert(error.message, 'error');
-        throw error;
+    } catch (err) {
+        alert('❌ ' + err.message);
     }
 }
 
@@ -66,10 +80,10 @@ async function register(name, email, password) {
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.reload();
+    location.reload();
 }
 
-// عرض مودال تسجيل الدخول
+// المودالات
 function showLoginModal() {
     document.getElementById('loginModal').style.display = 'block';
 }
@@ -86,53 +100,33 @@ function closeRegisterModal() {
     document.getElementById('registerModal').style.display = 'none';
 }
 
-// إضافة مستمعين للأحداث
-document.addEventListener('DOMContentLoaded', () => {
+// تشغيل عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
+        loginForm.onsubmit = function(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            await login(email, password);
-        });
+            login(email, password);
+        };
     }
     
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
+        registerForm.onsubmit = function(e) {
             e.preventDefault();
             const name = document.getElementById('regName').value;
             const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPassword').value;
-            await register(name, email, password);
-        });
+            register(name, email, password);
+        };
     }
     
-    // إغلاق المودالات عند النقر خارجها
-    window.onclick = function(event) {
-        const loginModal = document.getElementById('loginModal');
-        const registerModal = document.getElementById('registerModal');
-        const paymentModal = document.getElementById('paymentModal');
-        
-        if (event.target === loginModal) closeLoginModal();
-        if (event.target === registerModal) closeRegisterModal();
-        if (event.target === paymentModal) closePaymentModal();
+    window.onclick = function(e) {
+        if (e.target.id === 'loginModal') closeLoginModal();
+        if (e.target.id === 'registerModal') closeRegisterModal();
     };
-    
-    checkAuth();
 });
-
-// عرض رسالة تنبيه
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type}`;
-    alertDiv.textContent = message;
-    
-    const container = document.querySelector('.main-content') || document.body;
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 3000);
-}
