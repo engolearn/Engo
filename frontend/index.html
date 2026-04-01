@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnGo - تعلم اللغة الإنجليزية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 20px;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .logo i {
+            margin-left: 8px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #4a5568;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+        
+        .nav-links a:hover {
+            color: #667eea;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: white;
+            min-width: 180px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown-content a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #4a5568;
+        }
+        
+        .dropdown-content a:hover {
+            background: #f7fafc;
+        }
+        
+        .dropdown-content hr {
+            margin: 5px 0;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: transform 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 8px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 4rem 2rem;
+            border-radius: 20px;
+            margin: 2rem 0;
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* Courses Grid */
+        .courses-section {
+            padding: 2rem 0;
+        }
+        
+        .courses-section h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #2d3748;
+        }
+        
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .course-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .course-info {
+            padding: 1.5rem;
+        }
+        
+        .course-info h3 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .course-info p {
+            color: #718096;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .course-price {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        /* Pages */
+        .page {
+            display: none;
+            min-height: 60vh;
+            padding: 2rem 0;
+        }
+        
+        #homePage {
+            display: block;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            padding: 2rem;
+            border-radius: 20px;
+        }
+        
+        .modal-content h3 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #667eea;
+        }
+        
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .modal-content button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 3rem 0 1rem;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-section h3, .footer-section h4 {
+            margin-bottom: 1rem;
+        }
+        
+        .footer-section a {
+            display: block;
+            color: #cbd5e0;
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 1rem;
+            border-top: 1px solid #4a5568;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .hero h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-language"></i>
+                <span>EnGo</span>
+            </div>
+            <div class="nav-links" id="navLinks">
+                <a onclick="showPage('home')">الرئيسية</a>
+                <a onclick="showPage('courses')">الدورات</a>
+                <a onclick="showPage('levelTest')">اختبار المستوى</a>
+                <a id="adminLink" onclick="showPage('admin')" style="display: none;">👑 الأدمن</a>
+            </div>
+            <div class="auth-buttons" id="authButtons">
+                <button onclick="showLoginModal()" class="btn-outline">تسجيل دخول</button>
+                <button onclick="showRegisterModal()" class="btn-primary">حساب جديد</button>
+            </div>
+            <div class="user-menu" id="userMenu" style="display: none;">
+                <div class="user-avatar">👤</div>
+                <span id="userName"></span>
+                <div class="dropdown">
+                    <button class="dropdown-btn"><i class="fas fa-chevron-down"></i></button>
+                    <div class="dropdown-content">
+                        <a onclick="showPage('dashboard')">لوحة التحكم</a>
+                        <hr>
+                        <a onclick="logout()">تسجيل الخروج</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pages -->
+    <main>
+        <div id="homePage" class="page">
+            <div class="container">
+                <div class="hero">
+                    <h1>تعلم بطريقة تفاعلية وممتعة</h1>
+                    <p>دورات متكاملة مع دروس تفاعلية وواجبات واختبارات</p>
+                    <button class="btn-primary" onclick="showPage('courses')">استكشف الدورات</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="coursesPage" class="page">
+            <div class="container">
+                <div class="courses-section">
+                    <h2>جميع الدورات</h2>
+                    <div class="courses-grid" id="coursesGrid">
+                        <div class="loading-spinner">جاري التحميل...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="levelTestPage" class="page">
+            <div class="container">
+                <h2 style="text-align: center;">اختبار تحديد المستوى</h2>
+                <p style="text-align: center;">سيتم إضافة الاختبار قريباً</p>
+            </div>
+        </div>
+
+        <div id="dashboardPage" class="page">
+            <div class="container">
+                <h2 style="text-align: center;">لوحة التحكم</h2>
+                <p style="text-align: center;">مرحباً بك في لوحة التحكم</p>
+            </div>
+        </div>
+
+        <div id="adminPage" class="page">
+            <div class="container">
+                <h2 style="text-align: center;">👑 لوحة تحكم الأدمن</h2>
+                <div id="adminContent">
+                    <div style="background: white; padding: 2rem; border-radius: 15px; margin-top: 1rem;">
+                        <h3>✅ أنت الآن أدمن</h3>
+                        <p>يمكنك من هنا إدارة الموقع:</p>
+                        <ul style="margin-top: 1rem; margin-right: 1.5rem;">
+                            <li>إضافة دورات جديدة</li>
+                            <li>إضافة دروس</li>
+                            <li>إدارة المستخدمين</li>
+                            <li>الموافقة على طلبات الدفع</li>
+                        </ul>
+                        <button class="btn-primary" style="margin-top: 1rem;" onclick="loadAdminPanel()">تحميل لوحة الأدمن</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h3>تسجيل الدخول</h3>
+            <form id="loginForm">
+                <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+                <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+                <button type="submit" class="btn-primary">دخول</button>
+                <button type="button" onclick="closeLoginModal()" style="background: #e2e8f0;">إلغاء</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <h3>إنشاء حساب جديد</h3>
+            <form id="registerForm">
+                <input type="text" id="regName" placeholder="الاسم الكامل" required>
+                <input type="email" id="regEmail" placeholder="البريد الإلكتروني" required>
+                <input type="password" id="regPassword" placeholder="كلمة المرور" required>
+                <button type="submit" class="btn-primary">تسجيل</button>
+                <button type="button" onclick="closeRegisterModal()" style="background: #e2e8f0;">إلغاء</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EnGo</h3>
+                    <p>منصتك المثالية لتعلم اللغة الإنجليزية</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <a onclick="showPage('courses')">الدورات</a>
+                    <a onclick="showPage('levelTest')">اختبار المستوى</a>
+                </div>
+                <div class="footer-section">
+                    <h4>تواصل معنا</h4>
+                    <p><i class="fas fa-phone"></i> 0512345678</p>
+                    <p><i class="fab fa-whatsapp"></i> 0512345678</p>
+                    <p><i class="fas fa-envelope"></i> support@engo.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 EnGo - جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const API_URL = 'https://engo.koyeb.app/api';
+        
+        // عرض الصفحات
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.style.display = 'none';
+            });
+            const target = document.getElementById(pageName + 'Page');
+            if (target) target.style.display = 'block';
+        }
+        
+        // المودالات
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+        
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+        
+        function showRegisterModal() {
+            document.getElementById('registerModal').style.display = 'flex';
+        }
+        
+        function closeRegisterModal() {
+            document.getElementById('registerModal').style.display = 'none';
+        }
+        
+        // تسجيل الدخول
+        async function login(email, password) {
+            try {
+                const res = await fetch(API_URL + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message);
+                
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                alert('✅ تم تسجيل الدخول بنجاح');
+                closeLoginModal();
+                location.reload();
+            } catch(err) {
+                alert('❌ ' + err.message);
+            }
+        }
+        
+        // إنشاء حساب
+        async function register(name, email, password) {
+            try {
+                const res = await fetch(API_URL + '/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message);
+                
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                alert('✅ تم إنشاء الحساب بنجاح');
+                closeRegisterModal();
+                location.reload();
+            } catch(err) {
+                alert('❌ ' + err.message);
+            }
+        }
+        
+        // تسجيل الخروج
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            location.reload();
+        }
+        
+        // التحقق من حالة الدخول وإظهار الروابط
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            console.log('Checking auth:', { token: !!token, user, role: user.role });
+            
+            const authButtons = document.getElementById('authButtons');
+            const userMenu = document.getElementById('userMenu');
+            const userName = document.getElementById('userName');
+            const adminLink = document.getElementById('adminLink');
+            
+            if (token && user.id) {
+                // إظهار قائمة المستخدم
+                if (authButtons) authButtons.style.display = 'none';
+                if (userMenu) userMenu.style.display = 'flex';
+                if (userName) userName.innerText = user.name || user.email;
+                
+                // إظهار رابط الأدمن إذا كان role = admin
+                if (user.role === 'admin') {
+                    if (adminLink) {
+                        adminLink.style.display = 'inline-block';
+                        console.log('✅ Admin link shown');
+                    }
+                } else {
+                    if (adminLink) adminLink.style.display = 'none';
+                    console.log('User is not admin, role:', user.role);
+                }
+            } else {
+                // إظهار أزرار تسجيل الدخول
+                if (authButtons) authButtons.style.display = 'flex';
+                if (userMenu) userMenu.style.display = 'none';
+                if (adminLink) adminLink.style.display = 'none';
+            }
+        }
+        
+        // تحميل الدورات
+        async function loadCourses() {
+            try {
+                const res = await fetch(API_URL + '/courses');
+                const courses = await res.json();
+                const grid = document.getElementById('coursesGrid');
+                
+                if (!courses || courses.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; padding:2rem;">📚 لا توجد دورات متاحة حالياً<br>سيتم إضافة دورات قريباً</div>';
+                    return;
+                }
+                
+                grid.innerHTML = courses.map(course => `
+                    <div class="course-card">
+                        <div class="course-info">
+                            <h3>${course.title}</h3>
+                            <p>${course.description}</p>
+                            <div class="course-price">${course.isPremium ? course.price + ' ريال' : '🎓 مجاني'}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(err) {
+                console.error(err);
+                document.getElementById('coursesGrid').innerHTML = '<div style="text-align:center; padding:2rem; color:red;">⚠️ حدث خطأ في تحميل الدورات</div>';
+            }
+        }
+        
+        function loadAdminPanel() {
+            alert('سيتم إضافة لوحة الأدمن قريباً');
+        }
+        
+        // تشغيل عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded');
+            checkAuth();
+            loadCourses();
+            
+            // نماذج تسجيل الدخول
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('loginEmail').value;
+                    const password = document.getElementById('loginPassword').value;
+                    login(email, password);
+                };
+            }
+            
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) {
+                registerForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('regName').value;
+                    const email = document.getElementById('regEmail').value;
+                    const password = document.getElementById('regPassword').value;
+                    register(name, email, password);
+                };
+            }
+            
+            // إغلاق المودالات عند النقر خارجها
+            window.onclick = (e) => {
+                if (e.target.classList && e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            };
+        });
+    </script>
+</body>
+</html>
