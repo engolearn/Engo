@@ -1,7 +1,6 @@
-// تكوين API
-const API_URL = 'https://engo.koyeb.app';
+// frontend/js/api.js
+const API_URL = 'https://engo.koyeb.app/api';
 
-// دالة مساعدة للطلبات
 async function apiCall(endpoint, options = {}) {
     const token = localStorage.getItem('token');
     
@@ -11,24 +10,24 @@ async function apiCall(endpoint, options = {}) {
     };
     
     if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers['Authorization'] = 'Bearer ' + token;
     }
     
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const res = await fetch(API_URL + endpoint, {
         ...options,
         headers
     });
     
-    const data = await response.json();
+    const data = await res.json();
     
-    if (!response.ok) {
-        throw new Error(data.message || 'حدث خطأ ما');
+    if (!res.ok) {
+        throw new Error(data.message || 'حدث خطأ');
     }
     
     return data;
 }
 
-// دوال المصادقة
+// المصادقة
 async function registerUser(name, email, password) {
     return apiCall('/auth/register', {
         method: 'POST',
@@ -43,27 +42,27 @@ async function loginUser(email, password) {
     });
 }
 
-// دوال الدورات
+// الدورات
 async function getAllCourses() {
     return apiCall('/courses');
 }
 
 async function getCourseDetails(courseId) {
-    return apiCall(`/courses/${courseId}`);
+    return apiCall('/courses/' + courseId);
 }
 
-// دوال الأدمن
-async function createCourse(courseData) {
+// الأدمن
+async function createCourse(data) {
     return apiCall('/admin/courses', {
         method: 'POST',
-        body: JSON.stringify(courseData)
+        body: JSON.stringify(data)
     });
 }
 
-async function addLesson(lessonData) {
+async function addLesson(data) {
     return apiCall('/admin/lessons', {
         method: 'POST',
-        body: JSON.stringify(lessonData)
+        body: JSON.stringify(data)
     });
 }
 
@@ -72,27 +71,8 @@ async function getAllCoursesAdmin() {
 }
 
 async function updateCourseStatus(courseId, isPremium) {
-    return apiCall(`/admin/courses/${courseId}/status`, {
+    return apiCall('/admin/courses/' + courseId + '/status', {
         method: 'PUT',
         body: JSON.stringify({ isPremium })
-    });
-}
-
-// دوال الدفع
-async function submitPaymentProof(paymentData) {
-    return apiCall('/payment/submit', {
-        method: 'POST',
-        body: JSON.stringify(paymentData)
-    });
-}
-
-async function getPaymentRequests() {
-    return apiCall('/admin/payment-requests');
-}
-
-async function approvePayment(requestId, userId, courseId) {
-    return apiCall(`/admin/payment-requests/${requestId}/approve`, {
-        method: 'POST',
-        body: JSON.stringify({ userId, courseId })
     });
 }
