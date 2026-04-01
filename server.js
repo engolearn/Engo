@@ -8,87 +8,159 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ إعدادات CORS الصحيحة
+// CORS
 app.use(cors({
     origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    credentials: true
 }));
 
-// Middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// ✅ تسجيل جميع الطلبات للتصحيح
-app.use((req, res, next) => {
-    console.log(`📡 ${req.method} ${req.url}`);
-    next();
+// Static files
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+// ==================== Models ====================
+const userSchema = new mongoose.Schema({
+    name: String,
+    email: { type: String, unique: true },
+    password: String,
+    role: { type: String, default: 'user' },
+    purchasedCourses: { type: Array, default: [] }
 });
 
-// خدمة الملفات الثابتة
-app.use(express.static(path.join(__dirname, 'frontend')));
+const User = mongoose.model('User', userSchema);
 
 // ==================== Routes ====================
 
-// استيراد الموديلات
-const User = require('./backend/models/User');
-const Course = require('./backend/models/Course');
-const Lesson = require('./backend/models/Lesson');
-const UserProgress = require('./backend/models/UserProgress');
-
-// استيراد routes
-const authRoutes = require('./backend/routes/auth');
-const courseRoutes = require('./backend/routes/courses');
-const adminRoutes = require('./backend/routes/admin');
-
-// استخدام routes
-app.use('/api/auth', authRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/admin', adminRoutes);
-
-// ✅ Route رئيسي
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+// Register
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        console.log('Register:', req.body);
+        const { name, email, password } = req.body;
+        
+        const existing = await User.findOne({ email });
+        if (existing) {
+            return res.status(400).json({ message: 'البريد موجود بالفعل' });
+        }
+        
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        const user = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role: email === 'admin@admin.com' ? 'admin' : 'user'
+        });
+        
+        await user.save();
+        
+        const jwt = require('jsonwebtoken');
+        const token = jwt.sign(
+            { userId: user._id, role: user.role },
+            process.env.JWT_SECRET || 'secret123',
+            { expiresIn: '7d' }
+        );
+        
+        res.json({
+            message: 'تم التسجيل بنجاح',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                purchasedCourses: []
+            }
+        });
+        
+    } catch (error) {
+        console.error('Register error:', error);
+        res.status(500).json({ message: error.message });
+    }
 });
 
-// ✅ Route للتحقق من صحة الخادم
+// Login
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        console.log('Login:', req.body.email);
+        const { email, password } = req.body;
+        
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: 'بيانات غير صحيحة' });
+        }
+        
+        const bcrypt = require('bcryptjs');
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) {
+            return res.status(401).json({ message: 'بيانات غير صحيحة' });
+        }
+        
+        const jwt = require('jsonwebtoken');
+        const token = jwt.sign(
+            { userId: user._id, role: user.role },
+            process.env.JWT_SECRET || 'secret123',
+            { expiresIn: '7d' }
+        );
+        
+        res.json({
+            message: 'تم تسجيل الدخول',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                purchasedCourses: user.purchasedCourses || []
+            }
+        });
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get all courses
+app.get('/api/courses', async (req, res) => {
+    try {
+        const Course = mongoose.model('Course', new mongoose.Schema({
+            title: String,
+            description: String,
+            level: String,
+            price: Number,
+            isPremium: Boolean,
+            totalLessons: Number,
+            image: String
+        }));
+        
+        const courses = await Course.find();
+        res.json(courses);
+    } catch (error) {
+        res.json([]);
+    }
+});
+
+// Health check
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
+    res.json({ 
         status: 'healthy', 
-        time: new Date().toISOString(),
         mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
     });
 });
 
-// ✅ Route لاختبار API
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'API is working!', timestamp: new Date().toISOString() });
+// Serve HTML
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// ==================== Database Connection ====================
-
-const connectDB = async () => {
-    try {
-        const mongoURI = process.env.MONGODB_URI;
-        if (!mongoURI) {
-            console.error('❌ MONGODB_URI not set');
-            return;
-        }
-        
-        await mongoose.connect(mongoURI);
-        console.log('✅ MongoDB Connected');
-    } catch (error) {
-        console.error('❌ MongoDB Error:', error.message);
-        setTimeout(connectDB, 5000);
-    }
-};
-
-// تشغيل الخادم
-connectDB();
+// ==================== Database ====================
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/education')
+    .then(() => console.log('✅ MongoDB connected'))
+    .catch(err => console.error('❌ MongoDB error:', err.message));
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log('========================================');
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🌐 URL: https://engo.koyeb.app`);
-    console.log('========================================');
 });
