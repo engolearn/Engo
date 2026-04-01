@@ -52,6 +52,12 @@ app.get('/api/admin/users', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// server.js - أضف هذا الـ route مع باقي الـ routes
+
+// Serve admin page
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'admin.html'));
+});
 
 // Delete course
 app.delete('/api/admin/courses/:id', async (req, res) => {
