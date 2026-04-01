@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة التعليم - الرئيسية</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h2>منصة التعليم</h2>
+            </div>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="active">الرئيسية</a>
+                <a href="#" id="coursesLink">الدورات</a>
+                <a href="#" id="levelTestLink">تحديد المستوى</a>
+                <a href="#" id="adminPanelLink" style="display: none;">لوحة التحكم</a>
+            </div>
+            <div class="auth-buttons" id="authButtons">
+                <button class="btn-login" onclick="showLoginModal()">تسجيل الدخول</button>
+                <button class="btn-register" onclick="showRegisterModal()">إنشاء حساب</button>
+            </div>
+            <div class="user-info" id="userInfo" style="display: none;">
+                <span id="userName"></span>
+                <button class="btn-logout" onclick="logout()">تسجيل خروج</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="main-content">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>تعلم بطريقة تفاعلية وممتعة</h1>
+                <p>دورات متكاملة مع دروس تفاعلية وواجبات واختبارات</p>
+                <button class="btn-primary" onclick="scrollToCourses()">استكشف الدورات</button>
+            </div>
+        </section>
+
+        <section class="courses-section" id="coursesSection">
+            <div class="container">
+                <h2>جميع الدورات</h2>
+                <div class="courses-grid" id="coursesGrid">
+                    <!-- سيتم عرض الدورات هنا عبر JavaScript -->
+                    <div class="loading-spinner">جاري التحميل...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- مودال تسجيل الدخول -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeLoginModal()">&times;</span>
+            <h3>تسجيل الدخول</h3>
+            <form id="loginForm">
+                <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+                <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+                <button type="submit" class="btn-primary">دخول</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال إنشاء حساب -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRegisterModal()">&times;</span>
+            <h3>إنشاء حساب جديد</h3>
+            <form id="registerForm">
+                <input type="text" id="regName" placeholder="الاسم الكامل" required>
+                <input type="email" id="regEmail" placeholder="البريد الإلكتروني" required>
+                <input type="password" id="regPassword" placeholder="كلمة المرور" required>
+                <button type="submit" class="btn-primary">تسجيل</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال الدفع -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content payment-modal">
+            <span class="close" onclick="closePaymentModal()">&times;</span>
+            <h3>🔒 فتح الدورة</h3>
+            <div id="paymentCourseInfo"></div>
+            <div class="payment-methods">
+                <h4>طرق الدفع المتاحة:</h4>
+                
+                <div class="payment-method">
+                    <h5>💰 جيب كاش (Geep Cash)</h5>
+                    <div class="payment-number">
+                        <span>رقم المحفظة: <strong>773041464</strong></span>
+                        <button onclick="copyNumber('773041464')" class="btn-copy">📋 نسخ</button>
+                    </div>
+                    <p class="payment-note">قم بتحويل المبلغ المطلوب ثم أرسل صورة الإيصال</p>
+                </div>
+
+                <div class="payment-method">
+                    <h5>💳 كريمي (Krimi)</h5>
+                    <div class="payment-number">
+                        <span>رقم الحساب: <strong>3015418876</strong></span>
+                        <button onclick="copyNumber('3015418876')" class="btn-copy">📋 نسخ</button>
+                    </div>
+                    <p class="payment-note">قم بالتحويل إلى الرقم أعلاه ثم أرسل صورة الإيصال</p>
+                </div>
+            </div>
+
+            <div class="payment-proof">
+                <h4>إثبات الدفع:</h4>
+                <form id="paymentProofForm">
+                    <input type="file" id="paymentImage" accept="image/*" required>
+                    <input type="text" id="transactionId" placeholder="رقم العملية / الإيصال" required>
+                    <textarea id="paymentNote" placeholder="ملاحظات إضافية (اختياري)"></textarea>
+                    <button type="submit" class="btn-primary">إرسال إثبات الدفع</button>
+                </form>
+                <p class="payment-info">⚠️ سيتم فتح الدورة خلال 24 ساعة بعد التحقق من الإيصال</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/payment.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
