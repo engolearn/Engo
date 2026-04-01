@@ -191,73 +191,238 @@
         };
 
         // ==================== Lessons ====================
-        async function loadCoursesForSelect() {
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_URL + '/admin/courses', { headers: { 'Authorization': 'Bearer ' + token } });
-            const courses = await res.json();
-            const select = document.getElementById('lessonCourse');
-            const courseSelect = document.getElementById('courseForLessons');
-            select.innerHTML = '<option value="">اختر الدورة</option>' + courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
-            courseSelect.innerHTML = '<option value="">اختر دورة لعرض دروسها</option>' + courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+async function loadCoursesForSelect() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/courses', { 
+            headers: { 'Authorization': 'Bearer ' + token },
+            method: 'GET'
+        });
+        
+        if (!res.ok) {
+            console.error('Failed to load courses:', res.status);
+            return;
         }
-
-        async function loadLessonsForCourse() {
-            const courseId = document.getElementById('courseForLessons').value;
-            if (!courseId) return;
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_URL + '/admin/courses/' + courseId + '/lessons', { headers: { 'Authorization': 'Bearer ' + token } });
-            const lessons = await res.json();
-            const container = document.getElementById('lessonsList');
-            if (lessons.length === 0) { container.innerHTML = '<p>لا توجد دروس</p>'; return; }
-            container.innerHTML = lessons.map(l => `<div class="lesson-item"><strong>${l.lessonNumber}. ${l.title}</strong><button class="btn-danger" style="float:left" onclick="deleteLesson('${l._id}')">حذف</button></div>`).join('');
+        
+        const courses = await res.json();
+        const select = document.getElementById('lessonCourse');
+        const courseSelect = document.getElementById('courseForLessons');
+        
+        if (select) {
+            select.innerHTML = '<option value="">اختر الدورة</option>' + 
+                courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
         }
+        
+        if (courseSelect) {
+            courseSelect.innerHTML = '<option value="">اختر دورة لعرض دروسها</option>' + 
+                courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error loading courses:', error);
+        showAlert('خطأ في تحميل الدورات', 'error');
+    }
+}
 
-        window.deleteLesson = async (id) => {
-            if (!confirm('هل أنت متأكد؟')) return;
-            const token = localStorage.getItem('token');
-            await fetch(API_URL + '/admin/lessons/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+async function loadLessonsForCourse() {
+    const courseId = document.getElementById('courseForLessons').value;
+    if (!courseId) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/courses/' + courseId + '/lessons', { 
+            headers: { 'Authorization': 'Bearer ' + token },
+            method: 'GET'
+        });
+        
+        if (!res.ok) {
+            console.error('Failed to load lessons:', res.status);
+            return;
+        }
+        
+        const lessons = await res.json();
+        const container = document.getElementById('lessonsList');
+        
+        if (!lessons || lessons.length === 0) {
+            container.innerHTML = '<p>لا توجد دروس في هذه الدورة</p>';
+            return;
+        }
+        
+        container.innerHTML = lessons.map(l => `
+            <div class="lesson-item">
+                <strong>${l.lessonNumber}. ${l.title}</strong>
+                <button class="btn-danger" style="float:left" onclick="deleteLesson('${l._id}')">حذف</button>
+                <div style="clear:both"></div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading lessons:', error);
+        showAlert('خطأ في تحميل الدروس', 'error');
+    }
+}
+
+window.deleteLesson = async (id) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الدرس؟')) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/lessons/' + id, { 
+            method: 'DELETE', 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        
+        if (res.ok) {
             showAlert('✅ تم حذف الدرس', 'success');
             loadLessonsForCourse();
-        };
+        } else {
+            showAlert('❌ خطأ في الحذف', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting lesson:', error);
+        showAlert('❌ خطأ في الحذف', 'error');
+    }
+};
 
-        document.getElementById('assignmentType').onchange = function() {
-            const fields = document.getElementById('assignmentFields');
-            if (this.value === 'none') { fields.style.display = 'none'; return; }
-            fields.style.display = 'block';
-            if (this.value === 'sentence_arrangement') fields.innerHTML = `<div class="form-group"><label>الجمل (مفصولة بفواصل)</label><input type="text" id="assignmentSentences" placeholder="جملة1,جملة2,جملة3"></div><div class="form-group"><label>الترتيب الصحيح (أرقام مفصولة بفواصل)</label><input type="text" id="assignmentOrder" placeholder="0,1,2"></div>`;
-            else if (this.value === 'word_match') fields.innerHTML = `<div class="form-group"><label>الكلمات والمعاني (كلمة:معنى,كلمة2:معنى2)</label><input type="text" id="assignmentPairs" placeholder="book:كتاب,pen:قلم"></div>`;
-            else fields.innerHTML = `<div class="form-group"><label>النص مع ____ للفراغ</label><input type="text" id="assignmentText" placeholder="السماء ____ زرقاء."></div><div class="form-group"><label>الإجابة الصحيحة</label><input type="text" id="assignmentAnswer"></div>`;
-        };
+// إعدادات الواجب
+document.getElementById('assignmentType').onchange = function() {
+    const fields = document.getElementById('assignmentFields');
+    const type = this.value;
+    
+    if (type === 'none') {
+        fields.style.display = 'none';
+        return;
+    }
+    
+    fields.style.display = 'block';
+    
+    if (type === 'sentence_arrangement') {
+        fields.innerHTML = `
+            <div class="form-group">
+                <label>الجمل (مفصولة بفواصل)</label>
+                <input type="text" id="assignmentSentences" placeholder="مثال: أنا أحب اللغة العربية, اللغة العربية جميلة, أتعلم اللغة العربية">
+                <small>أدخل الجمل مفصولة بفواصل</small>
+            </div>
+            <div class="form-group">
+                <label>الترتيب الصحيح (أرقام مفصولة بفواصل)</label>
+                <input type="text" id="assignmentOrder" placeholder="مثال: 0,1,2">
+                <small>الترتيب الصحيح للجمل (يبدأ من 0)</small>
+            </div>
+        `;
+    } 
+    else if (type === 'word_match') {
+        fields.innerHTML = `
+            <div class="form-group">
+                <label>الكلمات والمعاني (كلمة:معنى,كلمة2:معنى2)</label>
+                <input type="text" id="assignmentPairs" placeholder="مثال: book:كتاب,pen:قلم,school:مدرسة">
+                <small>أدخل كل زوج كلمة:معنى مفصول بفاصلة</small>
+            </div>
+        `;
+    }
+    else if (type === 'fill_blank') {
+        fields.innerHTML = `
+            <div class="form-group">
+                <label>النص مع ____ للفراغ</label>
+                <input type="text" id="assignmentText" placeholder="مثال: السماء ____ زرقاء.">
+            </div>
+            <div class="form-group">
+                <label>الإجابة الصحيحة</label>
+                <input type="text" id="assignmentAnswer" placeholder="مثال: لونها">
+            </div>
+        `;
+    }
+};
 
-        document.getElementById('addLessonForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const token = localStorage.getItem('token');
-            let assignment = null;
-            const type = document.getElementById('assignmentType').value;
-            if (type !== 'none') {
-                if (type === 'sentence_arrangement') assignment = { type, sentences: document.getElementById('assignmentSentences').value.split(','), correctOrder: document.getElementById('assignmentOrder').value.split(',').map(Number) };
-                else if (type === 'word_match') {
-                    const pairs = document.getElementById('assignmentPairs').value.split(',').map(p => { const [word, meaning] = p.split(':'); return { word, meaning }; });
-                    assignment = { type, pairs, questions: pairs.map(p => p.word) };
-                }
-                else assignment = { type, text: document.getElementById('assignmentText').value, correctAnswer: document.getElementById('assignmentAnswer').value };
+// إضافة درس
+document.getElementById('addLessonForm').onsubmit = async (e) => {
+    e.preventDefault();
+    
+    const token = localStorage.getItem('token');
+    const courseId = document.getElementById('lessonCourse').value;
+    
+    if (!courseId) {
+        showAlert('❌ يرجى اختيار الدورة أولاً', 'error');
+        return;
+    }
+    
+    let assignment = null;
+    const type = document.getElementById('assignmentType').value;
+    
+    if (type !== 'none') {
+        try {
+            if (type === 'sentence_arrangement') {
+                const sentences = document.getElementById('assignmentSentences').value.split(',').map(s => s.trim());
+                const correctOrder = document.getElementById('assignmentOrder').value.split(',').map(n => parseInt(n.trim()));
+                assignment = { 
+                    type, 
+                    question: 'رتب الجمل التالية بالترتيب الصحيح:',
+                    sentences, 
+                    correctOrder 
+                };
             }
-            const data = {
-                title: document.getElementById('lessonTitle').value,
-                content: document.getElementById('lessonContent').value,
-                videoUrl: document.getElementById('lessonVideo').value,
-                audioUrl: document.getElementById('lessonAudio').value,
-                lessonNumber: parseInt(document.getElementById('lessonNumber').value),
-                courseId: document.getElementById('lessonCourse').value,
-                assignment
-            };
-            const res = await fetch(API_URL + '/admin/lessons', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) { showAlert('✅ تم إضافة الدرس', 'success'); e.target.reset(); loadLessonsForCourse(); }
-            else showAlert('❌ خطأ', 'error');
-        };
+            else if (type === 'word_match') {
+                const pairsInput = document.getElementById('assignmentPairs').value;
+                const pairs = pairsInput.split(',').map(p => {
+                    const [word, meaning] = p.split(':');
+                    return { word: word.trim(), meaning: meaning.trim() };
+                });
+                assignment = { 
+                    type, 
+                    pairs, 
+                    questions: pairs.map(p => p.word) 
+                };
+            }
+            else if (type === 'fill_blank') {
+                assignment = { 
+                    type, 
+                    text: document.getElementById('assignmentText').value, 
+                    correctAnswer: document.getElementById('assignmentAnswer').value 
+                };
+            }
+        } catch (err) {
+            console.error('Error creating assignment:', err);
+            showAlert('❌ خطأ في بيانات الواجب', 'error');
+            return;
+        }
+    }
+    
+    const lessonData = {
+        title: document.getElementById('lessonTitle').value,
+        content: document.getElementById('lessonContent').value,
+        videoUrl: document.getElementById('lessonVideo').value || null,
+        audioUrl: document.getElementById('lessonAudio').value || null,
+        lessonNumber: parseInt(document.getElementById('lessonNumber').value),
+        courseId: courseId,
+        assignment: assignment
+    };
+    
+    console.log('Sending lesson data:', lessonData);
+    
+    try {
+        const res = await fetch(API_URL + '/admin/lessons', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': 'Bearer ' + token 
+            },
+            body: JSON.stringify(lessonData)
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok) {
+            showAlert('✅ تم إضافة الدرس بنجاح', 'success');
+            document.getElementById('addLessonForm').reset();
+            document.getElementById('assignmentFields').style.display = 'none';
+            document.getElementById('assignmentType').value = 'none';
+            loadLessonsForCourse();
+        } else {
+            console.error('Server error:', result);
+            showAlert('❌ خطأ: ' + (result.message || 'فشل إضافة الدرس'), 'error');
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+    }
+};
 
         // ==================== Quizzes ====================
         let questionCount = 1;
