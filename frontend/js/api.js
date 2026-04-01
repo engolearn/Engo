@@ -1,5 +1,5 @@
 // تكوين API
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://engo.koyeb.app';
 
 // دالة مساعدة للطلبات
 async function apiCall(endpoint, options = {}) {
