@@ -78,24 +78,513 @@
             <div class="admin-section"><h2><i class="fas fa-list"></i> قائمة الدورات</h2><div id="coursesList"></div></div>
         </div>
 
-        <!-- تبويب الدروس -->
-        <div id="lessonsTab" class="tab-content">
-            <div class="admin-section">
-                <h2><i class="fas fa-plus-circle"></i> إضافة درس جديد</h2>
-                <form id="addLessonForm">
-                    <div class="form-group"><label>اختر الدورة</label><select id="lessonCourse" required></select></div>
-                    <div class="form-group"><label>رقم الدرس</label><input type="number" id="lessonNumber" required></div>
-                    <div class="form-group"><label>عنوان الدرس</label><input type="text" id="lessonTitle" required></div>
-                    <div class="form-group"><label>محتوى الدرس (HTML)</label><textarea id="lessonContent" rows="5" placeholder="يمكنك استخدام HTML للتنسيق"></textarea></div>
-                    <div class="form-group"><label>رابط فيديو (YouTube)</label><input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=..."></div>
-                    <div class="form-group"><label>رابط صوتي (اختياري)</label><input type="text" id="lessonAudio" placeholder="رابط ملف صوتي"></div>
-                    <div class="form-group"><label>نوع الواجب</label><select id="assignmentType"><option value="none">لا يوجد واجب</option><option value="sentence_arrangement">ترتيب جمل</option><option value="word_match">اختيار الكلمة ومعناها</option><option value="fill_blank">اكمل الفراغات</option></select></div>
-                    <div id="assignmentFields" style="display:none;"></div>
-                    <button type="submit" class="btn-primary">➕ إضافة الدرس</button>
-                </form>
+        <!-- تبويب الدروس - نسخة محسنة مع واجب متعدد الأسئلة -->
+<div id="lessonsTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-plus-circle"></i> إضافة درس جديد</h2>
+        <form id="addLessonForm">
+            <div class="form-group">
+                <label>اختر الدورة *</label>
+                <select id="lessonCourse" required>
+                    <option value="">-- اختر الدورة --</option>
+                </select>
             </div>
-            <div class="admin-section"><h2><i class="fas fa-list"></i> دروس الدورة</h2><select id="courseForLessons" onchange="loadLessonsForCourse()"><option value="">اختر دورة لعرض دروسها</option></select><div id="lessonsList"></div></div>
-        </div>
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>رقم الدرس *</label>
+                    <input type="number" id="lessonNumber" required>
+                </div>
+                <div class="form-group">
+                    <label>عنوان الدرس *</label>
+                    <input type="text" id="lessonTitle" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>محتوى الدرس (اكتب النص العادي أو HTML)</label>
+                <textarea id="lessonContent" rows="5" placeholder="أدخل محتوى الدرس هنا..."></textarea>
+            </div>
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>رابط فيديو (YouTube)</label>
+                    <input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <div class="form-group">
+                    <label>رابط صوتي</label>
+                    <input type="text" id="lessonAudio" placeholder="رابط ملف صوتي">
+                </div>
+            </div>
+            
+            <!-- قسم الواجب المحسن -->
+            <div style="background: #f7fafc; border-radius: 15px; padding: 1.5rem; margin-top: 1.5rem;">
+                <h3><i class="fas fa-tasks"></i> إعدادات الواجب</h3>
+                
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>عنوان الواجب</label>
+                        <input type="text" id="assignmentTitle" placeholder="واجب الدرس" value="واجب الدرس">
+                    </div>
+                    <div class="form-group">
+                        <label>نسبة النجاح (%)</label>
+                        <input type="number" id="passingScore" value="70">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>وصف الواجب (اختياري)</label>
+                    <textarea id="assignmentDescription" rows="2" placeholder="وصف مختصر للواجب"></textarea>
+                </div>
+                
+                <hr style="margin: 1.5rem 0;">
+                
+                <h4><i class="fas fa-question-circle"></i> أسئلة الواجب</h4>
+                <div id="questionsList" style="margin-bottom: 1rem;"></div>
+                
+                <div class="form-group">
+                    <label>إضافة سؤال جديد</label>
+                    <select id="questionTypeSelect" style="width: auto; display: inline-block; margin-left: 10px;">
+                        <option value="sentence_arrangement">📝 ترتيب جمل</option>
+                        <option value="word_match">🔤 اختيار الكلمة ومعناها</option>
+                        <option value="fill_blank">✏️ اكمل الفراغات</option>
+                        <option value="multiple_choice">✅ اختيار من متعدد</option>
+                        <option value="true_false">⚖️ صح أو خطأ</option>
+                    </select>
+                    <button type="button" class="btn-primary" onclick="addNewQuestion()" style="padding: 8px 20px;">➕ إضافة سؤال</button>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">➕ إضافة الدرس</button>
+        </form>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-list"></i> دروس الدورة</h2>
+        <select id="courseForLessons" onchange="loadLessonsForCourse()">
+            <option value="">اختر دورة لعرض دروسها</option>
+        </select>
+        <div id="lessonsList" style="margin-top: 1rem;"></div>
+    </div>
+</div>
+
+<style>
+    .question-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    .question-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .question-type-badge {
+        background: #667eea;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .remove-question {
+        background: #e53e3e;
+        color: white;
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    .question-field {
+        margin-bottom: 0.8rem;
+    }
+    .question-field label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+        color: #4a5568;
+    }
+    .question-field input, .question-field textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+    .sentence-item {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        align-items: center;
+    }
+    .sentence-item input {
+        flex: 1;
+    }
+    .btn-sm {
+        padding: 4px 12px;
+        font-size: 0.8rem;
+    }
+</style>
+
+<script>
+    let questions = [];
+    let questionCounter = 0;
+    
+    // إضافة سؤال جديد
+    function addNewQuestion() {
+        const type = document.getElementById('questionTypeSelect').value;
+        const id = 'q_' + Date.now() + '_' + (++questionCounter);
+        
+        const newQuestion = {
+            id: id,
+            type: type,
+            title: '',
+            points: 10
+        };
+        
+        // إضافة حقول حسب النوع
+        switch(type) {
+            case 'sentence_arrangement':
+                newQuestion.sentences = ['', '', ''];
+                newQuestion.correctOrder = [0, 1, 2];
+                break;
+            case 'word_match':
+                newQuestion.pairs = [{ word: '', meaning: '' }];
+                break;
+            case 'fill_blank':
+                newQuestion.text = '';
+                newQuestion.correctAnswer = '';
+                break;
+            case 'multiple_choice':
+                newQuestion.question = '';
+                newQuestion.options = ['', '', ''];
+                newQuestion.correctOption = 0;
+                break;
+            case 'true_false':
+                newQuestion.statement = '';
+                newQuestion.isTrue = true;
+                break;
+        }
+        
+        questions.push(newQuestion);
+        renderQuestions();
+    }
+    
+    // حذف سؤال
+    function removeQuestion(id) {
+        questions = questions.filter(q => q.id !== id);
+        renderQuestions();
+    }
+    
+    // تحديث بيانات السؤال
+    function updateQuestion(id, field, value, index, subIndex) {
+        const question = questions.find(q => q.id === id);
+        if (question) {
+            if (field === 'points') {
+                question.points = parseInt(value) || 0;
+            } else if (field === 'title') {
+                question.title = value;
+            } else if (field === 'sentences' && index !== undefined) {
+                question.sentences[index] = value;
+            } else if (field === 'order' && index !== undefined) {
+                question.correctOrder[index] = parseInt(value);
+            } else if (field === 'pairs_word' && index !== undefined) {
+                question.pairs[index].word = value;
+            } else if (field === 'pairs_meaning' && index !== undefined) {
+                question.pairs[index].meaning = value;
+            } else if (field === 'text') {
+                question.text = value;
+            } else if (field === 'correctAnswer') {
+                question.correctAnswer = value;
+            } else if (field === 'question') {
+                question.question = value;
+            } else if (field === 'options' && index !== undefined) {
+                question.options[index] = value;
+            } else if (field === 'correctOption') {
+                question.correctOption = parseInt(value);
+            } else if (field === 'statement') {
+                question.statement = value;
+            } else if (field === 'isTrue') {
+                question.isTrue = value === 'true';
+            }
+        }
+        renderQuestions();
+    }
+    
+    // إضافة عنصر جديد (جملة، زوج كلمات، خيار)
+    function addItem(questionId, type) {
+        const question = questions.find(q => q.id === questionId);
+        if (question) {
+            if (type === 'sentence') {
+                question.sentences.push('');
+                question.correctOrder.push(question.sentences.length - 1);
+            } else if (type === 'pair') {
+                question.pairs.push({ word: '', meaning: '' });
+            } else if (type === 'option') {
+                question.options.push('');
+            }
+            renderQuestions();
+        }
+    }
+    
+    // حذف عنصر
+    function removeItem(questionId, type, index) {
+        const question = questions.find(q => q.id === questionId);
+        if (question) {
+            if (type === 'sentence') {
+                question.sentences.splice(index, 1);
+                question.correctOrder = question.correctOrder.filter(o => o !== index).map(o => o > index ? o - 1 : o);
+            } else if (type === 'pair') {
+                question.pairs.splice(index, 1);
+            } else if (type === 'option') {
+                question.options.splice(index, 1);
+            }
+            renderQuestions();
+        }
+    }
+    
+    // عرض جميع الأسئلة
+    function renderQuestions() {
+        const container = document.getElementById('questionsList');
+        if (!container) return;
+        
+        if (questions.length === 0) {
+            container.innerHTML = '<p style="color: #718096; text-align: center; padding: 2rem;">لا توجد أسئلة بعد. أضف سؤالاً جديداً</p>';
+            return;
+        }
+        
+        container.innerHTML = questions.map(q => {
+            let fieldsHtml = '';
+            
+            switch(q.type) {
+                case 'sentence_arrangement':
+                    fieldsHtml = `
+                        <div class="question-field">
+                            <label>الجمل (رتبها بالترتيب الصحيح)</label>
+                            ${q.sentences.map((s, i) => `
+                                <div class="sentence-item">
+                                    <input type="text" value="${escapeHtml(s)}" placeholder="جملة ${i+1}" 
+                                        onchange="updateQuestion('${q.id}', 'sentences', this.value, ${i})">
+                                    <input type="number" style="width: 80px;" value="${q.correctOrder[i]}" placeholder="ترتيب ${i+1}"
+                                        onchange="updateQuestion('${q.id}', 'order', this.value, ${i})">
+                                    <button type="button" class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'sentence', ${i})">✖</button>
+                                </div>
+                            `).join('')}
+                            <button type="button" class="btn-primary btn-sm" onclick="addItem('${q.id}', 'sentence')">+ إضافة جملة</button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'word_match':
+                    fieldsHtml = `
+                        <div class="question-field">
+                            <label>الكلمات ومعانيها</label>
+                            ${q.pairs.map((p, i) => `
+                                <div class="sentence-item">
+                                    <input type="text" value="${escapeHtml(p.word)}" placeholder="كلمة" 
+                                        onchange="updateQuestion('${q.id}', 'pairs_word', this.value, ${i})">
+                                    <input type="text" value="${escapeHtml(p.meaning)}" placeholder="المعنى"
+                                        onchange="updateQuestion('${q.id}', 'pairs_meaning', this.value, ${i})">
+                                    <button type="button" class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'pair', ${i})">✖</button>
+                                </div>
+                            `).join('')}
+                            <button type="button" class="btn-primary btn-sm" onclick="addItem('${q.id}', 'pair')">+ إضافة زوج</button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'fill_blank':
+                    fieldsHtml = `
+                        <div class="question-field">
+                            <label>النص (استخدم ____ للفراغ)</label>
+                            <textarea rows="2" placeholder="مثال: السماء ____ زرقاء، والشمس ____ مشرقة"
+                                onchange="updateQuestion('${q.id}', 'text', this.value)">${escapeHtml(q.text || '')}</textarea>
+                        </div>
+                        <div class="question-field">
+                            <label>الإجابة الصحيحة (للإجابة المفردة) أو الإجابات مفصولة بفواصل</label>
+                            <input type="text" value="${escapeHtml(q.correctAnswer || '')}" 
+                                onchange="updateQuestion('${q.id}', 'correctAnswer', this.value)">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'multiple_choice':
+                    fieldsHtml = `
+                        <div class="question-field">
+                            <label>السؤال</label>
+                            <input type="text" value="${escapeHtml(q.question || '')}" 
+                                onchange="updateQuestion('${q.id}', 'question', this.value)">
+                        </div>
+                        <div class="question-field">
+                            <label>الخيارات</label>
+                            ${q.options.map((opt, i) => `
+                                <div class="sentence-item">
+                                    <input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${i+1}"
+                                        onchange="updateQuestion('${q.id}', 'options', this.value, ${i})">
+                                    <button type="button" class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'option', ${i})">✖</button>
+                                </div>
+                            `).join('')}
+                            <button type="button" class="btn-primary btn-sm" onclick="addItem('${q.id}', 'option')">+ إضافة خيار</button>
+                        </div>
+                        <div class="question-field">
+                            <label>رقم الإجابة الصحيحة (0 للخيار الأول، 1 للثاني...)</label>
+                            <input type="number" value="${q.correctOption || 0}" 
+                                onchange="updateQuestion('${q.id}', 'correctOption', this.value)">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'true_false':
+                    fieldsHtml = `
+                        <div class="question-field">
+                            <label>العبارة</label>
+                            <input type="text" value="${escapeHtml(q.statement || '')}" 
+                                onchange="updateQuestion('${q.id}', 'statement', this.value)">
+                        </div>
+                        <div class="question-field">
+                            <label>الإجابة الصحيحة</label>
+                            <select onchange="updateQuestion('${q.id}', 'isTrue', this.value)">
+                                <option value="true" ${q.isTrue === true ? 'selected' : ''}>✅ صح</option>
+                                <option value="false" ${q.isTrue === false ? 'selected' : ''}>❌ خطأ</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            return `
+                <div class="question-card">
+                    <div class="question-header">
+                        <div>
+                            <span class="question-type-badge">${getQuestionTypeName(q.type)}</span>
+                            <span style="margin-right: 10px; color: #718096;">${q.points} نقطة</span>
+                        </div>
+                        <button type="button" class="remove-question" onclick="removeQuestion('${q.id}')">✖</button>
+                    </div>
+                    <div class="question-field">
+                        <label>عنوان السؤال (اختياري)</label>
+                        <input type="text" value="${escapeHtml(q.title || '')}" placeholder="عنوان السؤال"
+                            onchange="updateQuestion('${q.id}', 'title', this.value)">
+                    </div>
+                    <div class="question-field">
+                        <label>عدد النقاط</label>
+                        <input type="number" value="${q.points}" style="width: 100px;" 
+                            onchange="updateQuestion('${q.id}', 'points', this.value)">
+                    </div>
+                    ${fieldsHtml}
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function getQuestionTypeName(type) {
+        const names = {
+            'sentence_arrangement': '📝 ترتيب جمل',
+            'word_match': '🔤 كلمة ومعناها',
+            'fill_blank': '✏️ اكمل الفراغ',
+            'multiple_choice': '✅ اختيار من متعدد',
+            'true_false': '⚖️ صح أو خطأ'
+        };
+        return names[type] || type;
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // تحديث دالة إضافة الدرس لترسل الأسئلة
+    document.getElementById('addLessonForm').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const token = localStorage.getItem('token');
+        const courseId = document.getElementById('lessonCourse').value;
+        
+        if (!courseId) {
+            showAlert('❌ يرجى اختيار الدورة أولاً', 'error');
+            return;
+        }
+        
+        // تجهيز بيانات الواجب
+        const assignmentData = {
+            title: document.getElementById('assignmentTitle')?.value || 'واجب الدرس',
+            description: document.getElementById('assignmentDescription')?.value || '',
+            passingScore: parseInt(document.getElementById('passingScore')?.value || 70),
+            questions: questions.map(q => ({
+                id: q.id,
+                type: q.type,
+                title: q.title || '',
+                points: q.points || 10,
+                ...(q.type === 'sentence_arrangement' && {
+                    sentences: q.sentences,
+                    correctOrder: q.correctOrder
+                }),
+                ...(q.type === 'word_match' && {
+                    pairs: q.pairs
+                }),
+                ...(q.type === 'fill_blank' && {
+                    text: q.text,
+                    correctAnswer: q.correctAnswer
+                }),
+                ...(q.type === 'multiple_choice' && {
+                    question: q.question,
+                    options: q.options,
+                    correctOption: q.correctOption
+                }),
+                ...(q.type === 'true_false' && {
+                    statement: q.statement,
+                    isTrue: q.isTrue
+                })
+            }))
+        };
+        
+        const lessonData = {
+            title: document.getElementById('lessonTitle').value,
+            content: document.getElementById('lessonContent').value,
+            videoUrl: document.getElementById('lessonVideo').value || null,
+            audioUrl: document.getElementById('lessonAudio').value || null,
+            lessonNumber: parseInt(document.getElementById('lessonNumber').value),
+            courseId: courseId,
+            assignment: questions.length > 0 ? assignmentData : null
+        };
+        
+        console.log('Sending lesson data:', lessonData);
+        
+        try {
+            const res = await fetch(API_URL + '/admin/lessons', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + token 
+                },
+                body: JSON.stringify(lessonData)
+            });
+            
+            const result = await res.json();
+            
+            if (res.ok) {
+                showAlert('✅ تم إضافة الدرس بنجاح', 'success');
+                // إعادة تعيين النموذج
+                document.getElementById('addLessonForm').reset();
+                questions = [];
+                renderQuestions();
+                loadLessonsForCourse();
+            } else {
+                showAlert('❌ خطأ: ' + (result.message || 'فشل إضافة الدرس'), 'error');
+            }
+        } catch (error) {
+            console.error('Network error:', error);
+            showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+        }
+    };
+</script>
 
         <!-- تبويب الاختبارات -->
         <div id="quizzesTab" class="tab-content">
