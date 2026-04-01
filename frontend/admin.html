@@ -27,6 +27,7 @@
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo', sans-serif; }
         .btn-primary { background: #667eea; color: white; padding: 10px 25px; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem; }
         .btn-danger { background: #e53e3e; color: white; padding: 5px 15px; border: none; border-radius: 10px; cursor: pointer; }
+        .btn-warning { background: #ed8936; color: white; padding: 5px 15px; border: none; border-radius: 10px; cursor: pointer; }
         .table { width: 100%; border-collapse: collapse; }
         .table th, .table td { padding: 12px; text-align: right; border-bottom: 1px solid #e2e8f0; }
         .table th { background: #f7fafc; }
@@ -76,6 +77,47 @@
         .sentence-item input { flex: 1; }
         .btn-sm { padding: 4px 12px; font-size: 0.8rem; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        /* أنماط الصور */
+        .images-section-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .image-card-item {
+            background: white;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+        .image-card-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .image-preview-small {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .fun-fact {
+            background: #fef3c7;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #92400e;
+            margin-top: 8px;
+        }
+        .image-caption-input, .image-desc-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
         @media (max-width: 768px) { .tabs { flex-direction: column; } .table { font-size: 0.8rem; } .form-row { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -122,7 +164,7 @@
             </div>
         </div>
 
-        <!-- تبويب الدروس -->
+        <!-- تبويب الدروس مع إضافة الصور -->
         <div id="lessonsTab" class="tab-content">
             <div class="admin-section">
                 <h2><i class="fas fa-plus-circle"></i> إضافة درس جديد</h2>
@@ -139,6 +181,21 @@
                     <div class="form-row">
                         <div class="form-group"><label>رابط فيديو (YouTube)</label><input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=..."></div>
                         <div class="form-group"><label>رابط صوتي</label><input type="text" id="lessonAudio" placeholder="رابط ملف صوتي"></div>
+                    </div>
+                    
+                    <!-- قسم إضافة الصور -->
+                    <div class="images-section-card">
+                        <h3><i class="fas fa-images"></i> 📸 صور تفاعلية للدرس</h3>
+                        <p style="color: #92400e; margin-bottom: 1rem;">أضف صوراً مع شرح ممتع لكل صورة لجعل الدرس أكثر تشويقاً</p>
+                        <div id="imagesList" style="margin-bottom: 1rem;"></div>
+                        <button type="button" class="btn-primary" onclick="addImageField()" style="background: #d97706;">
+                            <i class="fas fa-plus-circle"></i> إضافة صورة جديدة
+                        </button>
+                        <div id="imagePreview" style="display: none; margin-top: 1rem; padding: 1rem; background: white; border-radius: 10px;">
+                            <h4>📷 معاينة الصورة:</h4>
+                            <img id="previewImg" src="" style="max-width: 100%; max-height: 200px; border-radius: 10px;">
+                            <p id="previewCaption" style="margin-top: 10px; color: #666;"></p>
+                        </div>
                     </div>
                     
                     <div style="background: #f7fafc; border-radius: 15px; padding: 1.5rem; margin-top: 1.5rem;">
@@ -204,6 +261,8 @@
         let questions = [];
         let questionCounter = 0;
         let quizQuestionCount = 1;
+        let lessonImages = [];
+        let imageCounter = 0;
 
         // ==================== Helper Functions ====================
         function showAlert(message, type) {
@@ -268,7 +327,7 @@
                                     <td>${c.isPremium ? c.price + ' ريال' : 'مجاني'}</td>
                                     <td>${c.totalLessons || 0}</td>
                                     <td><button class="btn-danger" onclick="deleteCourse('${c._id}')">حذف</button></td>
-                                </tr>
+                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
@@ -409,6 +468,85 @@
                 showAlert('❌ خطأ في الحذف', 'error');
             }
         };
+
+        // ==================== Images Functions ====================
+        function addImageField() {
+            const id = Date.now() + '_' + (++imageCounter);
+            lessonImages.push({
+                id: id,
+                url: '',
+                caption: '',
+                description: '',
+                order: lessonImages.length
+            });
+            renderImagesList();
+        }
+
+        function removeImage(id) {
+            lessonImages = lessonImages.filter(img => img.id !== id);
+            renderImagesList();
+        }
+
+        function updateImage(id, field, value) {
+            const image = lessonImages.find(img => img.id === id);
+            if (image) {
+                image[field] = value;
+                if (field === 'url') {
+                    const preview = document.getElementById('imagePreview');
+                    const previewImg = document.getElementById('previewImg');
+                    const previewCaption = document.getElementById('previewCaption');
+                    if (value) {
+                        preview.style.display = 'block';
+                        previewImg.src = value;
+                        previewCaption.innerHTML = `<i class="fas fa-info-circle"></i> ${image.caption || 'لم يتم إضافة شرح بعد'}`;
+                    } else {
+                        preview.style.display = 'none';
+                    }
+                }
+                renderImagesList();
+            }
+        }
+
+        function renderImagesList() {
+            const container = document.getElementById('imagesList');
+            if (!container) return;
+            
+            if (lessonImages.length === 0) {
+                container.innerHTML = '<div class="empty-message" style="background: #fef9e6; padding: 2rem; text-align: center; border-radius: 10px;"><i class="fas fa-camera"></i> 📸 لا توجد صور بعد. أضف صوراً لشرح الدرس بطريقة ممتعة!</div>';
+                return;
+            }
+            
+            container.innerHTML = lessonImages.map((img, index) => `
+                <div class="image-card-item">
+                    <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                        ${img.url ? `<img src="${img.url}" class="image-preview-small" onerror="this.src='https://placehold.co/80x80/667eea/white?text=خطأ'">` : '<div style="width:80px;height:80px;background:#fef3c7;border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:#d97706;"></i></div>'}
+                        <div style="flex: 1;">
+                            <div class="form-group" style="margin-bottom: 8px;">
+                                <label>🔗 رابط الصورة</label>
+                                <input type="text" value="${escapeHtml(img.url)}" placeholder="https://example.com/image.jpg" 
+                                    onchange="updateImage('${img.id}', 'url', this.value)">
+                                <small style="color:#666;">يمكنك استخدام رابط من الإنترنت أو تحميل صورة</small>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 8px;">
+                                <label>📝 عنوان الصورة (شرح مختصر)</label>
+                                <input type="text" value="${escapeHtml(img.caption)}" placeholder="مثال: جملة مفيدة باللغة الإنجليزية" 
+                                    class="image-caption-input" onchange="updateImage('${img.id}', 'caption', this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label>📖 شرح ممتع للصورة</label>
+                                <textarea rows="2" placeholder="اكتب شرحاً ممتعاً للصورة..." 
+                                    class="image-desc-input" onchange="updateImage('${img.id}', 'description', this.value)">${escapeHtml(img.description)}</textarea>
+                            </div>
+                            <div class="fun-fact">
+                                <i class="fas fa-lightbulb"></i> 
+                                <strong>فكرة ممتعة:</strong> أضف معلومة أو حقيقة عن الصورة لتجعل التعلم أكثر تشويقاً!
+                            </div>
+                        </div>
+                        <button type="button" class="btn-danger" onclick="removeImage('${img.id}')" style="align-self: flex-start;">✖</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         // ==================== Assignment Questions Functions ====================
         function addNewQuestion() {
@@ -593,13 +731,23 @@
 
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
 
-        // إضافة درس
+        // إضافة درس مع الصور
         document.getElementById('addLessonForm').onsubmit = async (e) => {
             e.preventDefault();
             const token = localStorage.getItem('token');
             const courseId = document.getElementById('lessonCourse').value;
             
             if (!courseId) { showAlert('❌ يرجى اختيار الدورة أولاً', 'error'); return; }
+            
+            // تجهيز بيانات الصور
+            const imagesData = lessonImages
+                .filter(img => img.url && img.url.trim())
+                .map((img, idx) => ({
+                    url: img.url,
+                    caption: img.caption || '',
+                    description: img.description || '',
+                    order: idx
+                }));
             
             const assignmentData = {
                 title: document.getElementById('assignmentTitle')?.value || 'واجب الدرس',
@@ -613,6 +761,7 @@
                 content: document.getElementById('lessonContent').value,
                 videoUrl: document.getElementById('lessonVideo').value || null,
                 audioUrl: document.getElementById('lessonAudio').value || null,
+                images: imagesData,
                 lessonNumber: parseInt(document.getElementById('lessonNumber').value),
                 courseId: courseId,
                 assignment: questions.length > 0 ? assignmentData : null
@@ -626,10 +775,12 @@
                 });
                 const result = await res.json();
                 if (res.ok) {
-                    showAlert('✅ تم إضافة الدرس بنجاح', 'success');
+                    showAlert(`✅ تم إضافة الدرس بنجاح مع ${imagesData.length} صور`, 'success');
                     document.getElementById('addLessonForm').reset();
                     questions = [];
+                    lessonImages = [];
                     renderQuestions();
+                    renderImagesList();
                     loadLessonsForCourse();
                 } else {
                     showAlert('❌ ' + (result.message || 'فشل إضافة الدرس'), 'error');
@@ -659,7 +810,7 @@
                 
                 container.innerHTML = `
                     <table class="table">
-                        <thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>الصلاحية</th><th>المستوى</th></tr></thead>
+                        <thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>الصلاحية</th><th>المستوى</th></thead>
                         <tbody>
                             ${users.map(u => `
                                 <tr>
