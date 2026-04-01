@@ -79,17 +79,32 @@ const assignmentQuestionSchema = new mongoose.Schema({
     isTrue: { type: Boolean }
 });
 
+// Lesson Model - إضافة حقل للصور
+const lessonImageSchema = new mongoose.Schema({
+    url: { type: String, required: true },
+    caption: { type: String, default: '' },
+    description: { type: String, default: '' },
+    order: { type: Number, default: 0 }
+});
+
 const lessonSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
     videoUrl: { type: String, default: null },
     audioUrl: { type: String, default: null },
+    images: [lessonImageSchema],  // ✅ إضافة صور متعددة للدرس
     lessonNumber: { type: Number, required: true },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
     assignment: {
         title: { type: String, default: 'واجب الدرس' },
         description: { type: String, default: '' },
-        questions: [assignmentQuestionSchema],
+        questions: [{
+            id: String,
+            type: String,
+            title: String,
+            points: Number,
+            // ... باقي الحقول
+        }],
         passingScore: { type: Number, default: 70 }
     },
     createdAt: { type: Date, default: Date.now }
@@ -342,6 +357,17 @@ app.post('/api/admin/lessons', auth, adminAuth, async (req, res) => {
         
     } catch (error) {
         console.error('Error adding lesson:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get single lesson
+app.get('/api/lessons/:lessonId', auth, async (req, res) => {
+    try {
+        const lesson = await Lesson.findById(req.params.lessonId);
+        if (!lesson) return res.status(404).json({ message: 'الدرس غير موجود' });
+        res.json(lesson);
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
