@@ -46,28 +46,56 @@ const courseSchema = new mongoose.Schema({
 });
 const Course = mongoose.model('Course', courseSchema);
 
-// Lesson Model
+// Lesson Model - نسخة محسنة تدعم واجبات متعددة الأنواع
+const assignmentQuestionSchema = new mongoose.Schema({
+    id: { type: String, required: true },
+    type: { type: String, enum: ['sentence_arrangement', 'word_match', 'fill_blank', 'multiple_choice', 'true_false'], required: true },
+    title: { type: String, default: '' },
+    points: { type: Number, default: 10 },
+    
+    // لترتيب الجمل
+    sentences: [{ type: String }],
+    correctOrder: [{ type: Number }],
+    
+    // للكلمة ومعناها
+    pairs: [{
+        word: { type: String },
+        meaning: { type: String }
+    }],
+    words: [{ type: String }],
+    
+    // لملء الفراغات
+    text: { type: String },
+    correctAnswer: { type: String },
+    blanks: [{ type: String }],
+    
+    // للاختيار من متعدد
+    question: { type: String },
+    options: [{ type: String }],
+    correctOption: { type: Number },
+    
+    // للصح والخطأ
+    statement: { type: String },
+    isTrue: { type: Boolean }
+});
+
 const lessonSchema = new mongoose.Schema({
-    title: String,
-    content: String,
-    videoUrl: String,
-    audioUrl: String,
-    lessonNumber: Number,
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    videoUrl: { type: String, default: null },
+    audioUrl: { type: String, default: null },
+    lessonNumber: { type: Number, required: true },
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
     assignment: {
-        type: { type: String, enum: ['sentence_arrangement', 'word_match', 'fill_blank', 'none'], default: 'none' },
-        question: String,
-        sentences: [String],
-        correctOrder: [Number],
-        pairs: [{ word: String, meaning: String }],
-        text: String,
-        correctAnswer: String,
-        options: [String]
+        title: { type: String, default: 'واجب الدرس' },
+        description: { type: String, default: '' },
+        questions: [assignmentQuestionSchema],
+        passingScore: { type: Number, default: 70 }
     },
     createdAt: { type: Date, default: Date.now }
 });
-const Lesson = mongoose.model('Lesson', lessonSchema);
 
+const Lesson = mongoose.model('Lesson', lessonSchema);
 // Quiz Model
 const quizSchema = new mongoose.Schema({
     title: { type: String, enum: ['midterm', 'final', 'level_test'] },
@@ -231,13 +259,89 @@ app.get('/api/admin/courses/:courseId/lessons', auth, adminAuth, async (req, res
     }
 });
 
+// Add lesson with enhanced assignment
 app.post('/api/admin/lessons', auth, adminAuth, async (req, res) => {
     try {
-        const lesson = new Lesson(req.body);
+        console.log('Received lesson data:', JSON.stringify(req.body, null, 2));
+        
+        const { title, content, videoUrl, audioUrl, lessonNumber, courseId, assignment } = req.body;
+        
+        // التحقق من البيانات المطلوبة
+        if (!title || !content || !lessonNumber || !courseId) {
+            return res.status(400).json({ message: 'جميع الحقول المطلوبة غير مكتملة' });
+        }
+        
+        // تنظيف بيانات الواجب
+        let cleanAssignment = {
+            title: assignment?.title || 'واجب الدرس',
+            description: assignment?.description || '',
+            questions: [],
+            passingScore: assignment?.passingScore || 70
+        };
+        
+        // معالجة الأسئلة إذا كانت موجودة
+        if (assignment && assignment.questions && Array.isArray(assignment.questions)) {
+            cleanAssignment.questions = assignment.questions.map(q => {
+                const question = {
+                    id: q.id || Date.now().toString() + Math.random(),
+                    type: q.type,
+                    title: q.title || '',
+                    points: q.points || 10
+                };
+                
+                switch (q.type) {
+                    case 'sentence_arrangement':
+                        question.sentences = q.sentences || [];
+                        question.correctOrder = q.correctOrder || [];
+                        break;
+                    case 'word_match':
+                        question.pairs = q.pairs || [];
+                        question.words = q.words || [];
+                        break;
+                    case 'fill_blank':
+                        question.text = q.text || '';
+                        question.correctAnswer = q.correctAnswer || '';
+                        question.blanks = q.blanks || [];
+                        break;
+                    case 'multiple_choice':
+                        question.question = q.question || '';
+                        question.options = q.options || [];
+                        question.correctOption = q.correctOption || 0;
+                        break;
+                    case 'true_false':
+                        question.statement = q.statement || '';
+                        question.isTrue = q.isTrue || false;
+                        break;
+                }
+                
+                return question;
+            });
+        }
+        
+        // إنشاء الدرس
+        const lesson = new Lesson({
+            title,
+            content,
+            videoUrl: videoUrl || null,
+            audioUrl: audioUrl || null,
+            lessonNumber,
+            courseId,
+            assignment: cleanAssignment
+        });
+        
         await lesson.save();
-        await Course.findByIdAndUpdate(lesson.courseId, { $push: { lessons: lesson._id }, $inc: { totalLessons: 1 } });
+        
+        // تحديث عدد الدروس في الدورة
+        await Course.findByIdAndUpdate(courseId, { 
+            $push: { lessons: lesson._id }, 
+            $inc: { totalLessons: 1 } 
+        });
+        
+        console.log('Lesson saved successfully:', lesson._id);
         res.json({ message: '✅ تم إضافة الدرس بنجاح', lesson });
+        
     } catch (error) {
+        console.error('Error adding lesson:', error);
         res.status(500).json({ message: error.message });
     }
 });
