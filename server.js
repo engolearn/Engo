@@ -1,4 +1,4 @@
-// server.js - النسخة الكاملة
+// server.js - نسخة كاملة ومنظمة مع Socket.IO
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -6,14 +6,22 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 
-// CORS
+// ==================== Middleware ====================
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Static files
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 // ==================== Models ====================
@@ -46,40 +54,26 @@ const courseSchema = new mongoose.Schema({
 });
 const Course = mongoose.model('Course', courseSchema);
 
-// Lesson Model - نسخة محسنة تدعم واجبات متعددة الأنواع
+// Lesson Model
 const assignmentQuestionSchema = new mongoose.Schema({
     id: { type: String, required: true },
     type: { type: String, enum: ['sentence_arrangement', 'word_match', 'fill_blank', 'multiple_choice', 'true_false'], required: true },
     title: { type: String, default: '' },
     points: { type: Number, default: 10 },
-    
-    // لترتيب الجمل
     sentences: [{ type: String }],
     correctOrder: [{ type: Number }],
-    
-    // للكلمة ومعناها
-    pairs: [{
-        word: { type: String },
-        meaning: { type: String }
-    }],
+    pairs: [{ word: String, meaning: String }],
     words: [{ type: String }],
-    
-    // لملء الفراغات
     text: { type: String },
     correctAnswer: { type: String },
     blanks: [{ type: String }],
-    
-    // للاختيار من متعدد
     question: { type: String },
     options: [{ type: String }],
     correctOption: { type: Number },
-    
-    // للصح والخطأ
     statement: { type: String },
     isTrue: { type: Boolean }
 });
 
-// Lesson Model - إضافة حقل للصور
 const lessonImageSchema = new mongoose.Schema({
     url: { type: String, required: true },
     caption: { type: String, default: '' },
@@ -92,25 +86,19 @@ const lessonSchema = new mongoose.Schema({
     content: { type: String, required: true },
     videoUrl: { type: String, default: null },
     audioUrl: { type: String, default: null },
-    images: [lessonImageSchema],  // ✅ إضافة صور متعددة للدرس
+    images: [lessonImageSchema],
     lessonNumber: { type: Number, required: true },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
     assignment: {
         title: { type: String, default: 'واجب الدرس' },
         description: { type: String, default: '' },
-        questions: [{
-            id: String,
-            type: String,
-            title: String,
-            points: Number,
-            // ... باقي الحقول
-        }],
+        questions: [assignmentQuestionSchema],
         passingScore: { type: Number, default: 70 }
     },
     createdAt: { type: Date, default: Date.now }
 });
-
 const Lesson = mongoose.model('Lesson', lessonSchema);
+
 // Quiz Model
 const quizSchema = new mongoose.Schema({
     title: { type: String, enum: ['midterm', 'final', 'level_test'] },
@@ -138,7 +126,7 @@ const userProgressSchema = new mongoose.Schema({
 });
 const UserProgress = mongoose.model('UserProgress', userProgressSchema);
 
-// ==================== Middleware ====================
+// ==================== Auth Middleware ====================
 const auth = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -165,15 +153,15 @@ app.post('/api/auth/register', async (req, res) => {
         const { name, email, password } = req.body;
         const existing = await User.findOne({ email });
         if (existing) return res.status(400).json({ message: 'البريد موجود بالفعل' });
-        
+
         const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({ name, email, password: hashedPassword });
         await user.save();
-        
+
         const jwt = require('jsonwebtoken');
         const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
-        
+
         res.json({ message: 'تم التسجيل بنجاح', token, user: { id: user._id, name: user.name, email: user.email, role: user.role, purchasedCourses: [] } });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -185,14 +173,14 @@ app.post('/api/auth/login', async (req, res) => {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
         if (!user) return res.status(401).json({ message: 'بيانات غير صحيحة' });
-        
+
         const bcrypt = require('bcryptjs');
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return res.status(401).json({ message: 'بيانات غير صحيحة' });
-        
+
         const jwt = require('jsonwebtoken');
         const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
-        
+
         res.json({ message: 'تم تسجيل الدخول', token, user: { id: user._id, name: user.name, email: user.email, role: user.role, level: user.level, purchasedCourses: user.purchasedCourses || [] } });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -213,13 +201,13 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId).populate('lessons');
         if (!course) return res.status(404).json({ message: 'Course not found' });
-        
+
         const isPurchased = req.user.purchasedCourses.includes(course._id.toString());
         const lessonsWithStatus = course.lessons.map((lesson, index) => ({
             ...lesson.toObject(),
             isLocked: !isPurchased && index >= course.freeLessons
         }));
-        
+
         res.json({ ...course.toObject(), lessons: lessonsWithStatus, isPurchased });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -265,6 +253,7 @@ app.delete('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => 
 });
 
 // ==================== Lesson Routes ====================
+// Get lessons for a course (admin)
 app.get('/api/admin/courses/:courseId/lessons', auth, adminAuth, async (req, res) => {
     try {
         const lessons = await Lesson.find({ courseId: req.params.courseId }).sort({ lessonNumber: 1 });
@@ -274,27 +263,21 @@ app.get('/api/admin/courses/:courseId/lessons', auth, adminAuth, async (req, res
     }
 });
 
-// Add lesson with enhanced assignment
+// Add lesson
 app.post('/api/admin/lessons', auth, adminAuth, async (req, res) => {
     try {
-        console.log('Received lesson data:', JSON.stringify(req.body, null, 2));
-        
         const { title, content, videoUrl, audioUrl, lessonNumber, courseId, assignment } = req.body;
-        
-        // التحقق من البيانات المطلوبة
         if (!title || !content || !lessonNumber || !courseId) {
             return res.status(400).json({ message: 'جميع الحقول المطلوبة غير مكتملة' });
         }
-        
-        // تنظيف بيانات الواجب
+
         let cleanAssignment = {
             title: assignment?.title || 'واجب الدرس',
             description: assignment?.description || '',
             questions: [],
             passingScore: assignment?.passingScore || 70
         };
-        
-        // معالجة الأسئلة إذا كانت موجودة
+
         if (assignment && assignment.questions && Array.isArray(assignment.questions)) {
             cleanAssignment.questions = assignment.questions.map(q => {
                 const question = {
@@ -303,7 +286,7 @@ app.post('/api/admin/lessons', auth, adminAuth, async (req, res) => {
                     title: q.title || '',
                     points: q.points || 10
                 };
-                
+
                 switch (q.type) {
                     case 'sentence_arrangement':
                         question.sentences = q.sentences || [];
@@ -328,12 +311,10 @@ app.post('/api/admin/lessons', auth, adminAuth, async (req, res) => {
                         question.isTrue = q.isTrue || false;
                         break;
                 }
-                
                 return question;
             });
         }
-        
-        // إنشاء الدرس
+
         const lesson = new Lesson({
             title,
             content,
@@ -343,20 +324,16 @@ app.post('/api/admin/lessons', auth, adminAuth, async (req, res) => {
             courseId,
             assignment: cleanAssignment
         });
-        
+
         await lesson.save();
-        
-        // تحديث عدد الدروس في الدورة
+
         await Course.findByIdAndUpdate(courseId, { 
             $push: { lessons: lesson._id }, 
             $inc: { totalLessons: 1 } 
         });
-        
-        console.log('Lesson saved successfully:', lesson._id);
+
         res.json({ message: '✅ تم إضافة الدرس بنجاح', lesson });
-        
     } catch (error) {
-        console.error('Error adding lesson:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -416,12 +393,12 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
     try {
         const { answers } = req.body;
         const quiz = await Quiz.findById(req.params.quizId);
-        
+
         let score = 0;
         quiz.questions.forEach((q, i) => {
             if (answers[i] === q.correctAnswer) score += 100 / quiz.questions.length;
         });
-        
+
         if (quiz.title === 'level_test') {
             await User.findByIdAndUpdate(req.user._id, { levelScore: score, level: score >= 70 ? 'beginner' : null });
         } else {
@@ -431,19 +408,18 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
                 { upsert: true }
             );
         }
-        
+
         res.json({ score, passed: score >= quiz.passingScore });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// ==================== Level Test Routes ====================
+// ==================== Level Test ====================
 app.get('/api/level-test', async (req, res) => {
     try {
         const levelTest = await Quiz.findOne({ title: 'level_test' });
         if (!levelTest) {
-            // إنشاء اختبار افتراضي
             const defaultTest = new Quiz({
                 title: 'level_test',
                 questions: [
@@ -469,72 +445,44 @@ app.get('/api/level-test', async (req, res) => {
 app.get('/api/progress/:courseId', auth, async (req, res) => {
     try {
         const progress = await UserProgress.findOne({ userId: req.user._id, courseId: req.params.courseId });
-        res.json(progress || { completedLessons: [], midtermScore: null, finalScore: null });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-// Get lessons for a specific course (admin only)
-app.get('/api/admin/courses/:courseId/lessons', auth, adminAuth, async (req, res) => {
-    try {
-        const lessons = await Lesson.find({ courseId: req.params.courseId }).sort({ lessonNumber: 1 });
-        res.json(lessons);
+        res.json(progress || { completedLessons: [], midtermScore: null, finalScore: null, levelTestScore: null, certificateIssued: false });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// Get all users (admin only)
-app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
-    try {
-        const users = await User.find().select('-password');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+// ==================== Socket.IO ====================
+io.on('connection', (socket) => {
+    console.log('🔌 A user connected:', socket.id);
+
+    // Example: receive a message
+    socket.on('send_message', (data) => {
+        console.log('Message received:', data);
+        io.emit('receive_message', data); // broadcast to all
+    });
+
+    socket.on('disconnect', () => {
+        console.log('❌ A user disconnected:', socket.id);
+    });
 });
 
-app.post('/api/progress/:courseId/lessons/:lessonId/complete', auth, async (req, res) => {
-    try {
-        const { score } = req.body;
-        let progress = await UserProgress.findOne({ userId: req.user._id, courseId: req.params.courseId });
-        
-        if (!progress) {
-            progress = new UserProgress({ userId: req.user._id, courseId: req.params.courseId, completedLessons: [] });
-        }
-        
-        const exists = progress.completedLessons.some(l => l.lessonId.toString() === req.params.lessonId);
-        if (!exists) {
-            progress.completedLessons.push({ lessonId: req.params.lessonId, score: score || 100 });
-            await progress.save();
-        }
-        
-        res.json({ message: '✅ تم إكمال الدرس', progress });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+// ==================== Connect to MongoDB ====================
+const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/elearning';
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log('✅ Connected to MongoDB');
+}).catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
 });
 
-// Get all users (admin only)
-app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
-    try {
-        const users = await User.find().select('-password');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+// ==================== Serve Frontend ====================
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
-// ==================== Serve Pages ====================
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'frontend', 'index.html')); });
-app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'frontend', 'admin.html')); });
-app.get('/health', (req, res) => { res.json({ status: 'healthy', mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' }); });
 
-// ==================== Database Connection ====================
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('✅ MongoDB connected'))
-    .catch(err => console.error('❌ MongoDB error:', err.message));
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Admin panel: https://engo.koyeb.app/admin`);
+// ==================== Start Server ====================
+server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
