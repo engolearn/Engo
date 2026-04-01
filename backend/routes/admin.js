@@ -4,7 +4,6 @@ const Lesson = require('../models/Lesson');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
-// التحقق من صلاحيات الأدمن
 const adminAuth = async (req, res, next) => {
     if (req.user.role !== 'admin') {
         return res.status(403).json({ message: 'غير مصرح لك بهذه العملية' });
@@ -12,7 +11,6 @@ const adminAuth = async (req, res, next) => {
     next();
 };
 
-// إضافة دورة جديدة
 router.post('/courses', auth, adminAuth, async (req, res) => {
     try {
         const course = new Course(req.body);
@@ -23,13 +21,11 @@ router.post('/courses', auth, adminAuth, async (req, res) => {
     }
 });
 
-// إضافة درس جديد
 router.post('/lessons', auth, adminAuth, async (req, res) => {
     try {
         const lesson = new Lesson(req.body);
         await lesson.save();
         
-        // تحديث عدد الدروس في الدورة
         await Course.findByIdAndUpdate(lesson.courseId, {
             $push: { lessons: lesson._id },
             $inc: { totalLessons: 1 }
@@ -41,7 +37,6 @@ router.post('/lessons', auth, adminAuth, async (req, res) => {
     }
 });
 
-// جلب جميع الدورات للأدمن
 router.get('/courses', auth, adminAuth, async (req, res) => {
     try {
         const courses = await Course.find().populate('lessons', 'title lessonNumber');
@@ -51,7 +46,6 @@ router.get('/courses', auth, adminAuth, async (req, res) => {
     }
 });
 
-// تحديث حالة الدورة
 router.put('/courses/:courseId/status', auth, adminAuth, async (req, res) => {
     try {
         const { isPremium } = req.body;
