@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل الدورة - EnGo</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-language"></i>
+                <span>EnGo</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">الرئيسية</a>
+                <a href="courses.html">الدورات</a>
+                <a href="level-test.html">اختبار المستوى</a>
+            </div>
+            <div class="auth-buttons" id="authButtons">
+                <button onclick="window.location.href='login.html'" class="btn-outline">تسجيل دخول</button>
+                <button onclick="window.location.href='register.html'" class="btn-primary">حساب جديد</button>
+            </div>
+            <div class="user-menu" id="userMenu" style="display:none">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <span id="userName"></span>
+                <div class="dropdown">
+                    <button class="dropdown-btn"><i class="fas fa-chevron-down"></i></button>
+                    <div class="dropdown-content">
+                        <a href="dashboard.html">لوحة التحكم</a>
+                        <a href="profile.html">الملف الشخصي</a>
+                        <a href="certificates.html">شهاداتي</a>
+                        <hr>
+                        <a href="#" onclick="logout()">تسجيل الخروج</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container" id="courseDetailsContainer"></div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EnGo</h3>
+                    <p>منصتك المثالية لتعلم اللغة الإنجليزية</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <a href="courses.html">الدورات</a>
+                    <a href="level-test.html">اختبار المستوى</a>
+                    <a href="payment.html">معلومات الدفع</a>
+                </div>
+                <div class="footer-section">
+                    <h4>تواصل معنا</h4>
+                    <p><i class="fas fa-phone"></i> 0512345678</p>
+                    <p><i class="fab fa-whatsapp"></i> 0512345678</p>
+                    <p><i class="fas fa-envelope"></i> support@engo.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 EnGo - جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="public/js/data.js"></script>
+    <script src="public/js/course-details.js"></script>
+    <script src="public/js/app.js"></script>
+</body>
+</html>

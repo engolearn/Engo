@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معلومات الدفع - EnGo</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-language"></i>
+                <span>EnGo</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">الرئيسية</a>
+                <a href="courses.html">الدورات</a>
+                <a href="level-test.html">اختبار المستوى</a>
+            </div>
+            <div class="auth-buttons" id="authButtons">
+                <button onclick="window.location.href='login.html'" class="btn-outline">تسجيل دخول</button>
+                <button onclick="window.location.href='register.html'" class="btn-primary">حساب جديد</button>
+            </div>
+            <div class="user-menu" id="userMenu" style="display:none">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <span id="userName"></span>
+                <div class="dropdown">
+                    <button class="dropdown-btn"><i class="fas fa-chevron-down"></i></button>
+                    <div class="dropdown-content">
+                        <a href="dashboard.html">لوحة التحكم</a>
+                        <a href="profile.html">الملف الشخصي</a>
+                        <a href="certificates.html">شهاداتي</a>
+                        <hr>
+                        <a href="#" onclick="logout()">تسجيل الخروج</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="form-container" style="max-width: 500px; margin: 60px auto;">
+                <h2 style="text-align: center; margin-bottom: 30px;">💳 معلومات الدفع</h2>
+                
+                <div class="card" style="margin: 20px 0; text-align: center; padding: 24px;">
+                    <i class="fas fa-university" style="font-size: 48px; color: #3b82f6; margin-bottom: 16px;"></i>
+                    <h3>🏦 التحويل البنكي</h3>
+                    <p><strong>بنك الرياض</strong></p>
+                    <p><strong>اسم المستفيد:</strong> EnGo Educational Platform</p>
+                    <p><strong>رقم الحساب:</strong> SA1234567890123456</p>
+                    <p><strong>الآيبان:</strong> SA1234567890123456789012</p>
+                </div>
+                
+                <div class="card" style="margin: 20px 0; text-align: center; padding: 24px;">
+                    <i class="fas fa-mobile-alt" style="font-size: 48px; color: #3b82f6; margin-bottom: 16px;"></i>
+                    <h3>📱 المحفظة الإلكترونية</h3>
+                    <p><strong>STC Pay / UrPay</strong></p>
+                    <p><strong>الرقم:</strong> 0512345678</p>
+                </div>
+                
+                <div class="alert-info" style="background: #fef9c3; color: #854d0e; padding: 20px; border-radius: 16px; text-align: center; margin: 20px 0;">
+                    <i class="fas fa-info-circle"></i>
+                    <p><strong>تعليمات هامة:</strong></p>
+                    <p>يرجى إرسال صورة التحويل عبر واتساب على الرقم <strong>0512345678</strong></p>
+                    <p>مع ذكر اسم المستخدم والبريد الإلكتروني والدورة المراد التسجيل فيها</p>
+                </div>
+                
+                <a href="courses.html" class="btn-primary" style="display: block; text-align: center; text-decoration: none;">العودة للدورات</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EnGo</h3>
+                    <p>منصتك المثالية لتعلم اللغة الإنجليزية</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <a href="courses.html">الدورات</a>
+                    <a href="level-test.html">اختبار المستوى</a>
+                    <a href="payment.html">معلومات الدفع</a>
+                </div>
+                <div class="footer-section">
+                    <h4>تواصل معنا</h4>
+                    <p><i class="fas fa-phone"></i> 0512345678</p>
+                    <p><i class="fab fa-whatsapp"></i> 0512345678</p>
+                    <p><i class="fas fa-envelope"></i> support@engo.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 EnGo - جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="public/js/data.js"></script>
+    <script src="public/js/app.js"></script>
+</body>
+</html>
