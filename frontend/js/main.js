@@ -1,27 +1,22 @@
+// frontend/js/main.js
+const API_URL = 'https://engo.koyeb.app/api';
+
 // تحميل الدورات عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', () => {
     loadCourses();
-    
-    // إضافة مستمع لرابط الدورات
-    const coursesLink = document.getElementById('coursesLink');
-    if (coursesLink) {
-        coursesLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('coursesSection').scrollIntoView({ behavior: 'smooth' });
-        });
-    }
 });
 
 // تحميل جميع الدورات
 async function loadCourses() {
     try {
-        const courses = await getAllCourses();
+        const response = await fetch(API_URL + '/courses');
+        const courses = await response.json();
         displayCourses(courses);
     } catch (error) {
         console.error('خطأ في تحميل الدورات:', error);
         document.getElementById('coursesGrid').innerHTML = `
             <div class="error-message">
-                <p>حدث خطأ في تحميل الدورات</p>
+                <p>⚠️ حدث خطأ في تحميل الدورات</p>
                 <button onclick="loadCourses()" class="btn-primary">إعادة المحاولة</button>
             </div>
         `;
@@ -53,7 +48,7 @@ function displayCourses(courses) {
                     <span>⭐ ${course.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
                 </div>
                 <div class="course-price">
-                    ${course.isPremium ? `${course.price} ريال` : 'مجاني'}
+                    ${course.isPremium ? course.price + ' ريال' : 'مجاني'}
                 </div>
                 ${renderCourseButton(course)}
             </div>
@@ -81,12 +76,10 @@ function renderCourseButton(course) {
     return `<button class="btn-enroll" onclick="event.stopPropagation(); showPaymentModal('${course._id}', '${course.title}', '${course.price}')">شراء الدورة</button>`;
 }
 
-// عرض تفاصيل الدورة
 function viewCourseDetails(courseId) {
-    window.location.href = `course-details.html?id=${courseId}`;
+    window.location.href = '/course-details.html?id=' + courseId;
 }
 
-// التمرير إلى قسم الدورات
 function scrollToCourses() {
     document.getElementById('coursesSection').scrollIntoView({ behavior: 'smooth' });
 }
