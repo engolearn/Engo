@@ -6,18 +6,17 @@ const auth = async (req, res, next) => {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         
         if (!token) {
-            throw new Error();
+            return res.status(401).json({ message: 'يرجى تسجيل الدخول' });
         }
         
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
         const user = await User.findById(decoded.userId).select('-password');
         
         if (!user) {
-            throw new Error();
+            return res.status(401).json({ message: 'المستخدم غير موجود' });
         }
         
         req.user = user;
-        req.token = token;
         next();
     } catch (error) {
         res.status(401).json({ message: 'يرجى تسجيل الدخول' });
