@@ -3,7 +3,6 @@ const Course = require('../models/Course');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
-// جلب جميع الدورات
 router.get('/', async (req, res) => {
     try {
         const courses = await Course.find()
@@ -15,7 +14,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// جلب دورة محددة مع دروسها
 router.get('/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId)
