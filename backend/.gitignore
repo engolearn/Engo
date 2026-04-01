@@ -1,0 +1,17 @@
+# ملفات البيئة
+.env
+.env.local
+.env.production
+
+# مجلدات Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ملفات قاعدة البيانات
+*.db
+*.sqlite
+
+# ملفات مؤقتة
+.DS_Store
+Thumbs.db
