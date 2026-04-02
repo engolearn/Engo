@@ -46,6 +46,48 @@ const courseSchema = new mongoose.Schema({
 });
 const Course = mongoose.model('Course', courseSchema);
 
+// ==================== Models ====================
+// أضف هذا النموذج مع باقي النماذج
+
+// Private Message Model
+const privateMessageSchema = new mongoose.Schema({
+    conversationId: { type: String, required: true, index: true },
+    participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    messages: [{
+        from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        fromName: String,
+        text: String,
+        timestamp: { type: Date, default: Date.now },
+        read: { type: Boolean, default: false }
+    }],
+    lastActivity: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const PrivateConversation = mongoose.model('PrivateConversation', privateMessageSchema);
+
+// Room Model
+const roomSchema = new mongoose.Schema({
+    roomId: { type: String, required: true, unique: true, index: true },
+    name: { type: String, required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    creatorName: String,
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    messages: [{
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        userName: String,
+        text: String,
+        timestamp: { type: Date, default: Date.now },
+        readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    }],
+    isPrivate: { type: Boolean, default: false },
+    allowedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    createdAt: { type: Date, default: Date.now },
+    lastActivity: { type: Date, default: Date.now }
+});
+
+const Room = mongoose.model('Room', roomSchema);
+
 // Lesson Model
 const assignmentQuestionSchema = new mongoose.Schema({
     id: { type: String, required: true },
