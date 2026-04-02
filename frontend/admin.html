@@ -140,21 +140,65 @@
         </div>
 
         <!-- تبويب الاختبارات (نصفي ونهائي) -->
-        <div id="quizzesTab" class="tab-content">
-            <div class="admin-section">
-                <h2><i class="fas fa-plus-circle"></i> إضافة اختبار نصفي/نهائي</h2>
-                <form id="addQuizForm">
-                    <div class="form-row"><div class="form-group"><label>نوع الاختبار</label><select id="quizType"><option value="midterm">اختبار نصفي</option><option value="final">اختبار نهائي</option></select></div><div class="form-group"><label>اختر الدورة</label><select id="quizCourse"><option value="">اختر دورة</option></select></div></div>
-                    <div class="form-group"><label>عنوان الاختبار</label><input type="text" id="quizName" required></div>
-                    <div class="form-group"><label>وصف الاختبار</label><textarea id="quizDescription" rows="2"></textarea></div>
-                    <div class="form-row"><div class="form-group"><label>الوقت (دقائق)</label><input type="number" id="quizDuration" value="30"></div><div class="form-group"><label>نسبة النجاح (%)</label><input type="number" id="quizPassingScore" value="70"></div></div>
-                    <div id="questionsContainer"></div>
-                    <button type="button" class="btn-primary" onclick="addQuizQuestion()">➕ إضافة سؤال</button>
-                    <button type="submit" class="btn-primary">💾 حفظ الاختبار</button>
-                </form>
+<div id="quizzesTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-plus-circle"></i> إضافة اختبار نصفي/نهائي</h2>
+        <form id="addQuizForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>نوع الاختبار</label>
+                    <select id="quizType" required>
+                        <option value="midterm">📝 اختبار نصفي</option>
+                        <option value="final">🎓 اختبار نهائي</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>اختر الدورة</label>
+                    <select id="quizCourse" required>
+                        <option value="">-- اختر الدورة --</option>
+                    </select>
+                </div>
             </div>
-            <div class="admin-section"><h2><i class="fas fa-list"></i> قائمة الاختبارات</h2><div id="quizzesList"><div class="loading">جاري التحميل...</div></div></div>
-        </div>
+            <div class="form-group">
+                <label>عنوان الاختبار</label>
+                <input type="text" id="quizName" required>
+            </div>
+            <div class="form-group">
+                <label>وصف الاختبار</label>
+                <textarea id="quizDescription" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>الوقت (دقائق)</label>
+                    <input type="number" id="quizDuration" value="30" required>
+                </div>
+                <div class="form-group">
+                    <label>نسبة النجاح (%)</label>
+                    <input type="number" id="quizPassingScore" value="70" required>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0;">
+                <h3><i class="fas fa-question-circle"></i> أسئلة الاختبار</h3>
+                <button type="button" class="btn-primary" onclick="addQuizQuestion()" style="padding: 8px 20px;">
+                    <i class="fas fa-plus"></i> إضافة سؤال
+                </button>
+            </div>
+            
+            <div id="quizQuestionsList" style="max-height: 500px; overflow-y: auto;"></div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn-primary" id="saveQuizBtn">💾 حفظ الاختبار</button>
+                <button type="button" class="btn-outline" onclick="resetQuizForm()">🔄 إلغاء</button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-list"></i> قائمة الاختبارات</h2>
+        <div id="quizzesList"><div class="loading">جاري تحميل الاختبارات...</div></div>
+    </div>
+</div>
 
         <!-- تبويب المستخدمين -->
         <div id="usersTab" class="tab-content">
@@ -171,7 +215,6 @@
         const API_URL = window.location.origin + '/api';
         let questions = [];
         let questionCounter = 0;
-        let quizQuestionCount = 1;
         let lessonImages = [];
         let imageCounter = 0;
         
@@ -377,21 +420,9 @@
         window.approvePayment = (id) => { let payments = JSON.parse(localStorage.getItem('pendingPayments')||'[]'); payments = payments.filter(p=>p.requestId!==id); localStorage.setItem('pendingPayments',JSON.stringify(payments)); showAlert('✅ تم قبول الطلب','success'); loadPayments(); };
         window.rejectPayment = (id) => { let payments = JSON.parse(localStorage.getItem('pendingPayments')||'[]'); payments = payments.filter(p=>p.requestId!==id); localStorage.setItem('pendingPayments',JSON.stringify(payments)); showAlert('❌ تم رفض الطلب','success'); loadPayments(); };
 
-        function addQuizQuestion() { const qNum = quizQuestionCount++; document.getElementById('questionsContainer').innerHTML += `<div class="question-card" id="quizQ${qNum}"><div class="question-header"><span>سؤال ${qNum}</span><button onclick="document.getElementById('quizQ${qNum}').remove()">✖</button></div><input type="text" id="quizQ${qNum}_text" placeholder="السؤال"><input type="text" id="quizQ${qNum}_options" placeholder="الخيارات (مفصولة بفواصل)"><input type="number" id="quizQ${qNum}_correct" value="0"></div>`; }
         
-        document.getElementById('addQuizForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const token = localStorage.getItem('token');
-            const questions = [];
-            for(let i=1; i<quizQuestionCount; i++) { const qText = document.getElementById(`quizQ${i}_text`); if(qText?.value) questions.push({ question: qText.value, options: document.getElementById(`quizQ${i}_options`).value.split(','), correctAnswer: parseInt(document.getElementById(`quizQ${i}_correct`).value) }); }
-            if(!questions.length) { showAlert('أضف أسئلة','error'); return; }
-            const data = { quizType: document.getElementById('quizType').value, courseId: document.getElementById('quizCourse').value||null, name: document.getElementById('quizName').value, description: document.getElementById('quizDescription').value, duration: parseInt(document.getElementById('quizDuration').value), passingScore: parseInt(document.getElementById('quizPassingScore').value), questions };
-            const res = await fetch(API_URL + '/admin/quizzes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(data) });
-            if(res.ok) { showAlert('✅ تم إضافة الاختبار','success'); document.getElementById('addQuizForm').reset(); document.getElementById('questionsContainer').innerHTML = ''; quizQuestionCount=1; } else showAlert('❌ خطأ','error');
-        };
         
-        async function loadQuizzes() { document.getElementById('quizzesList').innerHTML = '<div class="empty-message">قائمة الاختبارات</div>'; }
-        function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/'; }
+          function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/'; }
         function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
         // ==================== Assignment Questions Functions ====================
@@ -485,6 +516,443 @@ function editQuiz(quizId) {
     // سيتم إضافة وظيفة تعديل الاختبار لاحقاً
     showAlert('✏️ وظيفة تعديل الاختبار قيد التطوير', 'success');
             }
+
+        // ==================== Quiz Questions Management (نفس نظام اختبارات المستوى) ====================
+let currentEditingQuiz = null;
+let quizQuestions = [];
+let quizQuestionCounter = 0;
+
+// إضافة سؤال جديد للاختبار
+function addQuizQuestion() {
+    const id = 'quiz_q_' + Date.now() + '_' + (++quizQuestionCounter);
+    
+    quizQuestions.push({
+        id: id,
+        type: 'multiple_choice',
+        question: '',
+        points: 10,
+        options: ['', '', ''],
+        correctAnswer: 0,
+        essayKeywords: []
+    });
+    renderQuizQuestions();
+}
+
+// عرض أسئلة الاختبار
+function renderQuizQuestions() {
+    const container = document.getElementById('quizQuestionsList');
+    if (!container) return;
+    
+    if (quizQuestions.length === 0) {
+        container.innerHTML = '<div class="empty-message" style="padding: 2rem; text-align: center;">📝 لا توجد أسئلة. أضف سؤالاً جديداً</div>';
+        return;
+    }
+    
+    container.innerHTML = quizQuestions.map((q, idx) => `
+        <div class="question-card" style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px; border-right: 4px solid #667eea;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                <div>
+                    <span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">سؤال ${idx + 1}</span>
+                    <span style="margin-right: 10px; color: #718096;"><i class="fas fa-star"></i> ${q.points} نقطة</span>
+                </div>
+                <div>
+                    <button type="button" class="btn-sm btn-warning" onclick="moveQuizQuestionUp(${idx})" ${idx === 0 ? 'disabled' : ''} style="margin-left: 5px;"><i class="fas fa-arrow-up"></i></button>
+                    <button type="button" class="btn-sm btn-warning" onclick="moveQuizQuestionDown(${idx})" ${idx === quizQuestions.length - 1 ? 'disabled' : ''} style="margin-left: 5px;"><i class="fas fa-arrow-down"></i></button>
+                    <button type="button" class="btn-sm btn-danger" onclick="removeQuizQuestion('${q.id}')"><i class="fas fa-trash"></i> حذف</button>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label>نوع السؤال</label>
+                    <select onchange="updateQuizQuestion('${q.id}', 'type', this.value)" style="width: 100%; padding: 8px; border-radius: 8px;">
+                        <option value="multiple_choice" ${q.type === 'multiple_choice' ? 'selected' : ''}>📋 اختيار من متعدد</option>
+                        <option value="true_false" ${q.type === 'true_false' ? 'selected' : ''}>✅ صح/خطأ</option>
+                        <option value="fill_blank" ${q.type === 'fill_blank' ? 'selected' : ''}>✏️ اكمل الفراغ</option>
+                        <option value="essay" ${q.type === 'essay' ? 'selected' : ''}>📝 مقال</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>النقاط</label>
+                    <input type="number" value="${q.points}" onchange="updateQuizQuestion('${q.id}', 'points', parseInt(this.value))" style="width: 100%; padding: 8px; border-radius: 8px;">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>السؤال</label>
+                <textarea rows="2" placeholder="أدخل نص السؤال..." onchange="updateQuizQuestion('${q.id}', 'question', this.value)" style="width: 100%; padding: 8px; border-radius: 8px;">${escapeHtml(q.question)}</textarea>
+            </div>
+            
+            ${q.type === 'multiple_choice' ? `
+                <div class="form-group">
+                    <label>الخيارات</label>
+                    ${q.options.map((opt, i) => `
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+                            <span style="width: 35px; font-weight: bold;">${String.fromCharCode(65 + i)}.</span>
+                            <input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${i + 1}" 
+                                onchange="updateQuizQuestionOption('${q.id}', ${i}, this.value)" style="flex: 1; padding: 8px; border-radius: 8px;">
+                            <button type="button" class="btn-sm btn-danger" onclick="removeQuizOption('${q.id}', ${i})" style="width: 30px; height: 30px; border-radius: 50%;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                    <button type="button" class="btn-sm btn-primary" onclick="addQuizOption('${q.id}')" style="margin-top: 5px;">
+                        <i class="fas fa-plus"></i> إضافة خيار
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>الإجابة الصحيحة</label>
+                    <select onchange="updateQuizQuestion('${q.id}', 'correctAnswer', parseInt(this.value))" style="width: 100%; padding: 8px; border-radius: 8px;">
+                        ${q.options.map((opt, i) => `
+                            <option value="${i}" ${q.correctAnswer === i ? 'selected' : ''}>${String.fromCharCode(65 + i)}. ${escapeHtml(opt)}</option>
+                        `).join('')}
+                    </select>
+                </div>
+            ` : q.type === 'true_false' ? `
+                <div class="form-group">
+                    <label>الإجابة الصحيحة</label>
+                    <select onchange="updateQuizQuestion('${q.id}', 'correctAnswer', this.value === 'true')" style="width: 100%; padding: 8px; border-radius: 8px;">
+                        <option value="true" ${q.correctAnswer === true ? 'selected' : ''}>✅ صح (True)</option>
+                        <option value="false" ${q.correctAnswer === false ? 'selected' : ''}>❌ خطأ (False)</option>
+                    </select>
+                </div>
+            ` : q.type === 'fill_blank' ? `
+                <div class="form-group">
+                    <label>الإجابة الصحيحة</label>
+                    <input type="text" value="${escapeHtml(q.correctAnswer)}" onchange="updateQuizQuestion('${q.id}', 'correctAnswer', this.value)" placeholder="أدخل الإجابة الصحيحة" style="width: 100%; padding: 8px; border-radius: 8px;">
+                    <small style="color: #718096;">يمكن إضافة أكثر من إجابة مفصولة بفاصلة</small>
+                </div>
+            ` : q.type === 'essay' ? `
+                <div class="form-group">
+                    <label>الكلمات المفتاحية (مفصولة بفواصل)</label>
+                    <input type="text" value="${escapeHtml(q.essayKeywords?.join(','))}" 
+                        onchange="updateQuizQuestion('${q.id}', 'essayKeywords', this.value.split(',').map(s => s.trim()))" 
+                        placeholder="مثال: hello,greeting,welcome" style="width: 100%; padding: 8px; border-radius: 8px;">
+                    <small>سيتم تقييم الإجابة بناءً على الكلمات المفتاحية</small>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// تحديث سؤال الاختبار
+function updateQuizQuestion(id, field, value) {
+    const question = quizQuestions.find(q => q.id === id);
+    if (question) {
+        if (field === 'correctAnswer' && question.type === 'true_false') {
+            question[field] = value === 'true' || value === true;
+        } else {
+            question[field] = value;
+        }
+        renderQuizQuestions();
+    }
+}
+
+function updateQuizQuestionOption(id, index, value) {
+    const question = quizQuestions.find(q => q.id === id);
+    if (question && question.options) {
+        question.options[index] = value;
+        renderQuizQuestions();
+    }
+}
+
+function addQuizOption(id) {
+    const question = quizQuestions.find(q => q.id === id);
+    if (question && question.options) {
+        question.options.push('');
+        renderQuizQuestions();
+    }
+}
+
+function removeQuizOption(id, index) {
+    const question = quizQuestions.find(q => q.id === id);
+    if (question && question.options && question.options.length > 2) {
+        question.options.splice(index, 1);
+        if (question.correctAnswer >= question.options.length) {
+            question.correctAnswer = question.options.length - 1;
+        }
+        renderQuizQuestions();
+    } else {
+        showAlert('❌ يجب أن يكون هناك خياران على الأقل', 'error');
+    }
+}
+
+function removeQuizQuestion(id) {
+    if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+        quizQuestions = quizQuestions.filter(q => q.id !== id);
+        renderQuizQuestions();
+    }
+}
+
+function moveQuizQuestionUp(index) {
+    if (index > 0) {
+        [quizQuestions[index - 1], quizQuestions[index]] = [quizQuestions[index], quizQuestions[index - 1]];
+        renderQuizQuestions();
+    }
+}
+
+function moveQuizQuestionDown(index) {
+    if (index < quizQuestions.length - 1) {
+        [quizQuestions[index + 1], quizQuestions[index]] = [quizQuestions[index], quizQuestions[index + 1]];
+        renderQuizQuestions();
+    }
+}
+
+function resetQuizForm() {
+    currentEditingQuiz = null;
+    document.getElementById('addQuizForm').reset();
+    quizQuestions = [];
+    quizQuestionCounter = 0;
+    renderQuizQuestions();
+    document.getElementById('saveQuizBtn').innerHTML = '💾 حفظ الاختبار';
+    showAlert('🔄 تم إعادة تعيين النموذج', 'success');
+}
+
+// إنشاء اختبار جديد (نصفي/نهائي)
+async function createNewQuiz() {
+    const token = localStorage.getItem('token');
+    
+    if (quizQuestions.length === 0) {
+        showAlert('❌ يرجى إضافة أسئلة للاختبار', 'error');
+        return;
+    }
+    
+    const quizData = {
+        quizType: document.getElementById('quizType').value,
+        courseId: document.getElementById('quizCourse').value,
+        name: document.getElementById('quizName').value,
+        description: document.getElementById('quizDescription').value,
+        duration: parseInt(document.getElementById('quizDuration').value),
+        passingScore: parseInt(document.getElementById('quizPassingScore').value),
+        questions: quizQuestions.map(q => {
+            const baseQuestion = {
+                id: q.id,
+                type: q.type,
+                question: q.question,
+                points: q.points
+            };
+            if (q.type === 'multiple_choice') {
+                baseQuestion.options = q.options;
+                baseQuestion.correctOption = q.correctAnswer;
+            } else if (q.type === 'true_false') {
+                baseQuestion.isTrue = q.correctAnswer;
+            } else if (q.type === 'fill_blank') {
+                baseQuestion.correctAnswers = [q.correctAnswer];
+            } else if (q.type === 'essay') {
+                baseQuestion.essayKeywords = q.essayKeywords;
+            }
+            return baseQuestion;
+        })
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(quizData)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم إنشاء الاختبار بنجاح', 'success');
+            resetQuizForm();
+            loadQuizzes();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// تحميل قائمة الاختبارات
+async function loadQuizzes() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/quizzes', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const quizzes = await res.json();
+        
+        const courseQuizzes = quizzes.filter(q => q.quizType === 'midterm' || q.quizType === 'final');
+        
+        const container = document.getElementById('quizzesList');
+        if (!courseQuizzes || courseQuizzes.length === 0) {
+            container.innerHTML = '<div class="empty-message">📝 لا توجد اختبارات نصفية أو نهائية</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <table class="table">
+                <thead>
+                    <tr><th>الاسم</th><th>النوع</th><th>الدورة</th><th>الوقت</th><th>الأسئلة</th><th>نسبة النجاح</th><th>الإجراءات</th></tr>
+                </thead>
+                <tbody>
+                    ${courseQuizzes.map(quiz => `
+                        <tr>
+                            <td><strong>${escapeHtml(quiz.name)}</strong><br><small>${escapeHtml(quiz.description?.substring(0, 50)) || ''}</small></td>
+                            <td>${quiz.quizType === 'midterm' ? '📝 اختبار نصفي' : '🎓 اختبار نهائي'}</td>
+                            <td>${quiz.courseId?.title || 'غير محدد'}</td>
+                            <td>⏱️ ${quiz.duration} دقيقة</td>
+                            <td>📋 ${quiz.questions?.length || 0}</td>
+                            <td>🎯 ${quiz.passingScore}%</td>
+                            <td class="inline-buttons">
+                                <button class="btn-warning" onclick="editQuiz('${quiz._id}')"><i class="fas fa-edit"></i> تعديل</button>
+                                <button class="btn-danger" onclick="deleteQuiz('${quiz._id}')"><i class="fas fa-trash"></i> حذف</button>
+                             </td>
+                         </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error loading quizzes:', error);
+        document.getElementById('quizzesList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبارات</div>';
+    }
+}
+
+// حذف اختبار
+async function deleteQuiz(quizId) {
+    if (!confirm('⚠️ هل أنت متأكد من حذف هذا الاختبار؟')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes/' + quizId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم حذف الاختبار بنجاح', 'success');
+            loadQuizzes();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// تعديل اختبار
+async function editQuiz(quizId) {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/quizzes/' + quizId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const quiz = await res.json();
+        
+        if (!res.ok) throw new Error(quiz.message);
+        
+        currentEditingQuiz = quiz;
+        
+        document.getElementById('quizType').value = quiz.quizType;
+        document.getElementById('quizCourse').value = quiz.courseId?._id || quiz.courseId;
+        document.getElementById('quizName').value = quiz.name;
+        document.getElementById('quizDescription').value = quiz.description || '';
+        document.getElementById('quizDuration').value = quiz.duration;
+        document.getElementById('quizPassingScore').value = quiz.passingScore;
+        
+        quizQuestions = quiz.questions.map((q, idx) => ({
+            id: 'quiz_q_' + Date.now() + '_' + idx,
+            type: q.type,
+            question: q.question,
+            points: q.points || 10,
+            options: q.options || ['', '', ''],
+            correctAnswer: q.type === 'true_false' ? q.isTrue : (q.correctOption || 0),
+            essayKeywords: q.essayKeywords || []
+        }));
+        
+        quizQuestionCounter = quizQuestions.length;
+        renderQuizQuestions();
+        
+        document.getElementById('saveQuizBtn').innerHTML = '✏️ تحديث الاختبار';
+        document.getElementById('addQuizForm').scrollIntoView({ behavior: 'smooth' });
+        showAlert('✏️ يمكنك الآن تعديل الاختبار', 'success');
+        
+    } catch (error) {
+        console.error('Error loading quiz:', error);
+        showAlert('❌ فشل تحميل الاختبار', 'error');
+    }
+}
+
+// معالج إرسال النموذج
+document.getElementById('addQuizForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (currentEditingQuiz) {
+        await updateQuiz();
+    } else {
+        await createNewQuiz();
+    }
+});
+
+// تحديث اختبار موجود
+async function updateQuiz() {
+    const token = localStorage.getItem('token');
+    
+    if (quizQuestions.length === 0) {
+        showAlert('❌ يرجى إضافة أسئلة للاختبار', 'error');
+        return false;
+    }
+    
+    const quizData = {
+        quizType: document.getElementById('quizType').value,
+        courseId: document.getElementById('quizCourse').value,
+        name: document.getElementById('quizName').value,
+        description: document.getElementById('quizDescription').value,
+        duration: parseInt(document.getElementById('quizDuration').value),
+        passingScore: parseInt(document.getElementById('quizPassingScore').value),
+        questions: quizQuestions.map(q => {
+            const baseQuestion = {
+                id: q.id,
+                type: q.type,
+                question: q.question,
+                points: q.points
+            };
+            if (q.type === 'multiple_choice') {
+                baseQuestion.options = q.options;
+                baseQuestion.correctOption = q.correctAnswer;
+            } else if (q.type === 'true_false') {
+                baseQuestion.isTrue = q.correctAnswer;
+            } else if (q.type === 'fill_blank') {
+                baseQuestion.correctAnswers = [q.correctAnswer];
+            } else if (q.type === 'essay') {
+                baseQuestion.essayKeywords = q.essayKeywords;
+            }
+            return baseQuestion;
+        })
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes/' + currentEditingQuiz._id, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(quizData)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم تحديث الاختبار بنجاح', 'success');
+            resetQuizForm();
+            loadQuizzes();
+            return true;
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+            return false;
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+        return false;
+    }
+}
         
         async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadPayments(); await loadCoursesForSelect(); } }
         init();
