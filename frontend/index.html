@@ -713,9 +713,9 @@
                 </div>
                 <div class="footer-section">
                     <h4>تواصل معنا</h4>
-                    <p><i class="fas fa-phone"></i> 0512345678</p>
-                    <p><i class="fab fa-whatsapp"></i> 0512345678</p>
-                    <p><i class="fas fa-envelope"></i> support@engo.com</p>
+                    <p><i class="fas fa-phone"></i> 773041464</p>
+                    <p><i class="fab fa-whatsapp"></i> 737373627</p>
+                    <p><i class="fas fa-envelope"></i> engolearningsupport@gmail.com</p>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -733,14 +733,14 @@
         function goToAdmin() {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             if (user.role === 'admin') {
-                window.location.href = '/admin';
+                window.location.href = '/admin.html';
             } else {
                 showAlert('❌ غير مصرح لك بالدخول إلى لوحة التحكم', 'error');
             }
         }
         
         function goToChat() {
-            window.location.href = '/chat';
+            window.location.href = '/chat.html';
         }
         
         // ==================== Helper Functions ====================
