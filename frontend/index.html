@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#667eea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EnGo">
+<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>EnGo - تعلم اللغة الإنجليزية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -54,7 +60,6 @@
         .nav-links {
             display: flex;
             gap: 1.5rem;
-            align-items: center;
         }
         
         .nav-links a {
@@ -66,20 +71,6 @@
         
         .nav-links a:hover {
             color: #667eea;
-        }
-        
-        /* زر الأدمن المميز */
-        .admin-nav-link {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white !important;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-        }
-        
-        .admin-nav-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
         
         .auth-buttons {
@@ -102,7 +93,6 @@
             align-items: center;
             justify-content: center;
             color: white;
-            cursor: pointer;
         }
         
         .dropdown {
@@ -130,7 +120,6 @@
             padding: 10px 15px;
             text-decoration: none;
             color: #4a5568;
-            cursor: pointer;
         }
         
         .dropdown-content a:hover {
@@ -324,7 +313,6 @@
             color: #cbd5e0;
             text-decoration: none;
             margin-bottom: 0.5rem;
-            cursor: pointer;
         }
         
         .footer-bottom {
@@ -361,9 +349,8 @@
                 <a onclick="showPage('home')">الرئيسية</a>
                 <a onclick="showPage('courses')">الدورات</a>
                 <a onclick="showPage('levelTest')">اختبار المستوى</a>
-                <a id="adminLink" style="display: none;" onclick="goToAdmin()" class="admin-nav-link">
-                    <i class="fas fa-crown"></i> لوحة الأدمن
-                </a>
+                <a href="/chat">💬 المحادثات</a>
+                <a id="adminLink" onclick="showPage('admin')" style="display: none;">👑 الأدمن</a>
             </div>
             <div class="auth-buttons" id="authButtons">
                 <button onclick="showLoginModal()" class="btn-outline">تسجيل دخول</button>
@@ -376,9 +363,6 @@
                     <button class="dropdown-btn"><i class="fas fa-chevron-down"></i></button>
                     <div class="dropdown-content">
                         <a onclick="showPage('dashboard')">لوحة التحكم</a>
-                        <a id="adminDropdownLink" onclick="goToAdmin()" style="display: none; color: #667eea;">
-                            <i class="fas fa-crown"></i> لوحة الأدمن
-                        </a>
                         <hr>
                         <a onclick="logout()">تسجيل الخروج</a>
                     </div>
@@ -421,10 +405,24 @@
             <div class="container">
                 <h2 style="text-align: center;">لوحة التحكم</h2>
                 <p style="text-align: center;">مرحباً بك في لوحة التحكم</p>
-                <div style="text-align: center; margin-top: 2rem;">
-                    <button class="btn-primary" onclick="goToAdmin()">
-                        <i class="fas fa-crown"></i> الذهاب إلى لوحة الأدمن
-                    </button>
+            </div>
+        </div>
+
+        <div id="adminPage" class="page">
+            <div class="container">
+                <h2 style="text-align: center;">👑 لوحة تحكم الأدمن</h2>
+                <div id="adminContent">
+                    <div style="background: white; padding: 2rem; border-radius: 15px; margin-top: 1rem;">
+                        <h3>✅ أنت الآن أدمن</h3>
+                        <p>يمكنك من هنا إدارة الموقع:</p>
+                        <ul style="margin-top: 1rem; margin-right: 1.5rem;">
+                            <li>إضافة دورات جديدة</li>
+                            <li>إضافة دروس</li>
+                            <li>إدارة المستخدمين</li>
+                            <li>الموافقة على طلبات الدفع</li>
+                        </ul>
+                        <button class="btn-primary" style="margin-top: 1rem;" onclick="loadAdminPanel()">تحميل لوحة الأدمن</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -483,11 +481,6 @@
 
     <script>
         const API_URL = 'https://engo.koyeb.app/api';
-        
-        // الانتقال إلى صفحة الأدمن
-        function goToAdmin() {
-            window.location.href = '/admin';
-        }
         
         // عرض الصفحات
         function showPage(pageName) {
@@ -577,7 +570,6 @@
             const userMenu = document.getElementById('userMenu');
             const userName = document.getElementById('userName');
             const adminLink = document.getElementById('adminLink');
-            const adminDropdownLink = document.getElementById('adminDropdownLink');
             
             if (token && user.id) {
                 // إظهار قائمة المستخدم
@@ -589,15 +581,10 @@
                 if (user.role === 'admin') {
                     if (adminLink) {
                         adminLink.style.display = 'inline-block';
-                        console.log('✅ Admin link shown in navbar');
-                    }
-                    if (adminDropdownLink) {
-                        adminDropdownLink.style.display = 'block';
-                        console.log('✅ Admin link shown in dropdown');
+                        console.log('✅ Admin link shown');
                     }
                 } else {
                     if (adminLink) adminLink.style.display = 'none';
-                    if (adminDropdownLink) adminDropdownLink.style.display = 'none';
                     console.log('User is not admin, role:', user.role);
                 }
             } else {
@@ -605,7 +592,6 @@
                 if (authButtons) authButtons.style.display = 'flex';
                 if (userMenu) userMenu.style.display = 'none';
                 if (adminLink) adminLink.style.display = 'none';
-                if (adminDropdownLink) adminDropdownLink.style.display = 'none';
             }
         }
         
@@ -634,6 +620,10 @@
                 console.error(err);
                 document.getElementById('coursesGrid').innerHTML = '<div style="text-align:center; padding:2rem; color:red;">⚠️ حدث خطأ في تحميل الدورات</div>';
             }
+        }
+        
+        function loadAdminPanel() {
+            alert('سيتم إضافة لوحة الأدمن قريباً');
         }
         
         // تشغيل عند تحميل الصفحة
@@ -671,6 +661,16 @@
                 }
             };
         });
+    </script>
+    <script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(reg => console.log('SW registered')).catch(err => console.error('SW error', err));
+}
+async function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+        await Notification.requestPermission();
+    }
+}
     </script>
 </body>
 </html>
