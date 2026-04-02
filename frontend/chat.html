@@ -16,59 +16,71 @@
         
         body {
             font-family: 'Cairo', sans-serif;
-            background: #121212;
-            color: #e5e5e5;
-            overflow: hidden;
+            background: #0a0a0a;
             height: 100vh;
+            overflow: hidden;
         }
         
-        /* App Container */
+        /* ==================== App Container ==================== */
         .app {
             display: flex;
             height: 100vh;
             background: #0a0a0a;
+            position: relative;
         }
         
-        /* ==================== قائمة المحادثات (مثل واتساب) ==================== */
+        /* ==================== قائمة المحادثات ==================== */
         .conversations-list {
             width: 100%;
             max-width: 400px;
             background: #111111;
-            border-left: 1px solid #2a2a2a;
             display: flex;
             flex-direction: column;
+            height: 100vh;
             transition: transform 0.3s ease;
-            z-index: 10;
+            z-index: 20;
         }
         
-        /* للهواتف - القائمة تكون منزلقة */
+        /* للهواتف - القائمة تظهر افتراضياً */
         @media (max-width: 768px) {
             .conversations-list {
-                position: fixed;
-                right: 0;
+                position: absolute;
+                left: 0;
                 top: 0;
-                width: 85%;
+                width: 100%;
                 height: 100%;
-                transform: translateX(100%);
-                box-shadow: -5px 0 20px rgba(0,0,0,0.3);
+                transform: translateX(0);
+                z-index: 10;
             }
             
-            .conversations-list.open {
-                transform: translateX(0);
+            .conversations-list.hide {
+                transform: translateX(-100%);
             }
             
             .chat-area {
                 width: 100%;
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                z-index: 5;
+                background: #0e0e0e;
+            }
+            
+            .chat-area.show {
+                z-index: 15;
             }
         }
         
         @media (min-width: 769px) {
             .conversations-list {
                 display: flex;
+                position: relative;
             }
             
             .chat-area {
                 flex: 1;
+                position: relative;
             }
             
             .back-to-list {
@@ -84,12 +96,13 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #2a2a2a;
+            padding-top: env(safe-area-inset-top);
         }
         
         .conversations-header h2 {
             font-size: 1.3rem;
             font-weight: 600;
-            color: #fff;
+            color: #25D366;
         }
         
         .header-actions {
@@ -105,10 +118,11 @@
             cursor: pointer;
             padding: 0.5rem;
             border-radius: 50%;
-            transition: background 0.2s;
+            width: 40px;
+            height: 40px;
         }
         
-        .header-actions button:hover {
+        .header-actions button:active {
             background: #2a2a2a;
         }
         
@@ -116,7 +130,6 @@
         .search-bar {
             background: #1f1f1f;
             padding: 0.8rem;
-            border-bottom: 1px solid #2a2a2a;
         }
         
         .search-bar input {
@@ -134,12 +147,7 @@
             color: #888;
         }
         
-        .search-bar input:focus {
-            outline: none;
-            background: #333;
-        }
-        
-        /* Tabs (الغرف / الخاص) */
+        /* Tabs */
         .chat-tabs {
             display: flex;
             background: #1f1f1f;
@@ -154,23 +162,11 @@
             color: #888;
             font-weight: 500;
             transition: all 0.2s;
-            position: relative;
         }
         
         .chat-tab.active {
             color: #25D366;
-        }
-        
-        .chat-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 3px;
-            background: #25D366;
-            border-radius: 2px;
+            border-bottom: 2px solid #25D366;
         }
         
         /* قائمة المحادثات */
@@ -189,15 +185,10 @@
             border-bottom: 1px solid #1f1f1f;
         }
         
-        .conversation-item:hover {
+        .conversation-item:active {
             background: #1f1f1f;
         }
         
-        .conversation-item.active {
-            background: #2a2a2a;
-        }
-        
-        /* Avatar */
         .avatar {
             width: 50px;
             height: 50px;
@@ -216,11 +207,6 @@
             background: #2a5f3a;
         }
         
-        .avatar i {
-            font-size: 1.3rem;
-        }
-        
-        /* معلومات المحادثة */
         .conversation-info {
             flex: 1;
             min-width: 0;
@@ -244,11 +230,6 @@
             text-overflow: ellipsis;
         }
         
-        .conversation-time {
-            font-size: 0.7rem;
-            color: #666;
-        }
-        
         .unread-badge {
             background: #25D366;
             color: white;
@@ -267,7 +248,7 @@
             height: 10px;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 6px;
+            margin-left: 6px;
         }
         
         .online-status.online {
@@ -275,22 +256,22 @@
             box-shadow: 0 0 5px #25D366;
         }
         
-        /* ==================== منطقة المحادثة (مثل واتساب) ==================== */
+        /* ==================== منطقة المحادثة ==================== */
         .chat-area {
             display: flex;
             flex-direction: column;
             background: #0e0e0e;
-            position: relative;
+            height: 100vh;
         }
         
-        /* Header المحادثة */
         .chat-header {
             background: #1f1f1f;
             padding: 0.8rem 1rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.8rem;
             border-bottom: 1px solid #2a2a2a;
+            padding-top: env(safe-area-inset-top);
         }
         
         .back-to-list {
@@ -299,15 +280,15 @@
             color: #25D366;
             font-size: 1.2rem;
             cursor: pointer;
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        .back-to-list:hover {
+        .back-to-list:active {
             background: #2a2a2a;
         }
         
@@ -332,11 +313,6 @@
             color: #888;
         }
         
-        .chat-actions {
-            display: flex;
-            gap: 1rem;
-        }
-        
         .chat-actions button {
             background: none;
             border: none;
@@ -345,11 +321,8 @@
             cursor: pointer;
             padding: 0.5rem;
             border-radius: 50%;
-        }
-        
-        .chat-actions button:hover {
-            background: #2a2a2a;
-            color: #25D366;
+            width: 40px;
+            height: 40px;
         }
         
         /* منطقة الرسائل */
@@ -362,11 +335,10 @@
             gap: 0.5rem;
         }
         
-        /* رسالة */
         .message {
             display: flex;
             flex-direction: column;
-            max-width: 75%;
+            max-width: 80%;
             animation: fadeIn 0.2s ease;
         }
         
@@ -382,7 +354,6 @@
             padding: 0.7rem 1rem;
             border-radius: 18px;
             word-wrap: break-word;
-            position: relative;
         }
         
         .message.own .message-bubble {
@@ -414,42 +385,6 @@
             justify-content: flex-end;
         }
         
-        /* Typing Indicator */
-        .typing-indicator {
-            padding: 0.5rem 1rem;
-            font-size: 0.7rem;
-            color: #888;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .typing-dots {
-            display: flex;
-            gap: 3px;
-        }
-        
-        .typing-dots span {
-            width: 6px;
-            height: 6px;
-            background: #888;
-            border-radius: 50%;
-            animation: typing 1.4s infinite;
-        }
-        
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-5px); }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
         /* Input Area */
         .input-area {
             background: #1f1f1f;
@@ -458,6 +393,7 @@
             gap: 0.8rem;
             align-items: center;
             border-top: 1px solid #2a2a2a;
+            padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
         }
         
         .input-area input {
@@ -476,10 +412,6 @@
             background: #333;
         }
         
-        .input-area input:disabled {
-            opacity: 0.5;
-        }
-        
         .send-btn {
             background: #25D366;
             color: white;
@@ -488,19 +420,13 @@
             height: 45px;
             border-radius: 50%;
             cursor: pointer;
-            transition: transform 0.2s;
         }
         
-        .send-btn:hover {
-            transform: scale(1.05);
+        .send-btn:active {
+            transform: scale(0.95);
         }
         
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        /* Status */
+        /* Connection Status */
         .connection-status {
             position: fixed;
             bottom: 10px;
@@ -511,6 +437,7 @@
             border-radius: 20px;
             font-size: 0.7rem;
             z-index: 100;
+            pointer-events: none;
         }
         
         .connection-status.connected {
@@ -523,6 +450,19 @@
             color: white;
         }
         
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: #888;
+            padding: 2rem;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
         /* Modal */
         .modal {
             display: none;
@@ -531,7 +471,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             z-index: 2000;
             justify-content: center;
             align-items: center;
@@ -581,13 +521,14 @@
             gap: 1rem;
         }
         
-        .user-item:hover {
-            background: #333;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         /* Scrollbar */
         ::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
         }
         
         ::-webkit-scrollbar-track {
@@ -596,13 +537,13 @@
         
         ::-webkit-scrollbar-thumb {
             background: #25D366;
-            border-radius: 5px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <div class="app">
-        <!-- قائمة المحادثات (الجانبية) -->
+        <!-- قائمة المحادثات -->
         <div class="conversations-list" id="conversationsList">
             <div class="conversations-header">
                 <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
@@ -617,57 +558,54 @@
             </div>
             
             <div class="chat-tabs">
-                <div class="chat-tab active" onclick="switchTab('rooms')">🏠 الغرف</div>
-                <div class="chat-tab" onclick="switchTab('private')">💬 الخاص</div>
+                <div class="chat-tab active" onclick="switchTab('rooms')">الغرف</div>
+                <div class="chat-tab" onclick="switchTab('private')">الخاص</div>
             </div>
             
-            <div class="conversations-scroll" id="conversationsScroll">
-                <div id="roomsList" class="rooms-list active">
-                    <div style="text-align: center; padding: 2rem; color: #888;">جاري تحميل الغرف...</div>
+            <div class="conversations-scroll">
+                <div id="roomsList">
+                    <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل الغرف...</div>
                 </div>
-                <div id="privateList" class="private-list" style="display: none;">
-                    <div style="text-align: center; padding: 2rem; color: #888;">جاري تحميل المحادثات...</div>
+                <div id="privateList" style="display: none;">
+                    <div class="empty-state"><i class="fas fa-user-friends"></i>جاري تحميل المحادثات...</div>
                 </div>
             </div>
         </div>
         
         <!-- منطقة المحادثة -->
-        <div class="chat-area" id="chatArea">
-            <div class="chat-header" id="chatHeader" style="display: none;">
-                <button class="back-to-list" onclick="closeChat()"><i class="fas fa-arrow-right"></i></button>
+        <div class="chat-area" id="chatArea" style="display: none;">
+            <div class="chat-header">
+                <button class="back-to-list" onclick="showConversationsList()"><i class="fas fa-arrow-right"></i></button>
                 <div class="avatar" id="chatAvatar"><i class="fas fa-user"></i></div>
                 <div class="chat-header-info">
-                    <div class="chat-header-name" id="chatName">اختر محادثة</div>
+                    <div class="chat-header-name" id="chatName"></div>
                     <div class="chat-header-status" id="chatStatus"></div>
                 </div>
                 <div class="chat-actions">
-                    <button onclick="inviteToRoom()" id="inviteBtn" style="display: none;"><i class="fas fa-user-plus"></i></button>
+                    <button id="inviteBtn" onclick="inviteToRoom()" style="display: none;"><i class="fas fa-user-plus"></i></button>
                 </div>
             </div>
             
             <div class="chat-messages" id="chatMessages">
-                <div style="text-align: center; color: #888; padding: 2rem;">
-                    <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
-                    <p>اختر محادثة للبدء</p>
-                </div>
+                <div class="empty-state"><i class="fas fa-comments"></i><p>اختر محادثة للبدء</p></div>
             </div>
             
-            <div class="input-area" id="inputArea" style="display: none;">
+            <div class="input-area">
                 <input type="text" id="messageInput" placeholder="اكتب رسالة..." onkeypress="handleKeyPress(event)" disabled>
                 <button class="send-btn" onclick="sendMessage()" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
     
-    <div id="connectionStatus" class="connection-status disconnected">⛔ غير متصل</div>
+    <div id="connectionStatus" class="connection-status disconnected">⛔ جاري الاتصال...</div>
     
     <!-- Modals -->
     <div id="createRoomModal" class="modal">
         <div class="modal-content">
             <h3>إنشاء غرفة جديدة</h3>
             <input type="text" id="roomName" placeholder="اسم الغرفة">
-            <label><input type="checkbox" id="isPrivate"> غرفة خاصة</label>
-            <div id="inviteEmailsField" style="display: none; margin-top: 0.5rem;">
+            <label style="color:white;"><input type="checkbox" id="isPrivate"> غرفة خاصة</label>
+            <div id="inviteEmailsField" style="display: none;">
                 <input type="text" id="inviteEmails" placeholder="البريد الإلكتروني (مفصول بفواصل)">
             </div>
             <button onclick="createRoom()" style="background: #25D366; color: white;">إنشاء</button>
@@ -709,52 +647,17 @@
         
         // ==================== UI Functions ====================
         function showConversationsList() {
-            document.getElementById('conversationsList').classList.add('open');
-        }
-        
-        function closeChat() {
-            currentChat = null;
-            currentChatType = null;
-            document.getElementById('chatHeader').style.display = 'none';
-            document.getElementById('inputArea').style.display = 'none';
-            document.getElementById('chatMessages').innerHTML = `
-                <div style="text-align: center; color: #888; padding: 2rem;">
-                    <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
-                    <p>اختر محادثة للبدء</p>
-                </div>
-            `;
+            document.getElementById('conversationsList').classList.remove('hide');
+            document.getElementById('chatArea').style.display = 'none';
             if (window.innerWidth <= 768) {
-                document.getElementById('conversationsList').classList.add('open');
+                document.getElementById('conversationsList').classList.remove('hide');
             }
         }
         
-        function openChat() {
-            document.getElementById('chatHeader').style.display = 'flex';
-            document.getElementById('inputArea').style.display = 'flex';
+        function openChat(chatId, chatName, chatType) {
+            document.getElementById('chatArea').style.display = 'flex';
             if (window.innerWidth <= 768) {
-                document.getElementById('conversationsList').classList.remove('open');
-            }
-        }
-        
-        function filterConversations() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const roomsContainer = document.getElementById('roomsList');
-            const privateContainer = document.getElementById('privateList');
-            
-            if (roomsContainer) {
-                const items = roomsContainer.querySelectorAll('.conversation-item');
-                items.forEach(item => {
-                    const name = item.querySelector('.conversation-name span').innerText.toLowerCase();
-                    item.style.display = name.includes(search) ? 'flex' : 'none';
-                });
-            }
-            
-            if (privateContainer) {
-                const items = privateContainer.querySelectorAll('.conversation-item');
-                items.forEach(item => {
-                    const name = item.querySelector('.conversation-name span').innerText.toLowerCase();
-                    item.style.display = name.includes(search) ? 'flex' : 'none';
-                });
+                document.getElementById('conversationsList').classList.add('hide');
             }
         }
         
@@ -767,6 +670,28 @@
         }
         
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+        
+        function filterConversations() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const roomsContainer = document.getElementById('roomsList');
+            const privateContainer = document.getElementById('privateList');
+            
+            if (roomsContainer) {
+                const items = roomsContainer.querySelectorAll('.conversation-item');
+                items.forEach(item => {
+                    const name = item.querySelector('.conversation-name span:first-child')?.innerText?.toLowerCase() || '';
+                    item.style.display = name.includes(search) ? 'flex' : 'none';
+                });
+            }
+            
+            if (privateContainer) {
+                const items = privateContainer.querySelectorAll('.conversation-item');
+                items.forEach(item => {
+                    const name = item.querySelector('.conversation-name span:first-child')?.innerText?.toLowerCase() || '';
+                    item.style.display = name.includes(search) ? 'flex' : 'none';
+                });
+            }
+        }
         
         function switchTab(tab) {
             document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
@@ -857,7 +782,7 @@
         function renderRoomsList() {
             const container = document.getElementById('roomsList');
             if(!roomsList?.length) {
-                container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">📭 لا توجد غرف<br>أنشئ غرفة جديدة</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-comments"></i>لا توجد غرف<br>أنشئ غرفة جديدة</div>';
                 return;
             }
             container.innerHTML = roomsList.map(room => `
@@ -925,7 +850,7 @@
         function renderPrivateList() {
             const container = document.getElementById('privateList');
             if(!privateChats?.length) {
-                container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">💬 لا توجد محادثات خاصة<br>ابدأ محادثة جديدة</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-friends"></i>لا توجد محادثات خاصة<br>ابدأ محادثة جديدة</div>';
                 return;
             }
             container.innerHTML = privateChats.map(chat => `
@@ -958,7 +883,7 @@
             document.getElementById('inviteBtn').style.display = 'none';
             document.getElementById('messageInput').disabled = false;
             document.querySelector('.send-btn').disabled = false;
-            document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">جاري التحميل...</div>';
+            document.getElementById('chatMessages').innerHTML = '<div class="empty-state">جاري التحميل...</div>';
             
             socket.emit('start_private_chat', userId, (res) => {
                 if(res?.success) {
@@ -977,7 +902,7 @@
         function renderPrivateMessages() {
             const container = document.getElementById('chatMessages');
             if(!currentPrivateMessages?.length) {
-                container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">لا توجد رسائل بعد<br>أرسل أول رسالة!</div>';
+                container.innerHTML = '<div class="empty-state">لا توجد رسائل بعد<br>أرسل أول رسالة!</div>';
                 return;
             }
             container.innerHTML = currentPrivateMessages.map(msg => {
@@ -1112,7 +1037,11 @@
         
         // ==================== Init ====================
         async function init() {
-            if(await checkAuth()) connectSocket();
+            if(await checkAuth()) {
+                connectSocket();
+                // عرض القائمة في البداية
+                showConversationsList();
+            }
         }
         init();
     </script>
