@@ -642,6 +642,15 @@ io.on('connection', (socket) => {
     socket.on('send_private_message', async (data, callback) => {
         try {
             const { targetUserId, message } = data;
+            // إرسال إشعار للمستخدم المستلم عبر Socket.io
+const targetSocket = onlineUsers.get(targetUserId);
+if (targetSocket) {
+    io.to(targetSocket).emit('new_notification', {
+        title: '💬 رسالة خاصة',
+        message: `لديك رسالة جديدة من ${socket.user.name}`,
+        link: `/chat?private=${conversationId}&with=${socket.user._id}`
+    });
+}
             const participants = [socket.user._id, targetUserId].sort();
             const conversationId = `${participants[0]}_${participants[1]}`;
             
