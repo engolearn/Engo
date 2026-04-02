@@ -647,7 +647,10 @@ socket.on('start_private_chat', async (targetUserId, callback) => {
     try {
         const targetUser = await User.findById(targetUserId);
         if (!targetUser) {
-            return callback({ success: false, error: 'المستخدم غير موجود' });
+            if (callback && typeof callback === 'function') {
+                return callback({ success: false, error: 'المستخدم غير موجود' });
+            }
+            return;
         }
         
         const participants = [socket.user._id, targetUserId].sort();
@@ -667,18 +670,20 @@ socket.on('start_private_chat', async (targetUserId, callback) => {
         
         socket.join(`private_${conversationId}`);
         
-        callback({ 
-            success: true, 
-            conversation: {
-                id: conversation.conversationId,
-                participant: {
-                    id: targetUser._id,
-                    name: targetUser.name,
-                    email: targetUser.email
-                },
-                messages: conversation.messages
-            }
-        });
+        if (callback && typeof callback === 'function') {
+            callback({ 
+                success: true, 
+                conversation: {
+                    id: conversation.conversationId,
+                    participant: {
+                        id: targetUser._id,
+                        name: targetUser.name,
+                        email: targetUser.email
+                    },
+                    messages: conversation.messages
+                }
+            });
+        }
         
         const targetSocket = onlineUsers.get(targetUserId);
         if (targetSocket) {
@@ -689,7 +694,9 @@ socket.on('start_private_chat', async (targetUserId, callback) => {
         }
     } catch (error) {
         console.error('Error starting private chat:', error);
-        callback({ success: false, error: error.message });
+        if (callback && typeof callback === 'function') {
+            callback({ success: false, error: error.message });
+        }
     }
 });
 
@@ -735,10 +742,14 @@ socket.on('send_private_message', async (data, callback) => {
             });
         }
         
-        callback({ success: true, message: newMessage });
+        if (callback && typeof callback === 'function') {
+            callback({ success: true, message: newMessage });
+        }
     } catch (error) {
         console.error('Error sending private message:', error);
-        callback({ success: false, error: error.message });
+        if (callback && typeof callback === 'function') {
+            callback({ success: false, error: error.message });
+        }
     }
 });
 
@@ -747,10 +758,16 @@ socket.on('get_users_for_chat', async (callback) => {
         const users = await User.find({ 
             _id: { $ne: socket.user._id }
         }).select('_id name email');
-        callback({ success: true, users });
+        
+        // ✅ التحقق من وجود callback
+        if (callback && typeof callback === 'function') {
+            callback({ success: true, users });
+        }
     } catch (error) {
         console.error('Error getting users:', error);
-        callback({ success: false, error: error.message });
+        if (callback && typeof callback === 'function') {
+            callback({ success: false, error: error.message });
+        }
     }
 });
 
@@ -777,13 +794,19 @@ socket.on('get_my_conversations', async (callback) => {
             });
         }
         
-        callback({ success: true, conversations: myConversations });
+        // ✅ التحقق من وجود callback
+        if (callback && typeof callback === 'function') {
+            callback({ success: true, conversations: myConversations });
+        }
     } catch (error) {
         console.error('Error getting conversations:', error);
-        callback({ success: false, error: error.message });
+        if (callback && typeof callback === 'function') {
+            callback({ success: false, error: error.message });
+        }
     }
 });
 
+// في server.js - داخل io.on('connection')
 socket.on('mark_messages_read', async (conversationId, callback) => {
     try {
         const conversation = await PrivateConversation.findOne({ conversationId });
@@ -794,13 +817,21 @@ socket.on('mark_messages_read', async (conversationId, callback) => {
                 }
             });
             await conversation.save();
-            callback({ success: true });
+            
+            // ✅ التحقق من وجود callback قبل استدعائها
+            if (callback && typeof callback === 'function') {
+                callback({ success: true });
+            }
         } else {
-            callback({ success: false, error: 'المحادثة غير موجودة' });
+            if (callback && typeof callback === 'function') {
+                callback({ success: false, error: 'المحادثة غير موجودة' });
+            }
         }
     } catch (error) {
         console.error('Error marking messages read:', error);
-        callback({ success: false, error: error.message });
+        if (callback && typeof callback === 'function') {
+            callback({ success: false, error: error.message });
+        }
     }
 });
 
