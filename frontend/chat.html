@@ -7,6 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+        }
         * {
             margin: 0;
             padding: 0;
@@ -87,16 +91,49 @@
                 display: none !important;
             }
         }
-        
+        /* إضافة مسافة أمان من أسفل الشاشة للأجهزة الحديثة */
+.safe-bottom {
+    padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
+}
+
+/* تعديل منطقة الإدخال لتكون فوق أزرار الهاتف */
+.input-area {
+    background: #1f1f1f;
+    padding: 0.8rem;
+    padding-bottom: calc(0.8rem + var(--safe-bottom));
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    border-top: 1px solid #2a2a2a;
+}
+
+/* تعديل القائمة السفلية */
+.conversations-list {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* تعديل شريط الحالة */
+.connection-status {
+    position: fixed;
+    bottom: calc(10px + var(--safe-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    z-index: 100;
+    pointer-events: none;
+}
         /* Header القائمة */
         .conversations-header {
-            background: #1f1f1f;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #2a2a2a;
-            padding-top: env(safe-area-inset-top);
+    background: #1f1f1f;
+    padding: 1rem;
+    padding-top: calc(1rem + var(--safe-top));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #2a2a2a;
         }
         
         .conversations-header h2 {
@@ -265,13 +302,13 @@
         }
         
         .chat-header {
-            background: #1f1f1f;
-            padding: 0.8rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            border-bottom: 1px solid #2a2a2a;
-            padding-top: env(safe-area-inset-top);
+    background: #1f1f1f;
+    padding: 0.8rem 1rem;
+    padding-top: calc(0.8rem + var(--safe-top));
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    border-bottom: 1px solid #2a2a2a;
         }
         
         .back-to-list {
