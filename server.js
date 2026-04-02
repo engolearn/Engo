@@ -484,6 +484,9 @@ app.get('*', (req, res) => {
 app.get('/chat', (req, res) => { 
     res.sendFile(path.join(__dirname, 'frontend', 'chat.html')); 
 });
+app.get('/admin', (req, res) => { 
+    res.sendFile(path.join(__dirname, 'frontend', 'admin.html')); 
+});
 
 // ==================== Start Server ====================
 server.listen(PORT, () => {
