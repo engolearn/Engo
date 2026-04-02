@@ -481,6 +481,9 @@ mongoose.connect(mongoURI, {
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
+app.get('/chat', (req, res) => { 
+    res.sendFile(path.join(__dirname, 'frontend', 'chat.html')); 
+});
 
 // ==================== Start Server ====================
 server.listen(PORT, () => {
