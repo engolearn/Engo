@@ -513,5 +513,90 @@
         }
         init();
     </script>
+    <script>
+    // ==================== Notifications ====================
+    let notificationPermission = false;
+    
+    // طلب إذن الإشعارات
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            console.log('المتصفح لا يدعم الإشعارات');
+            return false;
+        }
+        
+        if (Notification.permission === 'granted') {
+            notificationPermission = true;
+            return true;
+        }
+        
+        if (Notification.permission !== 'denied') {
+            const permission = await Notification.requestPermission();
+            notificationPermission = permission === 'granted';
+            return notificationPermission;
+        }
+        return false;
+    }
+    
+    // عرض إشعار
+    function showNotification(title, body, link) {
+        if (!notificationPermission) return;
+        
+        const notification = new Notification(title, {
+            body: body,
+            icon: '/icons/icon-192x192.png',
+            badge: '/icons/badge.png',
+            tag: Date.now().toString(),
+            requireInteraction: true,
+            data: { url: link }
+        });
+        
+        notification.onclick = function() {
+            window.focus();
+            if (this.data.url) {
+                window.location.href = this.data.url;
+            }
+            notification.close();
+        };
+        
+        setTimeout(() => notification.close(), 5000);
+    }
+    
+    // طلب الإذن عند تحميل الصفحة
+    requestNotificationPermission();
+    
+    // استقبال الإشعارات من Socket.io
+    if (socket) {
+        socket.on('new_notification', (data) => {
+            showNotification(data.title, data.message, data.link);
+            
+            // إضافة الإشعار في القائمة المنسدلة أيضاً
+            addToNotificationList(data);
+        });
+    }
+    
+    // إضافة إشعار في القائمة المنسدلة
+    function addToNotificationList(notif) {
+        const list = document.getElementById('notificationList');
+        if (!list) return;
+        
+        const item = document.createElement('div');
+        item.className = 'notification-item unread';
+        item.innerHTML = `
+            <div class="notification-title">${notif.title}</div>
+            <div class="notification-message">${notif.message}</div>
+            <div class="notification-time">الآن</div>
+        `;
+        item.onclick = () => { window.location.href = notif.link; };
+        
+        list.insertBefore(item, list.firstChild);
+        
+        const count = document.getElementById('notificationCount');
+        if (count) {
+            const current = parseInt(count.innerText) || 0;
+            count.innerText = current + 1;
+            count.style.display = 'flex';
+        }
+    }
+    </script>
 </body>
 </html>
