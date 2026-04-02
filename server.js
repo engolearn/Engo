@@ -640,63 +640,60 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_private_message', async (data, callback) => {
-        try {
-            const { targetUserId, message } = data;
-            // إرسال إشعار للمستخدم المستلم عبر Socket.io
-const targetSocket = onlineUsers.get(targetUserId);
-if (targetSocket) {
-    io.to(targetSocket).emit('new_notification', {
-        title: '💬 رسالة خاصة',
-        message: `لديك رسالة جديدة من ${socket.user.name}`,
-        link: `/chat?private=${conversationId}&with=${socket.user._id}`
-    });
-}
-            const participants = [socket.user._id, targetUserId].sort();
-            const conversationId = `${participants[0]}_${participants[1]}`;
-            
-            let conversation = await PrivateConversation.findOne({ conversationId });
-            if (!conversation) {
-                conversation = new PrivateConversation({
-                    conversationId: conversationId,
-                    participants: participants,
-                    messages: [],
-                    createdAt: new Date()
-                });
-            }
-            
-            const newMessage = {
-                from: socket.user._id,
-                fromName: socket.user.name,
-                text: message,
-                timestamp: new Date(),
-                read: false
-            };
-            
-            conversation.messages.push(newMessage);
-            conversation.lastActivity = new Date();
-            await conversation.save();
-            
-            socket.emit('private_message_received', newMessage);
-            
-            const targetSocket = onlineUsers.get(targetUserId);
-            if (targetSocket) {
-                io.to(targetSocket).emit('private_message_received', { ...newMessage, conversationId });
-                await addNotification(targetUserId, {
-                    title: '💬 رسالة خاصة',
-                    message: `لديك رسالة جديدة من ${socket.user.name}`,
-                    type: 'private_message',
-                    link: `/chat?private=${conversationId}&with=${socket.user._id}`
-                });
-            }
-            
-            if (callback && typeof callback === 'function') {
-                callback({ success: true, message: newMessage });
-            }
-        } catch (error) {
-            console.error('Error sending private message:', error);
-            if (callback) callback({ success: false, error: error.message });
+    try {
+        const { targetUserId, message } = data;
+        const participants = [socket.user._id, targetUserId].sort();
+        const conversationId = `${participants[0]}_${participants[1]}`;
+        
+        let conversation = await PrivateConversation.findOne({ conversationId });
+        if (!conversation) {
+            conversation = new PrivateConversation({
+                conversationId: conversationId,
+                participants: participants,
+                messages: [],
+                createdAt: new Date()
+            });
         }
-    });
+        
+        const newMessage = {
+            from: socket.user._id,
+            fromName: socket.user.name,
+            text: message,
+            timestamp: new Date(),
+            read: false
+        };
+        
+        conversation.messages.push(newMessage);
+        conversation.lastActivity = new Date();
+        await conversation.save();
+        
+        // إرسال للمرسل
+        socket.emit('private_message_received', newMessage);
+        
+        // إرسال للمستلم (استخدم اسم متغير مختلف)
+        const recipientSocket = onlineUsers.get(targetUserId);
+        if (recipientSocket) {
+            io.to(recipientSocket).emit('private_message_received', { ...newMessage, conversationId });
+            
+            // إضافة إشعار
+            await addNotification(targetUserId, {
+                title: '💬 رسالة خاصة',
+                message: `لديك رسالة جديدة من ${socket.user.name}`,
+                type: 'private_message',
+                link: `/chat?private=${conversationId}&with=${socket.user._id}`
+            });
+        }
+        
+        if (callback && typeof callback === 'function') {
+            callback({ success: true, message: newMessage });
+        }
+    } catch (error) {
+        console.error('Error sending private message:', error);
+        if (callback && typeof callback === 'function') {
+            callback({ success: false, error: error.message });
+        }
+    }
+});
 
     socket.on('get_users_for_chat', async (callback) => {
         try {
