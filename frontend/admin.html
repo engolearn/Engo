@@ -765,34 +765,35 @@ document.getElementById('addLevelTestForm')?.addEventListener('submit', async (e
 
         function showTab(tabName) {
     // إخفاء جميع التبويبات
-    const tabs = document.querySelectorAll('.tab-content');
+    const tabs = ['coursesTab', 'lessonsTab', 'levelTestsTab', 'quizzesTab', 'usersTab', 'paymentsTab'];
     tabs.forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // إزالة الـ active من جميع الأزرار
-    const btns = document.querySelectorAll('.tab-btn');
-    btns.forEach(btn => {
-        btn.classList.remove('active');
+        const element = document.getElementById(tab);
+        if (element) {
+            element.classList.remove('active');
+            element.style.display = 'none';
+        }
     });
     
     // إظهار التبويب المحدد
     const activeTab = document.getElementById(tabName + 'Tab');
     if (activeTab) {
         activeTab.classList.add('active');
+        activeTab.style.display = 'block';
     }
     
-    // تفعيل الزر الحالي
-    if (event && event.target) {
-        event.target.classList.add('active');
-    } else {
-        // إذا لم يكن هناك event، نبحث عن الزر المناسب
-        btns.forEach(btn => {
-            if (btn.getAttribute('onclick')?.includes(tabName)) {
-                btn.classList.add('active');
-            }
-        });
-    }
+    // تحديث الأزرار - إزالة الـ active من الكل
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // تفعيل الزر الذي تم الضغط عليه
+    buttons.forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick');
+        if (onclickAttr && onclickAttr.includes(tabName)) {
+            btn.classList.add('active');
+        }
+    });
     
     // تحميل البيانات حسب التبويب
     if (tabName === 'courses') loadCourses();
@@ -801,7 +802,7 @@ document.getElementById('addLevelTestForm')?.addEventListener('submit', async (e
     if (tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
     if (tabName === 'levelTests') { loadLevelTests(); }
     if (tabName === 'quizzes') { loadCoursesForQuiz(); loadQuizzes(); }
-        }
+}
 
         async function checkAdmin() {
             const token = localStorage.getItem('token');
