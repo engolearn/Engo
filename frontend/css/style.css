@@ -70,6 +70,75 @@ body {
     color: #667eea;
 }
 
+/* أنماط صفحة الاختبارات */
+.test-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.test-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.test-timer {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: #667eea;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 25px;
+    font-weight: bold;
+    z-index: 100;
+}
+
+.test-question {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 15px;
+}
+
+.question-options {
+    margin-top: 1rem;
+    padding-right: 1rem;
+}
+
+.question-option {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.test-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+    .test-container {
+        padding: 1rem;
+        margin: 1rem;
+    }
+    
+    .test-timer {
+        top: 10px;
+        left: 10px;
+        font-size: 0.8rem;
+    }
+}
+
 /* زر الأدمن */
 .admin-nav-link {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
