@@ -11,7 +11,7 @@
         body { font-family: 'Cairo', sans-serif; background: #f7fafc; }
         
         .navbar { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 1rem 0; }
-        .navbar .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
         .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
         
         .chat-container { max-width: 1400px; margin: 2rem auto; padding: 0 20px; display: grid; grid-template-columns: 380px 1fr; gap: 1.5rem; height: calc(100vh - 120px); }
@@ -64,113 +64,22 @@
         .status.disconnected { background: #fed7d7; color: #742a2a; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 500px; padding: 2rem; border-radius: 20px; }
+        .modal-content { background: white; width: 90%; max-width: 500px; padding: 2rem; border-radius: 20px; max-height: 90vh; overflow-y: auto; }
         .btn-primary { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer; }
         .btn-outline { background: transparent; border: 1px solid #e2e8f0; padding: 10px 20px; border-radius: 25px; cursor: pointer; }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; }
         
-        .typing-indicator { padding: 0.5rem 1rem; font-size: 0.7rem; color: #718096; display: flex; align-items: center; gap: 5px; }
-        .typing-dots { display: flex; gap: 3px; }
-        .typing-dots span { width: 6px; height: 6px; background: #718096; border-radius: 50%; animation: typing 1.4s infinite; }
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+        .menu-toggle { display: none; position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #667eea; border-radius: 50%; align-items: center; justify-content: center; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1002; }
         
-        @media (max-width: 768px) { .chat-container { grid-template-columns: 1fr; } }
-   /* تحسينات للشاشات الصغيرة في صفحة المحادثات */
-@media (max-width: 768px) {
-    .chat-container {
-        grid-template-columns: 1fr;
-        height: calc(100vh - 80px);
-        margin: 1rem auto;
-    }
-    
-    .rooms-sidebar {
-        position: fixed;
-        left: -100%;
-        top: 0;
-        width: 85%;
-        height: 100%;
-        z-index: 1001;
-        transition: left 0.3s ease;
-        border-radius: 0;
-    }
-    
-    .rooms-sidebar.open {
-        left: 0;
-    }
-    
-    .chat-area {
-        height: 100%;
-    }
-    
-    .chat-header {
-        padding: 1rem;
-    }
-    
-    .chat-messages {
-        padding: 1rem;
-    }
-    
-    .message-bubble {
-        max-width: 85%;
-    }
-    
-    .chat-input-area {
-        padding: 0.8rem;
-    }
-    
-    .chat-input {
-        font-size: 0.9rem;
-    }
-    
-    /* زر فتح القائمة الجانبية */
-    .menu-toggle {
-        display: block;
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        background: #667eea;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        z-index: 1002;
-    }
-}
-
-@media (min-width: 769px) {
-    .menu-toggle {
-        display: none;
-    }
-}
-
-/* تحسين عرض الرسائل على الشاشات الصغيرة */
-@media (max-width: 480px) {
-    .room-name, .private-item .room-name {
-        font-size: 0.9rem;
-    }
-    
-    .room-meta {
-        font-size: 0.65rem;
-    }
-    
-    .message-sender {
-        font-size: 0.65rem;
-    }
-    
-    .message-time {
-        font-size: 0.55rem;
-    }
-}
+        @media (max-width: 768px) {
+            .chat-container { grid-template-columns: 1fr; height: calc(100vh - 80px); margin: 1rem auto; }
+            .rooms-sidebar { position: fixed; left: -100%; top: 0; width: 85%; height: 100%; z-index: 1001; transition: left 0.3s ease; border-radius: 0; }
+            .rooms-sidebar.open { left: 0; }
+            .menu-toggle { display: flex; }
+            .message-bubble { max-width: 85%; }
+        }
     </style>
 </head>
 <body>
@@ -220,15 +129,15 @@
                     <p>اختر محادثة للبدء</p>
                 </div>
             </div>
-            <div id="typingIndicator" class="typing-indicator" style="display: none;">
-                <span>يكتب</span>
-                <div class="typing-dots"><span></span><span></span><span></span></div>
-            </div>
             <div class="chat-input-area">
                 <input type="text" id="messageInput" class="chat-input" placeholder="اكتب رسالتك..." onkeypress="handleKeyPress(event)" disabled>
                 <button class="send-btn" onclick="sendMessage()" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
+    </div>
+
+    <div class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-comments"></i>
     </div>
 
     <!-- مودال إنشاء غرفة -->
@@ -237,7 +146,7 @@
             <h3>إنشاء غرفة جديدة</h3>
             <div class="form-group"><label>اسم الغرفة</label><input type="text" id="roomName"></div>
             <div class="form-group"><label><input type="checkbox" id="isPrivate"> غرفة خاصة</label></div>
-            <div id="inviteEmailsField" style="display: none;"><div class="form-group"><label>البريد الإلكتروني للمدعوين</label><input type="text" id="inviteEmails" placeholder="example@email.com"></div></div>
+            <div id="inviteEmailsField" style="display: none;"><div class="form-group"><label>البريد الإلكتروني للمدعوين</label><input type="text" id="inviteEmails"></div></div>
             <button class="btn-primary" onclick="createRoom()">إنشاء</button>
             <button class="btn-outline" onclick="closeCreateRoomModal()">إلغاء</button>
         </div>
@@ -288,6 +197,10 @@
         
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
         
+        function toggleSidebar() {
+            document.querySelector('.rooms-sidebar').classList.toggle('open');
+        }
+        
         function switchTab(tab) {
             document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.rooms-list, .private-list').forEach(l => l.classList.remove('active'));
@@ -325,56 +238,14 @@
                 transports: ['websocket', 'polling'],
                 reconnection: true
             });
-
-
-// استقبال استجابة get_my_conversations
-socket.on('get_my_conversations_response', (response) => {
-    console.log('📋 Conversations response:', response);
-    if (response.success) {
-        privateChats = response.conversations;
-        renderPrivateList();
-    }
-});
             
             socket.on('connect', () => {
-    console.log('✅ Connected to chat server');
-    document.getElementById('connectionStatus').innerHTML = '✅ متصل';
-    document.getElementById('connectionStatus').className = 'status connected';
-    
-    // تحميل البيانات بعد الاتصال مباشرة
-    setTimeout(() => {
-        loadRooms();
-        loadPrivateChats();
-    }, 500);
-});
-
-// استقبال رسالة خاصة جديدة
-socket.on('private_message_received', (msg) => {
-    console.log('📩 Private message received:', msg);
-    
-    // إضافة الرسالة للشاشة إذا كانت المحادثة مفتوحة
-    if (currentChatType === 'private' && currentPrivateUserId === msg.from) {
-        currentPrivateMessages.push(msg);
-        renderPrivateMessages();
-        // تحديث حالة القراءة
-        if (currentPrivateConvId) {
-            socket.emit('mark_messages_read', currentPrivateConvId);
-        }
-    }
-    
-    // تحديث قائمة المحادثات الخاصة
-    loadPrivateChats();
-    
-    // إشعار
-    showAlert(`💬 رسالة من ${msg.fromName}`, 'success');
-});
-
-// استقبال قائمة المحادثات الخاصة
-socket.on('private_conversations_list', (chats) => {
-    console.log('📋 Received private conversations:', chats);
-    privateChats = chats;
-    renderPrivateList();
-});
+                console.log('✅ Connected');
+                document.getElementById('connectionStatus').innerHTML = '✅ متصل';
+                document.getElementById('connectionStatus').className = 'status connected';
+                loadRooms();
+                loadPrivateChats();
+            });
             
             socket.on('disconnect', () => {
                 document.getElementById('connectionStatus').innerHTML = '⛔ غير متصل';
@@ -382,7 +253,6 @@ socket.on('private_conversations_list', (chats) => {
             });
             
             socket.on('rooms_list', (rooms) => { roomsList = rooms; renderRoomsList(); });
-            
             socket.on('private_conversations_list', (chats) => { privateChats = chats; renderPrivateList(); });
             
             socket.on('new_message', (msg) => {
@@ -391,7 +261,23 @@ socket.on('private_conversations_list', (chats) => {
                 }
             });
             
-            
+            // ✅ استقبال رسالة خاصة - تضاف فوراً
+            socket.on('private_message_received', (msg) => {
+                console.log('📩 Private message received:', msg);
+                
+                // إضافة الرسالة للشاشة إذا كانت المحادثة مفتوحة
+                if (currentChatType === 'private' && currentPrivateUserId === msg.from) {
+                    currentPrivateMessages.push(msg);
+                    renderPrivateMessages();
+                    if (currentPrivateConvId) {
+                        socket.emit('mark_messages_read', currentPrivateConvId);
+                    }
+                }
+                
+                // تحديث قائمة المحادثات
+                loadPrivateChats();
+                showAlert(`💬 رسالة من ${msg.fromName}`, 'success');
+            });
             
             socket.on('room_invite', (data) => {
                 if (confirm(`📨 ${data.invitedBy} دعاك للانضمام إلى "${data.roomName}"`)) {
@@ -457,19 +343,16 @@ socket.on('private_conversations_list', (chats) => {
         
         // ==================== Private Chats ====================
         function loadPrivateChats() { 
-    if(socket?.connected) {
-        console.log('🔄 Loading private chats...');
-        socket.emit('get_my_conversations', (response) => {
-            console.log('📋 Load private chats response:', response);
-            if (response && response.success) {
-                privateChats = response.conversations;
-                renderPrivateList();
-            } else {
-                console.error('Failed to load private chats:', response);
+            if(socket?.connected) {
+                socket.emit('get_my_conversations', (response) => {
+                    if(response?.success) {
+                        privateChats = response.conversations;
+                        renderPrivateList();
+                    }
+                });
             }
-        });
-    }
         }
+        
         function renderPrivateList() {
             const container = document.getElementById('privateList');
             if(!privateChats?.length) {
@@ -571,21 +454,34 @@ socket.on('private_conversations_list', (chats) => {
                     if(res?.success) input.value = '';
                 });
             } else {
-                // إرسال رسالة خاصة
-                socket.emit('send_private_message', { targetUserId: currentPrivateUserId, message: text }, (res) => {
+                // ✅ إرسال رسالة خاصة - إضافة محلية فورية
+                const tempMessage = {
+                    id: Date.now().toString(),
+                    from: currentUser.id,
+                    fromName: currentUser.name,
+                    text: text,
+                    timestamp: new Date(),
+                    read: false
+                };
+                
+                // إضافة الرسالة محلياً فوراً
+                currentPrivateMessages.push(tempMessage);
+                renderPrivateMessages();
+                input.value = '';
+                
+                // إرسال للخادم
+                socket.emit('send_private_message', { 
+                    targetUserId: currentPrivateUserId, 
+                    message: text 
+                }, (res) => {
                     if(res?.success) {
-                        // إضافة الرسالة محلياً فوراً
-                        const newMsg = { 
-                            ...res.message, 
-                            from: currentUser.id, 
-                            fromName: currentUser.name,
-                            timestamp: new Date()
-                        };
-                        currentPrivateMessages.push(newMsg);
-                        renderPrivateMessages();
-                        input.value = '';
-                    } else {
-                        showAlert('❌ فشل إرسال الرسالة', 'error');
+                        // تحديث الرسالة المحلية بحالة القراءة
+                        const lastMsg = currentPrivateMessages[currentPrivateMessages.length - 1];
+                        if (lastMsg && lastMsg.id === tempMessage.id) {
+                            lastMsg.id = res.message.id;
+                            lastMsg.read = res.message.read;
+                            renderPrivateMessages();
+                        }
                     }
                 });
             }
@@ -632,27 +528,5 @@ socket.on('private_conversations_list', (chats) => {
         }
         init();
     </script>
-    <!-- زر فتح القائمة للهواتف -->
-<div class="menu-toggle" onclick="toggleSidebar()">
-    <i class="fas fa-comments"></i>
-</div>
-
-<script>
-function toggleSidebar() {
-    const sidebar = document.querySelector('.rooms-sidebar');
-    sidebar.classList.toggle('open');
-}
-
-// إغلاق القائمة عند النقر خارجها
-document.addEventListener('click', function(e) {
-    const sidebar = document.querySelector('.rooms-sidebar');
-    const menuToggle = document.querySelector('.menu-toggle');
-    if (sidebar && sidebar.classList.contains('open')) {
-        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-            sidebar.classList.remove('open');
-        }
-    }
-});
-</script>
 </body>
 </html>
