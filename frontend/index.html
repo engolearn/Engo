@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>EnGo - تعلم اللغة الإنجليزية</title>
     
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#667eea">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="EnGo">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#667eea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EnGo">
+<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -842,7 +841,59 @@
             localStorage.removeItem('user');
             location.reload();
         }
-        
+
+        // طلب إذن الإشعارات
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('المتصفح لا يدعم الإشعارات');
+        return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+        console.log('✅ إذن الإشعارات موجود');
+        return true;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('✅ تم منح إذن الإشعارات');
+            return true;
+        }
+    }
+    return false;
+}
+
+// عرض إشعار
+function showNotification(title, body, link) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    
+    const notification = new Notification(title, {
+        body: body,
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/badge.png',
+        tag: Date.now().toString(),
+        requireInteraction: true,
+        data: { url: link }
+    });
+    
+    notification.onclick = function() {
+        window.focus();
+        if (this.data.url) {
+            window.location.href = this.data.url;
+        }
+        notification.close();
+    };
+    
+    setTimeout(() => notification.close(), 5000);
+}
+
+// استقبال الإشعارات من Socket.io
+if (socket) {
+    socket.on('new_notification', (data) => {
+        showNotification(data.title, data.message, data.link);
+    });
+}
         // ==================== User Stats ====================
         async function loadUserStats() {
             try {
@@ -1231,12 +1282,23 @@
             };
         });
         
-        // PWA Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('✅ Service Worker registered'))
-                .catch(err => console.error('❌ Service Worker error:', err));
-        }
+    </script>
+    <script>
+    // تسجيل Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('✅ Service Worker registered'))
+            .catch(err => console.error('❌ Service Worker error:', err));
+    }
+    
+    // طلب إذن الإشعارات
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        setTimeout(() => {
+            if (confirm('🔔 هل تريد تفعيل الإشعارات لتلقي تنبيهات الرسائل الجديدة؟')) {
+                Notification.requestPermission();
+            }
+        }, 2000);
+    }
     </script>
 </body>
 </html>
