@@ -1,4 +1,4 @@
-// server.js - نسخة مصححة بالكامل
+// server.js - النسخة النهائية الكاملة
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -55,7 +55,7 @@ const courseSchema = new mongoose.Schema({
 });
 const Course = mongoose.model('Course', courseSchema);
 
-// Private Conversation Model (تعريف واحد فقط)
+// Private Conversation Model
 const privateConversationSchema = new mongoose.Schema({
     conversationId: { type: String, required: true, unique: true, index: true },
     participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -92,7 +92,7 @@ const roomSchema = new mongoose.Schema({
 });
 const Room = mongoose.model('Room', roomSchema);
 
-// Lesson Model (مختصر)
+// Lesson Model
 const lessonSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
@@ -111,35 +111,31 @@ const lessonSchema = new mongoose.Schema({
 });
 const Lesson = mongoose.model('Lesson', lessonSchema);
 
-// Quiz Model - متقدم مع جميع أنواع الأسئلة
+// Quiz Models
 const quizQuestionSchema = new mongoose.Schema({
+    id: { type: String, required: true },
     type: { 
         type: String, 
-        enum: ['multiple_choice', 'true_false', 'fill_blank', 'essay', 'audio', 'image', 'matching', 'drag_drop'],
+        enum: ['multiple_choice', 'true_false', 'word_match', 'matching', 'essay', 'fill_blank'],
         required: true 
     },
-    question: { type: String, required: true },
+    title: { type: String, default: '' },
     points: { type: Number, default: 10 },
     
     // للاختيار من متعدد
+    question: { type: String },
     options: [{ type: String }],
-    correctAnswer: { type: mongoose.Schema.Types.Mixed },
+    correctOption: { type: Number },
     
-    // لملء الفراغات
-    blanks: [{ type: String }],
-    fillAnswers: [{ type: String }],
+    // للصح/خطأ
+    statement: { type: String },
+    isTrue: { type: Boolean },
     
-    // للمقال
-    essayKeywords: [{ type: String }],
-    
-    // للصوتيات
-    audioUrl: { type: String },
-    audioQuestion: { type: String },
-    
-    // للصور
-    imageUrl: { type: String },
-    imageQuestion: { type: String },
-    imageAnswer: { type: String },
+    // للكلمة ومعناها
+    word: { type: String },
+    meaning: { type: String },
+    wordOptions: [{ type: String }],
+    correctMeaning: { type: String },
     
     // للتوصيل
     matchingPairs: [{
@@ -147,28 +143,38 @@ const quizQuestionSchema = new mongoose.Schema({
         right: { type: String }
     }],
     
-    // للسحب والإفلات
-    dragItems: [{ type: String }],
-    dropZones: [{ type: String }]
+    // للمقال
+    essayTopic: { type: String },
+    essayGuidelines: { type: String },
+    essayKeywords: [{ type: String }],
+    
+    // لملء الفراغات
+    text: { type: String },
+    blanks: [{ type: String }],
+    correctAnswers: [{ type: String }]
 });
 
 const quizSchema = new mongoose.Schema({
-    title: { type: String, enum: ['beginner_level_test', 'advanced_level_test'], required: true },
-    level: { type: String, enum: ['beginner', 'advanced'], required: true },
-    name: { type: String, required: true }, // اسم الاختبار الظاهر للمستخدم
-    description: { type: String, default: '' }, // وصف الاختبار
-    duration: { type: Number, required: true, default: 30 }, // الوقت بالدقائق
+    quizType: { 
+        type: String, 
+        enum: ['level_test', 'midterm', 'final'], 
+        required: true 
+    },
+    level: { type: String, enum: ['beginner', 'advanced'] },
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+    name: { type: String, required: true },
+    description: { type: String, default: '' },
+    duration: { type: Number, default: 30 },
     passingScore: { type: Number, default: 70 },
     questions: [quizQuestionSchema],
     totalPoints: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    createdAt: { type: Date, default: Date.now }
 });
 
 const Quiz = mongoose.model('Quiz', quizSchema);
-// بعد نموذج Quiz وقبل Helper Functions
 
-// نموذج نتائج الاختبار
+// Quiz Result Model
 const quizResultSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
@@ -176,16 +182,14 @@ const quizResultSchema = new mongoose.Schema({
     percentage: { type: Number, default: 0 },
     passed: { type: Boolean, default: false },
     answers: [{
-        questionId: { type: Number },
+        questionId: String,
         userAnswer: mongoose.Schema.Types.Mixed,
         isCorrect: { type: Boolean, default: false },
         pointsEarned: { type: Number, default: 0 }
     }],
     timeSpent: { type: Number, default: 0 },
     startedAt: { type: Date, default: Date.now },
-    completedAt: { type: Date, default: Date.now },
-    ipAddress: { type: String },
-    deviceInfo: { type: String }
+    completedAt: { type: Date, default: Date.now }
 });
 
 const QuizResult = mongoose.model('QuizResult', quizResultSchema);
@@ -290,7 +294,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// ==================== Course Routes (مختصرة) ====================
+// ==================== Course Routes ====================
 app.get('/api/courses', async (req, res) => {
     try {
         const courses = await Course.find().sort({ createdAt: -1 });
@@ -315,7 +319,7 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
     }
 });
 
-// ==================== Admin Routes (مختصرة) ====================
+// ==================== Admin Routes ====================
 app.get('/api/admin/courses', auth, adminAuth, async (req, res) => {
     try {
         const courses = await Course.find().populate('lessons');
@@ -383,53 +387,165 @@ app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
-// ==================== Quiz Routes ====================
 
-// إنشاء اختبار جديد (للأدمن)
-app.post('/api/admin/quizzes', auth, adminAuth, async (req, res) => {
+// ==================== Quiz Routes (متكاملة) ====================
+
+// جلب اختبارات الدورة (نصفي ونهائي)
+app.get('/api/courses/:courseId/quizzes', auth, async (req, res) => {
     try {
-        const { title, level, name, description, duration, passingScore, questions } = req.body;
+        const course = await Course.findById(req.params.courseId);
+        if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
         
-        // حساب مجموع النقاط
-        let totalPoints = 0;
-        questions.forEach(q => totalPoints += q.points || 10);
-        
-        const quiz = new Quiz({
-            title,
-            level,
-            name,
-            description,
-            duration: duration || 30,
-            passingScore: passingScore || 70,
-            questions,
-            totalPoints,
-            createdAt: new Date(),
-            isActive: true
+        const userProgress = await UserProgress.findOne({ 
+            userId: req.user._id, 
+            courseId: course._id 
         });
         
-        await quiz.save();
-        res.json({ message: '✅ تم إنشاء الاختبار بنجاح', quiz });
+        const completedLessons = userProgress?.completedLessons?.length || 0;
+        
+        const midterm = await Quiz.findOne({ 
+            courseId: course._id, 
+            quizType: 'midterm',
+            isActive: true 
+        });
+        
+        const final = await Quiz.findOne({ 
+            courseId: course._id, 
+            quizType: 'final',
+            isActive: true 
+        });
+        
+        const midtermUnlocked = completedLessons >= 15;
+        const finalUnlocked = completedLessons >= course.totalLessons;
+        
+        const midtermResult = midterm ? await QuizResult.findOne({ 
+            userId: req.user._id, 
+            quizId: midterm._id 
+        }) : null;
+        
+        const finalResult = final ? await QuizResult.findOne({ 
+            userId: req.user._id, 
+            quizId: final._id 
+        }) : null;
+        
+        res.json({
+            midterm: midterm ? {
+                id: midterm._id,
+                name: midterm.name,
+                description: midterm.description,
+                duration: midterm.duration,
+                passingScore: midterm.passingScore,
+                totalPoints: midterm.totalPoints,
+                questionsCount: midterm.questions.length,
+                unlocked: midtermUnlocked,
+                completed: !!midtermResult,
+                score: midtermResult?.percentage || null,
+                passed: midtermResult?.passed || false
+            } : null,
+            final: final ? {
+                id: final._id,
+                name: final.name,
+                description: final.description,
+                duration: final.duration,
+                passingScore: final.passingScore,
+                totalPoints: final.totalPoints,
+                questionsCount: final.questions.length,
+                unlocked: finalUnlocked,
+                completed: !!finalResult,
+                score: finalResult?.percentage || null,
+                passed: finalResult?.passed || false
+            } : null,
+            progress: {
+                completedLessons,
+                totalLessons: course.totalLessons,
+                remainingForMidterm: Math.max(0, 15 - completedLessons),
+                remainingForFinal: Math.max(0, course.totalLessons - completedLessons)
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// جلب جميع الاختبارات
-app.get('/api/quizzes', async (req, res) => {
+// جلب أسئلة اختبار الدورة
+app.get('/api/courses/:courseId/quizzes/:quizType/questions', auth, async (req, res) => {
     try {
-        const quizzes = await Quiz.find({ isActive: true }).select('-questions');
-        res.json(quizzes);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// جلب اختبار محدد
-app.get('/api/quizzes/:quizId', auth, async (req, res) => {
-    try {
-        const quiz = await Quiz.findById(req.params.quizId);
-        if (!quiz) return res.status(404).json({ message: 'الاختبار غير موجود' });
-        res.json(quiz);
+        const { courseId, quizType } = req.params;
+        
+        if (!['midterm', 'final'].includes(quizType)) {
+            return res.status(400).json({ message: 'نوع اختبار غير صحيح' });
+        }
+        
+        const course = await Course.findById(courseId);
+        if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
+        
+        const userProgress = await UserProgress.findOne({ 
+            userId: req.user._id, 
+            courseId: course._id 
+        });
+        
+        const completedLessons = userProgress?.completedLessons?.length || 0;
+        
+        if (quizType === 'midterm' && completedLessons < 15) {
+            return res.status(403).json({ 
+                message: `الاختبار النصفي متاح بعد إكمال 15 درساً. لديك ${completedLessons} دروس مكتملة` 
+            });
+        }
+        
+        if (quizType === 'final' && completedLessons < course.totalLessons) {
+            return res.status(403).json({ 
+                message: `الاختبار النهائي متاح بعد إكمال جميع الدروس (${course.totalLessons} درساً)` 
+            });
+        }
+        
+        const quiz = await Quiz.findOne({ courseId: course._id, quizType, isActive: true });
+        if (!quiz) {
+            return res.status(404).json({ message: 'الاختبار غير متوفر حالياً' });
+        }
+        
+        const existingResult = await QuizResult.findOne({ 
+            userId: req.user._id, 
+            quizId: quiz._id 
+        });
+        
+        if (existingResult) {
+            return res.status(403).json({ 
+                message: 'لقد قمت بالفعل بإجراء هذا الاختبار',
+                result: {
+                    score: existingResult.percentage,
+                    passed: existingResult.passed,
+                    completedAt: existingResult.completedAt
+                }
+            });
+        }
+        
+        const safeQuestions = quiz.questions.map(q => ({
+            id: q.id,
+            type: q.type,
+            title: q.title,
+            points: q.points,
+            question: q.question,
+            options: q.options,
+            statement: q.statement,
+            word: q.word,
+            wordOptions: q.wordOptions,
+            matchingPairs: q.matchingPairs,
+            text: q.text,
+            blanks: q.blanks,
+            essayTopic: q.essayTopic,
+            essayGuidelines: q.essayGuidelines
+        }));
+        
+        res.json({
+            id: quiz._id,
+            name: quiz.name,
+            description: quiz.description,
+            duration: quiz.duration,
+            passingScore: quiz.passingScore,
+            totalPoints: quiz.totalPoints,
+            questions: safeQuestions
+        });
+        
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -443,242 +559,59 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
         
         if (!quiz) return res.status(404).json({ message: 'الاختبار غير موجود' });
         
-        let score = 0;
-        let totalPoints = 0;
-        
-        quiz.questions.forEach((q, i) => {
-            totalPoints += q.points || 10;
-            const userAnswer = answers[i];
-            
-            switch(q.type) {
-                case 'multiple_choice':
-                case 'true_false':
-                    if (userAnswer == q.correctAnswer) score += q.points || 10;
-                    break;
-                case 'fill_blank':
-                    if (q.correctAnswer && userAnswer?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()) 
-                        score += q.points || 10;
-                    break;
-                case 'essay':
-                    // المقال يُصحح يدوياً أو بتقييم تلقائي بناءً على الكلمات المفتاحية
-                    if (q.essayKeywords) {
-                        let matched = 0;
-                        q.essayKeywords.forEach(kw => {
-                            if (userAnswer?.toLowerCase().includes(kw.toLowerCase())) matched++;
-                        });
-                        score += (matched / q.essayKeywords.length) * (q.points || 10);
-                    }
-                    break;
-                case 'audio':
-                case 'image':
-                    if (userAnswer?.toLowerCase().trim() === q.correctAnswer?.toLowerCase().trim()) 
-                        score += q.points || 10;
-                    break;
-                case 'matching':
-                    if (JSON.stringify(userAnswer) === JSON.stringify(q.correctAnswer)) 
-                        score += q.points || 10;
-                    break;
-            }
+        const existingResult = await QuizResult.findOne({ 
+            userId: req.user._id, 
+            quizId: quiz._id 
         });
         
-        const percentage = (score / totalPoints) * 100;
-        const passed = percentage >= quiz.passingScore;
-        
-        // حفظ النتيجة
-        const UserQuizResult = mongoose.model('UserQuizResult', new mongoose.Schema({
-            userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' },
-            score: Number,
-            percentage: Number,
-            passed: Boolean,
-            answers: Array,
-            timeSpent: Number,
-            completedAt: { type: Date, default: Date.now }
-        }));
-        
-        const result = new UserQuizResult({
-            userId: req.user._id,
-            quizId: quiz._id,
-            score,
-            percentage,
-            passed,
-            answers,
-            timeSpent
-        });
-        await result.save();
-        
-        // تحديث مستوى المستخدم
-        if (quiz.level === 'beginner' && passed) {
-            await User.findByIdAndUpdate(req.user._id, { level: 'beginner', levelScore: percentage });
-        } else if (quiz.level === 'advanced' && passed) {
-            await User.findByIdAndUpdate(req.user._id, { level: 'advanced', levelScore: percentage });
+        if (existingResult) {
+            return res.status(403).json({ message: 'لقد قمت بالفعل بإجراء هذا الاختبار' });
         }
-        
-        res.json({ 
-            success: true, 
-            score, 
-            totalPoints, 
-            percentage, 
-            passed,
-            passingScore: quiz.passingScore
-        });
-        
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-// ==================== Level Test Routes (متقدمة) ====================
-
-// جلب اختبارات تحديد المستوى حسب المستوى
-app.get('/api/level-tests/:level', async (req, res) => {
-    try {
-        const { level } = req.params;
-        const test = await Quiz.findOne({ 
-            title: `${level}_level_test`,
-            isActive: true 
-        }).select('-questions');
-        
-        if (!test) {
-            return res.status(404).json({ message: 'لا يوجد اختبار لهذا المستوى' });
-        }
-        
-        res.json(test);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// بدء اختبار جديد
-app.post('/api/level-tests/:testId/start', auth, async (req, res) => {
-    try {
-        const test = await Quiz.findById(req.params.testId);
-        if (!test) return res.status(404).json({ message: 'الاختبار غير موجود' });
-        
-        // التحقق من المحاولات السابقة
-        const previousAttempts = await QuizResult.countDocuments({
-            userId: req.user._id,
-            quizId: test._id
-        });
-        
-        const maxAttempts = 3; // عدد المحاولات المسموحة
-        
-        if (previousAttempts >= maxAttempts) {
-            return res.status(403).json({ 
-                message: `لقد استنفذت عدد المحاولات المسموحة (${maxAttempts})` 
-            });
-        }
-        
-        res.json({
-            success: true,
-            testId: test._id,
-            duration: test.duration,
-            totalQuestions: test.questions.length,
-            totalPoints: test.totalPoints
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// جلب أسئلة الاختبار
-app.get('/api/level-tests/:testId/questions', auth, async (req, res) => {
-    try {
-        const test = await Quiz.findById(req.params.testId);
-        if (!test) return res.status(404).json({ message: 'الاختبار غير موجود' });
-        
-        // إخفاء الإجابات الصحيحة
-        const safeQuestions = test.questions.map((q, index) => ({
-            id: index,
-            type: q.type,
-            question: q.question,
-            options: q.options,
-            points: q.points,
-            audioUrl: q.audioUrl,
-            imageUrl: q.imageUrl,
-            matchingPairs: q.matchingPairs,
-            dragItems: q.dragItems,
-            dropZones: q.dropZones,
-            statement: q.statement,
-            text: q.text,
-            blanks: q.blanks,
-            essayKeywords: q.essayKeywords
-        }));
-        
-        res.json({
-            testId: test._id,
-            title: test.name,
-            level: test.level,
-            duration: test.duration,
-            passingScore: test.passingScore,
-            questions: safeQuestions
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// تقديم الاختبار
-app.post('/api/level-tests/:testId/submit', auth, async (req, res) => {
-    try {
-        const { answers, timeSpent, startedAt } = req.body;
-        const test = await Quiz.findById(req.params.testId);
-        
-        if (!test) return res.status(404).json({ message: 'الاختبار غير موجود' });
         
         let totalScore = 0;
         let maxScore = 0;
         const results = [];
         
-        test.questions.forEach((question, idx) => {
+        quiz.questions.forEach(question => {
             const points = question.points || 10;
             maxScore += points;
-            const userAnswer = answers[idx];
+            const userAnswer = answers[question.id];
             let isCorrect = false;
             let pointsEarned = 0;
             
             switch(question.type) {
                 case 'multiple_choice':
-                    isCorrect = userAnswer === question.correctAnswer;
+                    isCorrect = userAnswer === question.correctOption;
                     break;
                 case 'true_false':
-                    isCorrect = userAnswer === question.correctAnswer;
+                    isCorrect = userAnswer === question.isTrue;
                     break;
                 case 'fill_blank':
-                    if (question.correctAnswer) {
+                    if (question.correctAnswers) {
                         const userAns = String(userAnswer).toLowerCase().trim();
-                        const correctAns = String(question.correctAnswer).toLowerCase().trim();
-                        isCorrect = userAns === correctAns;
-                    } else if (question.fillAnswers) {
-                        const userAns = String(userAnswer).toLowerCase().trim();
-                        isCorrect = question.fillAnswers.some(a => 
+                        isCorrect = question.correctAnswers.some(a => 
                             String(a).toLowerCase().trim() === userAns
                         );
                     }
                     break;
-                case 'audio':
-                case 'image':
-                    isCorrect = String(userAnswer).toLowerCase().trim() === 
-                               String(question.correctAnswer).toLowerCase().trim();
+                case 'word_match':
+                    isCorrect = userAnswer?.toLowerCase().trim() === question.correctMeaning?.toLowerCase().trim();
                     break;
                 case 'matching':
-                    if (question.correctAnswer) {
-                        isCorrect = JSON.stringify(userAnswer) === JSON.stringify(question.correctAnswer);
+                    if (question.matchingPairs) {
+                        const userSorted = JSON.stringify(userAnswer?.sort());
+                        const correctSorted = JSON.stringify(question.matchingPairs.map((p, i) => i).sort());
+                        isCorrect = userSorted === correctSorted;
                     }
                     break;
                 case 'essay':
-                    // المقال يُصحح تلقائياً بناءً على الكلمات المفتاحية
                     if (question.essayKeywords && userAnswer) {
                         let matched = 0;
                         question.essayKeywords.forEach(keyword => {
-                            if (String(userAnswer).toLowerCase().includes(keyword.toLowerCase())) {
-                                matched++;
-                            }
+                            if (String(userAnswer).toLowerCase().includes(keyword.toLowerCase())) matched++;
                         });
                         pointsEarned = Math.floor((matched / question.essayKeywords.length) * points);
                         isCorrect = pointsEarned > points / 2;
-                    } else {
-                        pointsEarned = points;
-                        isCorrect = true;
                     }
                     break;
             }
@@ -689,42 +622,43 @@ app.post('/api/level-tests/:testId/submit', auth, async (req, res) => {
             
             totalScore += pointsEarned;
             results.push({
-                questionId: idx,
+                questionId: question.id,
                 userAnswer: userAnswer,
-                isCorrect: isCorrect,
-                pointsEarned: pointsEarned
+                isCorrect,
+                pointsEarned
             });
         });
         
         const percentage = (totalScore / maxScore) * 100;
-        const passed = percentage >= test.passingScore;
+        const passed = percentage >= quiz.passingScore;
         
-        // حفظ النتيجة
         const quizResult = new QuizResult({
             userId: req.user._id,
-            quizId: test._id,
+            quizId: quiz._id,
             score: totalScore,
-            percentage: percentage,
-            passed: passed,
+            percentage,
+            passed,
             answers: results,
-            timeSpent: timeSpent,
-            startedAt: new Date(startedAt),
-            completedAt: new Date(),
-            ipAddress: req.ip,
-            deviceInfo: req.headers['user-agent']
+            timeSpent
         });
         
         await quizResult.save();
         
-        // تحديث مستوى المستخدم
-        if (test.level === 'beginner' && passed) {
+        if (quiz.quizType === 'midterm') {
+            await UserProgress.findOneAndUpdate(
+                { userId: req.user._id, courseId: quiz.courseId },
+                { midtermScore: percentage },
+                { upsert: true }
+            );
+        } else if (quiz.quizType === 'final') {
+            await UserProgress.findOneAndUpdate(
+                { userId: req.user._id, courseId: quiz.courseId },
+                { finalScore: percentage },
+                { upsert: true }
+            );
+        } else if (quiz.quizType === 'level_test') {
             await User.findByIdAndUpdate(req.user._id, { 
-                level: 'beginner', 
-                levelScore: percentage 
-            });
-        } else if (test.level === 'advanced' && passed) {
-            await User.findByIdAndUpdate(req.user._id, { 
-                level: 'advanced', 
+                level: quiz.level, 
                 levelScore: percentage 
             });
         }
@@ -732,112 +666,108 @@ app.post('/api/level-tests/:testId/submit', auth, async (req, res) => {
         res.json({
             success: true,
             score: totalScore,
-            maxScore: maxScore,
+            maxScore,
             percentage: Math.round(percentage),
-            passed: passed,
-            passingScore: test.passingScore,
-            message: passed ? 
-                '🎉 تهانينا! لقد اجتزت الاختبار بنجاح' : 
-                '📚 للأسف لم تجتز الاختبار، حاول مرة أخرى بعد المراجعة'
+            passed,
+            passingScore: quiz.passingScore,
+            message: passed ? '🎉 تهانينا! لقد اجتزت الاختبار' : '📚 للأسف لم تجتز الاختبار، حاول مرة أخرى'
         });
         
     } catch (error) {
-        console.error('Error submitting test:', error);
+        console.error('Error submitting quiz:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// جلب نتائج المستخدم في الاختبارات
-app.get('/api/level-tests/results', auth, async (req, res) => {
+// ==================== Level Test Routes ====================
+app.get('/api/level-tests', async (req, res) => {
     try {
-        const results = await QuizResult.find({ userId: req.user._id })
-            .populate('quizId', 'name level passingScore')
-            .sort({ completedAt: -1 });
-        
-        res.json(results);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// جلب إحصائيات المستخدم
-app.get('/api/level-tests/stats', auth, async (req, res) => {
-    try {
-        const beginnerTests = await QuizResult.countDocuments({
-            userId: req.user._id,
-            quizId: { $in: await Quiz.find({ level: 'beginner' }).distinct('_id') }
-        });
-        
-        const advancedTests = await QuizResult.countDocuments({
-            userId: req.user._id,
-            quizId: { $in: await Quiz.find({ level: 'advanced' }).distinct('_id') }
-        });
-        
-        const bestScore = await QuizResult.findOne({ userId: req.user._id })
-            .sort({ percentage: -1 });
-        
-        res.json({
-            totalTestsTaken: beginnerTests + advancedTests,
-            beginnerTests: beginnerTests,
-            advancedTests: advancedTests,
-            bestScore: bestScore ? {
-                percentage: bestScore.percentage,
-                testName: bestScore.quizId?.name
-            } : null,
-            currentLevel: req.user.level || 'غير محدد'
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// ==================== Admin Test Management ====================
-
-// جلب جميع الاختبارات للأدمن
-app.get('/api/admin/level-tests', auth, adminAuth, async (req, res) => {
-    try {
-        const tests = await Quiz.find({ 
-            title: { $in: ['beginner_level_test', 'advanced_level_test'] }
-        }).sort({ createdAt: -1 });
+        const tests = await Quiz.find({ quizType: 'level_test', isActive: true }).select('-questions');
         res.json(tests);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// تحديث اختبار
-app.put('/api/admin/level-tests/:testId', auth, adminAuth, async (req, res) => {
+app.get('/api/level-tests/:testId', auth, async (req, res) => {
     try {
-        const { name, description, duration, passingScore, isActive } = req.body;
-        const test = await Quiz.findByIdAndUpdate(
-            req.params.testId,
-            { name, description, duration, passingScore, isActive },
+        const test = await Quiz.findOne({ _id: req.params.testId, quizType: 'level_test' });
+        if (!test) return res.status(404).json({ message: 'الاختبار غير موجود' });
+        
+        const safeQuestions = test.questions.map(q => ({
+            id: q.id,
+            type: q.type,
+            title: q.title,
+            points: q.points,
+            question: q.question,
+            options: q.options,
+            statement: q.statement,
+            word: q.word,
+            wordOptions: q.wordOptions,
+            matchingPairs: q.matchingPairs,
+            text: q.text,
+            blanks: q.blanks,
+            essayTopic: q.essayTopic,
+            essayGuidelines: q.essayGuidelines
+        }));
+        
+        res.json({ ...test.toObject(), questions: safeQuestions });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ==================== Admin Quiz Management ====================
+app.get('/api/admin/quizzes', auth, adminAuth, async (req, res) => {
+    try {
+        const quizzes = await Quiz.find().sort({ createdAt: -1 });
+        res.json(quizzes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.get('/api/admin/quizzes/:quizId', auth, adminAuth, async (req, res) => {
+    try {
+        const quiz = await Quiz.findById(req.params.quizId);
+        if (!quiz) return res.status(404).json({ message: 'الاختبار غير موجود' });
+        res.json(quiz);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.post('/api/admin/quizzes', auth, adminAuth, async (req, res) => {
+    try {
+        const quiz = new Quiz(req.body);
+        let totalPoints = 0;
+        quiz.questions.forEach(q => totalPoints += q.points || 10);
+        quiz.totalPoints = totalPoints;
+        await quiz.save();
+        res.json({ message: '✅ تم إنشاء الاختبار بنجاح', quiz });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.put('/api/admin/quizzes/:quizId', auth, adminAuth, async (req, res) => {
+    try {
+        const quiz = await Quiz.findByIdAndUpdate(
+            req.params.quizId,
+            req.body,
             { new: true }
         );
-        res.json({ message: '✅ تم تحديث الاختبار', test });
+        res.json({ message: '✅ تم تحديث الاختبار', quiz });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// حذف اختبار
-app.delete('/api/admin/level-tests/:testId', auth, adminAuth, async (req, res) => {
+app.delete('/api/admin/quizzes/:quizId', auth, adminAuth, async (req, res) => {
     try {
-        await Quiz.findByIdAndDelete(req.params.testId);
-        await QuizResult.deleteMany({ quizId: req.params.testId });
-        res.json({ message: '✅ تم حذف الاختبار وجميع نتائجه' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// جلب نتائج اختبار معين (للأدمن)
-app.get('/api/admin/level-tests/:testId/results', auth, adminAuth, async (req, res) => {
-    try {
-        const results = await QuizResult.find({ quizId: req.params.testId })
-            .populate('userId', 'name email')
-            .sort({ percentage: -1 });
-        res.json(results);
+        await Quiz.findByIdAndDelete(req.params.quizId);
+        await QuizResult.deleteMany({ quizId: req.params.quizId });
+        res.json({ message: '✅ تم حذف الاختبار' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -869,44 +799,6 @@ app.put('/api/notifications/:notifId/read', auth, async (req, res) => {
         if (notif) notif.read = true;
         await req.user.save();
         res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// ==================== Quiz Routes ====================
-app.get('/api/level-test', async (req, res) => {
-    try {
-        let levelTest = await Quiz.findOne({ title: 'level_test' });
-        if (!levelTest) {
-            levelTest = new Quiz({
-                title: 'level_test',
-                questions: [
-                    { question: 'What is the correct greeting in English?', options: ['مرحبا', 'Hello', 'السلام عليكم', 'Bonjour'], correctAnswer: 1 },
-                    { question: 'What is the word for "كتاب" in English?', options: ['Pen', 'Book', 'Desk', 'Chair'], correctAnswer: 1 },
-                    { question: 'Complete: "I ___ a student."', options: ['am', 'is', 'are', 'be'], correctAnswer: 0 },
-                    { question: 'What is the opposite of "big"?', options: ['Large', 'Huge', 'Small', 'Tall'], correctAnswer: 2 },
-                    { question: 'How do you say "شكراً" in English?', options: ['Please', 'Sorry', 'Thank you', 'Hello'], correctAnswer: 2 }
-                ],
-                passingScore: 70
-            });
-            await levelTest.save();
-        }
-        res.json(levelTest);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
-    try {
-        const { answers } = req.body;
-        const quiz = await Quiz.findById(req.params.quizId);
-        let score = 0;
-        quiz.questions.forEach((q, i) => {
-            if (answers[i] === q.correctAnswer) score += 100 / quiz.questions.length;
-        });
-        res.json({ score, passed: score >= quiz.passingScore });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -965,7 +857,6 @@ io.on('connection', (socket) => {
     console.log('🔌 User connected:', socket.user?.name || socket.id);
     onlineUsers.set(socket.user._id.toString(), socket.id);
 
-    // ========== غرف المحادثة العامة ==========
     socket.on('get_rooms', async (callback) => {
         try {
             const rooms = await Room.find({
@@ -1113,7 +1004,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ========== المحادثات الخاصة ==========
     socket.on('start_private_chat', async (targetUserId, callback) => {
         try {
             const targetUser = await User.findById(targetUserId);
@@ -1164,60 +1054,57 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_private_message', async (data, callback) => {
-    try {
-        const { targetUserId, message } = data;
-        const participants = [socket.user._id, targetUserId].sort();
-        const conversationId = `${participants[0]}_${participants[1]}`;
-        
-        let conversation = await PrivateConversation.findOne({ conversationId });
-        if (!conversation) {
-            conversation = new PrivateConversation({
-                conversationId: conversationId,
-                participants: participants,
-                messages: [],
-                createdAt: new Date()
-            });
-        }
-        
-        const newMessage = {
-            from: socket.user._id,
-            fromName: socket.user.name,
-            text: message,
-            timestamp: new Date(),
-            read: false
-        };
-        
-        conversation.messages.push(newMessage);
-        conversation.lastActivity = new Date();
-        await conversation.save();
-        
-        // إرسال للمرسل
-        socket.emit('private_message_received', newMessage);
-        
-        // إرسال للمستلم (استخدم اسم متغير مختلف)
-        const recipientSocket = onlineUsers.get(targetUserId);
-        if (recipientSocket) {
-            io.to(recipientSocket).emit('private_message_received', { ...newMessage, conversationId });
+        try {
+            const { targetUserId, message } = data;
+            const participants = [socket.user._id, targetUserId].sort();
+            const conversationId = `${participants[0]}_${participants[1]}`;
             
-            // إضافة إشعار
-            await addNotification(targetUserId, {
-                title: '💬 رسالة خاصة',
-                message: `لديك رسالة جديدة من ${socket.user.name}`,
-                type: 'private_message',
-                link: `/chat?private=${conversationId}&with=${socket.user._id}`
-            });
+            let conversation = await PrivateConversation.findOne({ conversationId });
+            if (!conversation) {
+                conversation = new PrivateConversation({
+                    conversationId: conversationId,
+                    participants: participants,
+                    messages: [],
+                    createdAt: new Date()
+                });
+            }
+            
+            const newMessage = {
+                from: socket.user._id,
+                fromName: socket.user.name,
+                text: message,
+                timestamp: new Date(),
+                read: false
+            };
+            
+            conversation.messages.push(newMessage);
+            conversation.lastActivity = new Date();
+            await conversation.save();
+            
+            socket.emit('private_message_received', newMessage);
+            
+            const recipientSocket = onlineUsers.get(targetUserId);
+            if (recipientSocket) {
+                io.to(recipientSocket).emit('private_message_received', { ...newMessage, conversationId });
+                
+                await addNotification(targetUserId, {
+                    title: '💬 رسالة خاصة',
+                    message: `لديك رسالة جديدة من ${socket.user.name}`,
+                    type: 'private_message',
+                    link: `/chat?private=${conversationId}&with=${socket.user._id}`
+                });
+            }
+            
+            if (callback && typeof callback === 'function') {
+                callback({ success: true, message: newMessage });
+            }
+        } catch (error) {
+            console.error('Error sending private message:', error);
+            if (callback && typeof callback === 'function') {
+                callback({ success: false, error: error.message });
+            }
         }
-        
-        if (callback && typeof callback === 'function') {
-            callback({ success: true, message: newMessage });
-        }
-    } catch (error) {
-        console.error('Error sending private message:', error);
-        if (callback && typeof callback === 'function') {
-            callback({ success: false, error: error.message });
-        }
-    }
-});
+    });
 
     socket.on('get_users_for_chat', async (callback) => {
         try {
@@ -1232,54 +1119,46 @@ io.on('connection', (socket) => {
     });
 
     socket.on('get_my_conversations', async (callback) => {
-    try {
-        console.log('📋 Getting conversations for user:', socket.user.name);
-        
-        const conversations = await PrivateConversation.find({
-            participants: socket.user._id
-        }).sort({ lastActivity: -1 });
-        
-        console.log(`📋 Found ${conversations.length} conversations`);
-        
-        const myConversations = [];
-        for (const conv of conversations) {
-            const otherUserId = conv.participants.find(p => p.toString() !== socket.user._id.toString());
-            const otherUser = await User.findById(otherUserId).select('name email');
-            const isOnline = onlineUsers.has(otherUserId);
-            const unreadCount = conv.messages.filter(m => 
-                m.from.toString() !== socket.user._id.toString() && !m.read
-            ).length;
+        try {
+            const conversations = await PrivateConversation.find({
+                participants: socket.user._id
+            }).sort({ lastActivity: -1 });
             
-            myConversations.push({
-                id: conv.conversationId,
-                participant: { 
-                    id: otherUser._id, 
-                    name: otherUser.name, 
-                    email: otherUser.email,
-                    isOnline: isOnline
-                },
-                lastMessage: conv.messages[conv.messages.length - 1],
-                unreadCount: unreadCount,
-                createdAt: conv.createdAt
-            });
+            const myConversations = [];
+            for (const conv of conversations) {
+                const otherUserId = conv.participants.find(p => p.toString() !== socket.user._id.toString());
+                const otherUser = await User.findById(otherUserId).select('name email');
+                const isOnline = onlineUsers.has(otherUserId);
+                const unreadCount = conv.messages.filter(m => 
+                    m.from.toString() !== socket.user._id.toString() && !m.read
+                ).length;
+                
+                myConversations.push({
+                    id: conv.conversationId,
+                    participant: { 
+                        id: otherUser._id, 
+                        name: otherUser.name, 
+                        email: otherUser.email,
+                        isOnline: isOnline
+                    },
+                    lastMessage: conv.messages[conv.messages.length - 1],
+                    unreadCount: unreadCount,
+                    createdAt: conv.createdAt
+                });
+            }
+            
+            if (callback && typeof callback === 'function') {
+                callback({ success: true, conversations: myConversations });
+            } else {
+                socket.emit('private_conversations_list', myConversations);
+            }
+        } catch (error) {
+            console.error('Error getting conversations:', error);
+            if (callback && typeof callback === 'function') {
+                callback({ success: false, error: error.message });
+            }
         }
-        
-        console.log(`📋 Sending ${myConversations.length} conversations to client`);
-        
-        // إرسال القائمة مباشرة
-        if (callback && typeof callback === 'function') {
-            callback({ success: true, conversations: myConversations });
-        } else {
-            socket.emit('private_conversations_list', myConversations);
-        }
-        
-    } catch (error) {
-        console.error('Error getting conversations:', error);
-        if (callback && typeof callback === 'function') {
-            callback({ success: false, error: error.message });
-        }
-    }
-});
+    });
 
     socket.on('mark_messages_read', async (conversationId, callback) => {
         try {
@@ -1333,6 +1212,7 @@ app.get('/', (req, res) => {
 app.get('/chat', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'chat.html'));
 });
+
 app.get('/level-tests.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'level-tests.html'));
 });
