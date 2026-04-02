@@ -111,18 +111,60 @@ const lessonSchema = new mongoose.Schema({
 });
 const Lesson = mongoose.model('Lesson', lessonSchema);
 
-// Quiz Model
-const quizSchema = new mongoose.Schema({
-    title: { type: String, enum: ['midterm', 'final', 'level_test'] },
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
-    questions: [{
-        question: String,
-        options: [String],
-        correctAnswer: Number
+// Quiz Model - متقدم مع جميع أنواع الأسئلة
+const quizQuestionSchema = new mongoose.Schema({
+    type: { 
+        type: String, 
+        enum: ['multiple_choice', 'true_false', 'fill_blank', 'essay', 'audio', 'image', 'matching', 'drag_drop'],
+        required: true 
+    },
+    question: { type: String, required: true },
+    points: { type: Number, default: 10 },
+    
+    // للاختيار من متعدد
+    options: [{ type: String }],
+    correctAnswer: { type: mongoose.Schema.Types.Mixed },
+    
+    // لملء الفراغات
+    blanks: [{ type: String }],
+    fillAnswers: [{ type: String }],
+    
+    // للمقال
+    essayKeywords: [{ type: String }],
+    
+    // للصوتيات
+    audioUrl: { type: String },
+    audioQuestion: { type: String },
+    
+    // للصور
+    imageUrl: { type: String },
+    imageQuestion: { type: String },
+    imageAnswer: { type: String },
+    
+    // للتوصيل
+    matchingPairs: [{
+        left: { type: String },
+        right: { type: String }
     }],
-    passingScore: { type: Number, default: 70 },
-    createdAt: { type: Date, default: Date.now }
+    
+    // للسحب والإفلات
+    dragItems: [{ type: String }],
+    dropZones: [{ type: String }]
 });
+
+const quizSchema = new mongoose.Schema({
+    title: { type: String, enum: ['beginner_level_test', 'advanced_level_test'], required: true },
+    level: { type: String, enum: ['beginner', 'advanced'], required: true },
+    name: { type: String, required: true }, // اسم الاختبار الظاهر للمستخدم
+    description: { type: String, default: '' }, // وصف الاختبار
+    duration: { type: Number, required: true, default: 30 }, // الوقت بالدقائق
+    passingScore: { type: Number, default: 70 },
+    questions: [quizQuestionSchema],
+    totalPoints: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now },
+    isActive: { type: Boolean, default: true }
+});
+
 const Quiz = mongoose.model('Quiz', quizSchema);
 
 // UserProgress Model
@@ -314,6 +356,150 @@ app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
     try {
         const users = await User.find().select('-password');
         res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+// ==================== Quiz Routes ====================
+
+// إنشاء اختبار جديد (للأدمن)
+app.post('/api/admin/quizzes', auth, adminAuth, async (req, res) => {
+    try {
+        const { title, level, name, description, duration, passingScore, questions } = req.body;
+        
+        // حساب مجموع النقاط
+        let totalPoints = 0;
+        questions.forEach(q => totalPoints += q.points || 10);
+        
+        const quiz = new Quiz({
+            title,
+            level,
+            name,
+            description,
+            duration: duration || 30,
+            passingScore: passingScore || 70,
+            questions,
+            totalPoints,
+            createdAt: new Date(),
+            isActive: true
+        });
+        
+        await quiz.save();
+        res.json({ message: '✅ تم إنشاء الاختبار بنجاح', quiz });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب جميع الاختبارات
+app.get('/api/quizzes', async (req, res) => {
+    try {
+        const quizzes = await Quiz.find({ isActive: true }).select('-questions');
+        res.json(quizzes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب اختبار محدد
+app.get('/api/quizzes/:quizId', auth, async (req, res) => {
+    try {
+        const quiz = await Quiz.findById(req.params.quizId);
+        if (!quiz) return res.status(404).json({ message: 'الاختبار غير موجود' });
+        res.json(quiz);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تقديم الاختبار
+app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
+    try {
+        const { answers, timeSpent } = req.body;
+        const quiz = await Quiz.findById(req.params.quizId);
+        
+        if (!quiz) return res.status(404).json({ message: 'الاختبار غير موجود' });
+        
+        let score = 0;
+        let totalPoints = 0;
+        
+        quiz.questions.forEach((q, i) => {
+            totalPoints += q.points || 10;
+            const userAnswer = answers[i];
+            
+            switch(q.type) {
+                case 'multiple_choice':
+                case 'true_false':
+                    if (userAnswer == q.correctAnswer) score += q.points || 10;
+                    break;
+                case 'fill_blank':
+                    if (q.correctAnswer && userAnswer?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()) 
+                        score += q.points || 10;
+                    break;
+                case 'essay':
+                    // المقال يُصحح يدوياً أو بتقييم تلقائي بناءً على الكلمات المفتاحية
+                    if (q.essayKeywords) {
+                        let matched = 0;
+                        q.essayKeywords.forEach(kw => {
+                            if (userAnswer?.toLowerCase().includes(kw.toLowerCase())) matched++;
+                        });
+                        score += (matched / q.essayKeywords.length) * (q.points || 10);
+                    }
+                    break;
+                case 'audio':
+                case 'image':
+                    if (userAnswer?.toLowerCase().trim() === q.correctAnswer?.toLowerCase().trim()) 
+                        score += q.points || 10;
+                    break;
+                case 'matching':
+                    if (JSON.stringify(userAnswer) === JSON.stringify(q.correctAnswer)) 
+                        score += q.points || 10;
+                    break;
+            }
+        });
+        
+        const percentage = (score / totalPoints) * 100;
+        const passed = percentage >= quiz.passingScore;
+        
+        // حفظ النتيجة
+        const UserQuizResult = mongoose.model('UserQuizResult', new mongoose.Schema({
+            userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' },
+            score: Number,
+            percentage: Number,
+            passed: Boolean,
+            answers: Array,
+            timeSpent: Number,
+            completedAt: { type: Date, default: Date.now }
+        }));
+        
+        const result = new UserQuizResult({
+            userId: req.user._id,
+            quizId: quiz._id,
+            score,
+            percentage,
+            passed,
+            answers,
+            timeSpent
+        });
+        await result.save();
+        
+        // تحديث مستوى المستخدم
+        if (quiz.level === 'beginner' && passed) {
+            await User.findByIdAndUpdate(req.user._id, { level: 'beginner', levelScore: percentage });
+        } else if (quiz.level === 'advanced' && passed) {
+            await User.findByIdAndUpdate(req.user._id, { level: 'advanced', levelScore: percentage });
+        }
+        
+        res.json({ 
+            success: true, 
+            score, 
+            totalPoints, 
+            percentage, 
+            passed,
+            passingScore: quiz.passingScore
+        });
+        
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
