@@ -256,10 +256,20 @@
             socket.on('private_conversations_list', (chats) => { privateChats = chats; renderPrivateList(); });
             
             socket.on('new_message', (msg) => {
-                if (currentChatType === 'room' && currentChat === msg.roomId) {
-                    appendMessage(msg);
-                }
-            });
+    console.log('📩 Room message received:', msg);
+    
+    // التحقق إذا كانت الرسالة من نفس الغرفة المفتوحة
+    if (currentChatType === 'room' && currentChat === msg.roomId) {
+        // تجنب إضافة الرسالة مرتين (إذا كانت من نفس المستخدم)
+        const existingMessages = document.querySelectorAll('.message');
+        const lastMessage = existingMessages[existingMessages.length - 1];
+        const lastMessageText = lastMessage?.querySelector('.message-bubble')?.innerText;
+        
+        if (lastMessageText !== msg.text) {
+            appendMessage(msg);
+        }
+    }
+});
             
             // ✅ استقبال رسالة خاصة - تضاف فوراً
             socket.on('private_message_received', (msg) => {
@@ -444,59 +454,88 @@
         function closeUsersListModal() { document.getElementById('usersListModal').style.display = 'none'; }
         
         // ==================== Send Messages ====================
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            if(!text || !currentChat || !socket?.connected) return;
-            
-            if(currentChatType === 'room') {
-                socket.emit('send_message', { roomId: currentChat, text }, (res) => {
-                    if(res?.success) input.value = '';
-                });
+        // ==================== Send Messages ====================
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if(!text || !currentChat || !socket?.connected) return;
+    
+    if(currentChatType === 'room') {
+        // إضافة رسالة الغرفة محلياً فوراً
+        const tempMessage = {
+            id: 'temp_' + Date.now(),
+            userId: currentUser.id,
+            userName: currentUser.name,
+            text: text,
+            timestamp: new Date(),
+            roomId: currentChat
+        };
+        
+        appendMessage(tempMessage);
+        input.value = '';
+        
+        // إرسال للخادم
+        socket.emit('send_message', { roomId: currentChat, text }, (res) => {
+            if(res?.success) {
+                // تحديث معرف الرسالة المؤقت إذا لزم الأمر
+                const tempMsgElement = document.querySelector(`[data-message-id="${tempMessage.id}"]`);
+                if (tempMsgElement) {
+                    tempMsgElement.setAttribute('data-message-id', res.messageId || tempMessage.id);
+                }
             } else {
-                // ✅ إرسال رسالة خاصة - إضافة محلية فورية
-                const tempMessage = {
-                    id: Date.now().toString(),
-                    from: currentUser.id,
-                    fromName: currentUser.name,
-                    text: text,
-                    timestamp: new Date(),
-                    read: false
-                };
-                
-                // إضافة الرسالة محلياً فوراً
-                currentPrivateMessages.push(tempMessage);
-                renderPrivateMessages();
-                input.value = '';
-                
-                // إرسال للخادم
-                socket.emit('send_private_message', { 
-                    targetUserId: currentPrivateUserId, 
-                    message: text 
-                }, (res) => {
-                    if(res?.success) {
-                        // تحديث الرسالة المحلية بحالة القراءة
-                        const lastMsg = currentPrivateMessages[currentPrivateMessages.length - 1];
-                        if (lastMsg && lastMsg.id === tempMessage.id) {
-                            lastMsg.id = res.message.id;
-                            lastMsg.read = res.message.read;
-                            renderPrivateMessages();
-                        }
-                    }
-                });
+                // إزالة الرسالة إذا فشل الإرسال
+                const tempMsgElement = document.querySelector(`[data-message-id="${tempMessage.id}"]`);
+                if (tempMsgElement) tempMsgElement.remove();
+                showAlert('❌ فشل إرسال الرسالة', 'error');
             }
-        }
+        });
+    } else {
+        // رسالة خاصة - تضاف محلياً فوراً
+        const tempMessage = {
+            id: 'temp_' + Date.now(),
+            from: currentUser.id,
+            fromName: currentUser.name,
+            text: text,
+            timestamp: new Date(),
+            read: false
+        };
+        
+        currentPrivateMessages.push(tempMessage);
+        renderPrivateMessages();
+        input.value = '';
+        
+        socket.emit('send_private_message', { 
+            targetUserId: currentPrivateUserId, 
+            message: text 
+        }, (res) => {
+            if(res?.success && res.message) {
+                const index = currentPrivateMessages.findIndex(m => m.id === tempMessage.id);
+                if (index !== -1) {
+                    currentPrivateMessages[index] = res.message;
+                    renderPrivateMessages();
+                }
+            }
+        });
+    }
+}
         
         function handleKeyPress(e) { if(e.key === 'Enter') sendMessage(); }
         
         function appendMessage(msg) {
-            const isOwn = msg.userId === currentUser?.id;
-            const container = document.getElementById('chatMessages');
-            const div = document.createElement('div');
-            div.className = `message ${isOwn ? 'own' : 'other'}`;
-            div.innerHTML = `${!isOwn ? `<div class="message-sender">${escapeHtml(msg.userName)}</div>`:''}<div class="message-bubble">${escapeHtml(msg.text)}<div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div></div>`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+    const isOwn = msg.userId === currentUser?.id;
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `message ${isOwn ? 'own' : 'other'}`;
+    div.setAttribute('data-message-id', msg.id || 'msg_' + Date.now());
+    div.innerHTML = `
+        ${!isOwn ? `<div class="message-sender">${escapeHtml(msg.userName)}</div>` : ''}
+        <div class="message-bubble">
+            ${escapeHtml(msg.text)}
+            <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
         }
         
         function addSystemMessage(text) {
