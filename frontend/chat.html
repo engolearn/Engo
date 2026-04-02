@@ -580,6 +580,26 @@
 .input-area {
     padding-bottom: 25px !important;
 }
+        .header-actions a,
+.header-actions button {
+    background: none;
+    border: none;
+    color: #25D366;
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.header-actions a:hover,
+.header-actions button:hover {
+    background: #2a2a2a;
+}
 
 .connection-status {
     bottom: 25px !important;
@@ -617,11 +637,12 @@
         <!-- قائمة المحادثات -->
         <div class="conversations-list" id="conversationsList">
             <div class="conversations-header">
-                <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
-                <div class="header-actions">
-                    <button onclick="showCreateRoomModal()"><i class="fas fa-plus"></i></button>
-                    <button onclick="showUsersList()"><i class="fas fa-user-plus"></i></button>
-                </div>
+    <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
+    <div class="header-actions">
+        <a href="/"><i class="fas fa-home"></i></a>
+        <button onclick="showCreateRoomModal()"><i class="fas fa-plus"></i></button>
+        <button onclick="showUsersList()"><i class="fas fa-user-plus"></i></button>
+    </div>
             </div>
             
             <div class="search-bar">
