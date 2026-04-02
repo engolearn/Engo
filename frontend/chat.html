@@ -576,6 +576,40 @@
             background: #25D366;
             border-radius: 4px;
         }
+        /* رفع المحتوى من الأسفل */
+.input-area {
+    padding-bottom: 25px !important;
+}
+
+.connection-status {
+    bottom: 25px !important;
+}
+
+.conversations-list {
+    padding-bottom: 20px;
+}
+
+/* للشاشات الطويلة (iPhone وغيرها) */
+@media (min-height: 700px) {
+    .input-area {
+        padding-bottom: 35px !important;
+    }
+    
+    .connection-status {
+        bottom: 35px !important;
+    }
+}
+
+/* للشاشات الصغيرة جداً */
+@media (max-height: 600px) {
+    .input-area {
+        padding-bottom: 15px !important;
+    }
+    
+    .connection-status {
+        bottom: 15px !important;
+    }
+}
     </style>
 </head>
 <body>
