@@ -2,101 +2,618 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>المحادثات - EnGo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: #f7fafc; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
         
-        .navbar { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 1rem 0; }
-        .navbar .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #121212;
+            color: #e5e5e5;
+            overflow: hidden;
+            height: 100vh;
+        }
         
-        .chat-container { max-width: 1400px; margin: 2rem auto; padding: 0 20px; display: grid; grid-template-columns: 380px 1fr; gap: 1.5rem; height: calc(100vh - 120px); }
+        /* App Container */
+        .app {
+            display: flex;
+            height: 100vh;
+            background: #0a0a0a;
+        }
         
-        .rooms-sidebar { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
-        .rooms-header { padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .create-room-btn { width: 100%; padding: 10px; background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 10px; cursor: pointer; margin-top: 1rem; transition: all 0.3s; }
-        .create-room-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+        /* ==================== قائمة المحادثات (مثل واتساب) ==================== */
+        .conversations-list {
+            width: 100%;
+            max-width: 400px;
+            background: #111111;
+            border-left: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 10;
+        }
         
-        .chat-tabs { display: flex; border-bottom: 1px solid #e2e8f0; background: white; }
-        .chat-tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; transition: all 0.3s; color: #718096; border-bottom: 2px solid transparent; }
-        .chat-tab.active { color: #667eea; border-bottom-color: #667eea; font-weight: 600; }
-        
-        .rooms-list, .private-list { flex: 1; overflow-y: auto; padding: 1rem; display: none; }
-        .rooms-list.active, .private-list.active { display: block; }
-        
-        .room-item, .private-item { padding: 1rem; border-radius: 12px; cursor: pointer; transition: all 0.3s; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; position: relative; }
-        .room-item:hover, .private-item:hover { background: #f7fafc; transform: translateX(-5px); }
-        .room-item.active, .private-item.active { background: #667eea20; border-right: 3px solid #667eea; }
-        .room-name { font-weight: 600; margin-bottom: 0.25rem; display: flex; justify-content: space-between; align-items: center; }
-        .room-meta { font-size: 0.7rem; color: #718096; }
-        .unread-badge { background: #e53e3e; color: white; border-radius: 50%; min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; padding: 0 5px; }
-        .online-status { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .online-status.online { background: #48bb78; box-shadow: 0 0 5px #48bb78; }
-        .online-status.offline { background: #a0aec0; }
-        
-        .chat-area { background: white; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .chat-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: white; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 1.5rem; background: #f8fafc; }
-        
-        .message { margin-bottom: 1rem; display: flex; flex-direction: column; animation: fadeIn 0.2s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .message.own { align-items: flex-end; }
-        .message.other { align-items: flex-start; }
-        .message-bubble { max-width: 70%; padding: 0.75rem 1rem; border-radius: 18px; word-wrap: break-word; }
-        .message.own .message-bubble { background: #667eea; color: white; border-bottom-left-radius: 4px; }
-        .message.other .message-bubble { background: white; color: #2d3748; border-bottom-right-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .message-sender { font-size: 0.7rem; margin-bottom: 0.25rem; color: #718096; }
-        .message-time { font-size: 0.6rem; margin-top: 0.25rem; opacity: 0.7; display: flex; align-items: center; gap: 4px; }
-        
-        .chat-input-area { padding: 1rem; border-top: 1px solid #e2e8f0; display: flex; gap: 1rem; background: white; }
-        .chat-input { flex: 1; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 25px; font-family: 'Cairo', sans-serif; }
-        .chat-input:focus { outline: none; border-color: #667eea; }
-        .send-btn { background: #667eea; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; transition: all 0.3s; }
-        .send-btn:hover { transform: scale(1.05); }
-        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .status { text-align: center; padding: 0.5rem; font-size: 0.7rem; border-radius: 20px; margin-top: 0.5rem; }
-        .status.connected { background: #c6f6d5; color: #22543d; }
-        .status.disconnected { background: #fed7d7; color: #742a2a; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 500px; padding: 2rem; border-radius: 20px; max-height: 90vh; overflow-y: auto; }
-        .btn-primary { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer; }
-        .btn-outline { background: transparent; border: 1px solid #e2e8f0; padding: 10px 20px; border-radius: 25px; cursor: pointer; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; }
-        
-        .menu-toggle { display: none; position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #667eea; border-radius: 50%; align-items: center; justify-content: center; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1002; }
-        
+        /* للهواتف - القائمة تكون منزلقة */
         @media (max-width: 768px) {
-            .chat-container { grid-template-columns: 1fr; height: calc(100vh - 80px); margin: 1rem auto; }
-            .rooms-sidebar { position: fixed; left: -100%; top: 0; width: 85%; height: 100%; z-index: 1001; transition: left 0.3s ease; border-radius: 0; }
-            .rooms-sidebar.open { left: 0; }
-            .menu-toggle { display: flex; }
-            .message-bubble { max-width: 85%; }
+            .conversations-list {
+                position: fixed;
+                right: 0;
+                top: 0;
+                width: 85%;
+                height: 100%;
+                transform: translateX(100%);
+                box-shadow: -5px 0 20px rgba(0,0,0,0.3);
+            }
+            
+            .conversations-list.open {
+                transform: translateX(0);
+            }
+            
+            .chat-area {
+                width: 100%;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .conversations-list {
+                display: flex;
+            }
+            
+            .chat-area {
+                flex: 1;
+            }
+            
+            .back-to-list {
+                display: none !important;
+            }
+        }
+        
+        /* Header القائمة */
+        .conversations-header {
+            background: #1f1f1f;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .conversations-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .header-actions button {
+            background: none;
+            border: none;
+            color: #25D366;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .header-actions button:hover {
+            background: #2a2a2a;
+        }
+        
+        /* Search Bar */
+        .search-bar {
+            background: #1f1f1f;
+            padding: 0.8rem;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: #2a2a2a;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+        }
+        
+        .search-bar input::placeholder {
+            color: #888;
+        }
+        
+        .search-bar input:focus {
+            outline: none;
+            background: #333;
+        }
+        
+        /* Tabs (الغرف / الخاص) */
+        .chat-tabs {
+            display: flex;
+            background: #1f1f1f;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .chat-tab {
+            flex: 1;
+            padding: 0.8rem;
+            text-align: center;
+            cursor: pointer;
+            color: #888;
+            font-weight: 500;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .chat-tab.active {
+            color: #25D366;
+        }
+        
+        .chat-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: #25D366;
+            border-radius: 2px;
+        }
+        
+        /* قائمة المحادثات */
+        .conversations-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+        }
+        
+        .conversation-item {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #1f1f1f;
+        }
+        
+        .conversation-item:hover {
+            background: #1f1f1f;
+        }
+        
+        .conversation-item.active {
+            background: #2a2a2a;
+        }
+        
+        /* Avatar */
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            margin-left: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .avatar.group {
+            background: #2a5f3a;
+        }
+        
+        .avatar i {
+            font-size: 1.3rem;
+        }
+        
+        /* معلومات المحادثة */
+        .conversation-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .conversation-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            margin-bottom: 0.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .conversation-preview {
+            font-size: 0.8rem;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .conversation-time {
+            font-size: 0.7rem;
+            color: #666;
+        }
+        
+        .unread-badge {
+            background: #25D366;
+            color: white;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            padding: 0 5px;
+        }
+        
+        .online-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        
+        .online-status.online {
+            background: #25D366;
+            box-shadow: 0 0 5px #25D366;
+        }
+        
+        /* ==================== منطقة المحادثة (مثل واتساب) ==================== */
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            background: #0e0e0e;
+            position: relative;
+        }
+        
+        /* Header المحادثة */
+        .chat-header {
+            background: #1f1f1f;
+            padding: 0.8rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .back-to-list {
+            background: none;
+            border: none;
+            color: #25D366;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-list:hover {
+            background: #2a2a2a;
+        }
+        
+        .chat-header .avatar {
+            width: 40px;
+            height: 40px;
+            margin-left: 0;
+        }
+        
+        .chat-header-info {
+            flex: 1;
+        }
+        
+        .chat-header-name {
+            font-weight: 600;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .chat-header-status {
+            font-size: 0.7rem;
+            color: #888;
+        }
+        
+        .chat-actions {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .chat-actions button {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+        
+        .chat-actions button:hover {
+            background: #2a2a2a;
+            color: #25D366;
+        }
+        
+        /* منطقة الرسائل */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        /* رسالة */
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .message.own {
+            align-self: flex-end;
+        }
+        
+        .message.other {
+            align-self: flex-start;
+        }
+        
+        .message-bubble {
+            padding: 0.7rem 1rem;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+        }
+        
+        .message.own .message-bubble {
+            background: #25D366;
+            color: white;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.other .message-bubble {
+            background: #2a2a2a;
+            color: #e5e5e5;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-sender {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 0.2rem;
+            margin-right: 0.5rem;
+        }
+        
+        .message-time {
+            font-size: 0.6rem;
+            margin-top: 0.2rem;
+            opacity: 0.6;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            justify-content: flex-end;
+        }
+        
+        /* Typing Indicator */
+        .typing-indicator {
+            padding: 0.5rem 1rem;
+            font-size: 0.7rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #888;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Input Area */
+        .input-area {
+            background: #1f1f1f;
+            padding: 0.8rem;
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            border-top: 1px solid #2a2a2a;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            background: #2a2a2a;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+        }
+        
+        .input-area input:focus {
+            outline: none;
+            background: #333;
+        }
+        
+        .input-area input:disabled {
+            opacity: 0.5;
+        }
+        
+        .send-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Status */
+        .connection-status {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            z-index: 100;
+        }
+        
+        .connection-status.connected {
+            background: #25D366;
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background: #e53e3e;
+            color: white;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: #1f1f1f;
+            width: 90%;
+            max-width: 400px;
+            padding: 1.5rem;
+            border-radius: 20px;
+        }
+        
+        .modal-content h3 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-content input,
+        .modal-content textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: #2a2a2a;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            margin: 0.5rem 0;
+        }
+        
+        .modal-content button {
+            width: 100%;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        
+        .user-item {
+            padding: 0.8rem;
+            background: #2a2a2a;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-item:hover {
+            background: #333;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1f1f1f;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #25D366;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="logo"><i class="fas fa-comments"></i> EnGo Chat</div>
-            <div><a href="/" style="margin-left: 20px; color: #4a5568; text-decoration: none;">الرئيسية</a></div>
-        </div>
-    </nav>
-
-    <div class="chat-container">
-        <div class="rooms-sidebar">
-            <div class="rooms-header">
-                <h3><i class="fas fa-comments"></i> المحادثات</h3>
-                <div id="connectionStatus" class="status disconnected">⛔ غير متصل</div>
-                <button class="create-room-btn" onclick="showCreateRoomModal()"><i class="fas fa-plus"></i> غرفة جديدة</button>
-                <button class="create-room-btn" onclick="showUsersList()" style="margin-top: 0.5rem; background: #48bb78;"><i class="fas fa-user-friends"></i> محادثة خاصة</button>
+    <div class="app">
+        <!-- قائمة المحادثات (الجانبية) -->
+        <div class="conversations-list" id="conversationsList">
+            <div class="conversations-header">
+                <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
+                <div class="header-actions">
+                    <button onclick="showCreateRoomModal()"><i class="fas fa-plus"></i></button>
+                    <button onclick="showUsersList()"><i class="fas fa-user-plus"></i></button>
+                </div>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="بحث..." onkeyup="filterConversations()">
             </div>
             
             <div class="chat-tabs">
@@ -104,71 +621,75 @@
                 <div class="chat-tab" onclick="switchTab('private')">💬 الخاص</div>
             </div>
             
-            <div class="rooms-list active" id="roomsList">
-                <div style="text-align: center; padding: 2rem;">جاري تحميل الغرف...</div>
-            </div>
-            
-            <div class="private-list" id="privateList">
-                <div style="text-align: center; padding: 2rem;">جاري تحميل المحادثات...</div>
+            <div class="conversations-scroll" id="conversationsScroll">
+                <div id="roomsList" class="rooms-list active">
+                    <div style="text-align: center; padding: 2rem; color: #888;">جاري تحميل الغرف...</div>
+                </div>
+                <div id="privateList" class="private-list" style="display: none;">
+                    <div style="text-align: center; padding: 2rem; color: #888;">جاري تحميل المحادثات...</div>
+                </div>
             </div>
         </div>
         
-        <div class="chat-area">
-            <div class="chat-header">
-                <div>
-                    <h3 id="currentChatName">اختر محادثة</h3>
-                    <small id="currentChatInfo"></small>
+        <!-- منطقة المحادثة -->
+        <div class="chat-area" id="chatArea">
+            <div class="chat-header" id="chatHeader" style="display: none;">
+                <button class="back-to-list" onclick="closeChat()"><i class="fas fa-arrow-right"></i></button>
+                <div class="avatar" id="chatAvatar"><i class="fas fa-user"></i></div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name" id="chatName">اختر محادثة</div>
+                    <div class="chat-header-status" id="chatStatus"></div>
                 </div>
-                <button id="inviteBtn" class="btn-primary" style="padding: 8px 15px; display: none;" onclick="inviteToRoom()">
-                    <i class="fas fa-envelope"></i> دعوة
-                </button>
+                <div class="chat-actions">
+                    <button onclick="inviteToRoom()" id="inviteBtn" style="display: none;"><i class="fas fa-user-plus"></i></button>
+                </div>
             </div>
+            
             <div class="chat-messages" id="chatMessages">
-                <div style="text-align: center; color: #718096; padding: 2rem;">
+                <div style="text-align: center; color: #888; padding: 2rem;">
                     <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
                     <p>اختر محادثة للبدء</p>
                 </div>
             </div>
-            <div class="chat-input-area">
-                <input type="text" id="messageInput" class="chat-input" placeholder="اكتب رسالتك..." onkeypress="handleKeyPress(event)" disabled>
+            
+            <div class="input-area" id="inputArea" style="display: none;">
+                <input type="text" id="messageInput" placeholder="اكتب رسالة..." onkeypress="handleKeyPress(event)" disabled>
                 <button class="send-btn" onclick="sendMessage()" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
-
-    <div class="menu-toggle" onclick="toggleSidebar()">
-        <i class="fas fa-comments"></i>
-    </div>
-
-    <!-- مودال إنشاء غرفة -->
+    
+    <div id="connectionStatus" class="connection-status disconnected">⛔ غير متصل</div>
+    
+    <!-- Modals -->
     <div id="createRoomModal" class="modal">
         <div class="modal-content">
             <h3>إنشاء غرفة جديدة</h3>
-            <div class="form-group"><label>اسم الغرفة</label><input type="text" id="roomName"></div>
-            <div class="form-group"><label><input type="checkbox" id="isPrivate"> غرفة خاصة</label></div>
-            <div id="inviteEmailsField" style="display: none;"><div class="form-group"><label>البريد الإلكتروني للمدعوين</label><input type="text" id="inviteEmails"></div></div>
-            <button class="btn-primary" onclick="createRoom()">إنشاء</button>
-            <button class="btn-outline" onclick="closeCreateRoomModal()">إلغاء</button>
+            <input type="text" id="roomName" placeholder="اسم الغرفة">
+            <label><input type="checkbox" id="isPrivate"> غرفة خاصة</label>
+            <div id="inviteEmailsField" style="display: none; margin-top: 0.5rem;">
+                <input type="text" id="inviteEmails" placeholder="البريد الإلكتروني (مفصول بفواصل)">
+            </div>
+            <button onclick="createRoom()" style="background: #25D366; color: white;">إنشاء</button>
+            <button onclick="closeCreateRoomModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
         </div>
     </div>
-
-    <!-- مودال دعوة -->
+    
     <div id="inviteModal" class="modal">
         <div class="modal-content">
             <h3>دعوة إلى الغرفة</h3>
-            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="inviteEmail"></div>
-            <div class="form-group"><label>رسالة</label><textarea id="inviteMessage" rows="3"></textarea></div>
-            <button class="btn-primary" onclick="sendInvite()">إرسال الدعوة</button>
-            <button class="btn-outline" onclick="closeInviteModal()">إلغاء</button>
+            <input type="email" id="inviteEmail" placeholder="البريد الإلكتروني">
+            <textarea id="inviteMessage" rows="3" placeholder="رسالة"></textarea>
+            <button onclick="sendInvite()" style="background: #25D366; color: white;">إرسال الدعوة</button>
+            <button onclick="closeInviteModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
         </div>
     </div>
-
-    <!-- قائمة المستخدمين -->
+    
     <div id="usersListModal" class="modal">
         <div class="modal-content">
-            <h3>👥 المستخدمين المتاحين</h3>
-            <div id="usersForChat" style="max-height: 400px; overflow-y: auto; margin: 1rem 0;"></div>
-            <button class="btn-outline" onclick="closeUsersListModal()">إغلاق</button>
+            <h3>👥 المستخدمين</h3>
+            <div id="usersForChat" style="max-height: 400px; overflow-y: auto;"></div>
+            <button onclick="closeUsersListModal()" style="background: #2a2a2a; color: white;">إغلاق</button>
         </div>
     </div>
 
@@ -186,31 +707,78 @@
         let roomsList = [];
         let privateChats = [];
         
-        // ==================== Helper Functions ====================
+        // ==================== UI Functions ====================
+        function showConversationsList() {
+            document.getElementById('conversationsList').classList.add('open');
+        }
+        
+        function closeChat() {
+            currentChat = null;
+            currentChatType = null;
+            document.getElementById('chatHeader').style.display = 'none';
+            document.getElementById('inputArea').style.display = 'none';
+            document.getElementById('chatMessages').innerHTML = `
+                <div style="text-align: center; color: #888; padding: 2rem;">
+                    <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                    <p>اختر محادثة للبدء</p>
+                </div>
+            `;
+            if (window.innerWidth <= 768) {
+                document.getElementById('conversationsList').classList.add('open');
+            }
+        }
+        
+        function openChat() {
+            document.getElementById('chatHeader').style.display = 'flex';
+            document.getElementById('inputArea').style.display = 'flex';
+            if (window.innerWidth <= 768) {
+                document.getElementById('conversationsList').classList.remove('open');
+            }
+        }
+        
+        function filterConversations() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const roomsContainer = document.getElementById('roomsList');
+            const privateContainer = document.getElementById('privateList');
+            
+            if (roomsContainer) {
+                const items = roomsContainer.querySelectorAll('.conversation-item');
+                items.forEach(item => {
+                    const name = item.querySelector('.conversation-name span').innerText.toLowerCase();
+                    item.style.display = name.includes(search) ? 'flex' : 'none';
+                });
+            }
+            
+            if (privateContainer) {
+                const items = privateContainer.querySelectorAll('.conversation-item');
+                items.forEach(item => {
+                    const name = item.querySelector('.conversation-name span').innerText.toLowerCase();
+                    item.style.display = name.includes(search) ? 'flex' : 'none';
+                });
+            }
+        }
+        
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
             alertDiv.textContent = message;
-            alertDiv.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;z-index:10000;background:${type==='success'?'#48bb78':'#e53e3e'};color:white;font-family:Cairo`;
+            alertDiv.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:25px;z-index:10000;background:${type==='success'?'#25D366':'#e53e3e'};color:white;font-family:Cairo;font-size:0.9rem`;
             document.body.appendChild(alertDiv);
             setTimeout(() => alertDiv.remove(), 3000);
         }
         
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
         
-        function toggleSidebar() {
-            document.querySelector('.rooms-sidebar').classList.toggle('open');
-        }
-        
         function switchTab(tab) {
             document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.rooms-list, .private-list').forEach(l => l.classList.remove('active'));
             if (tab === 'rooms') {
                 document.querySelector('.chat-tab:first-child').classList.add('active');
-                document.getElementById('roomsList').classList.add('active');
+                document.getElementById('roomsList').style.display = 'block';
+                document.getElementById('privateList').style.display = 'none';
                 loadRooms();
             } else {
                 document.querySelector('.chat-tab:last-child').classList.add('active');
-                document.getElementById('privateList').classList.add('active');
+                document.getElementById('roomsList').style.display = 'none';
+                document.getElementById('privateList').style.display = 'block';
                 loadPrivateChats();
             }
         }
@@ -240,42 +808,28 @@
             });
             
             socket.on('connect', () => {
-                console.log('✅ Connected');
                 document.getElementById('connectionStatus').innerHTML = '✅ متصل';
-                document.getElementById('connectionStatus').className = 'status connected';
+                document.getElementById('connectionStatus').className = 'connection-status connected';
                 loadRooms();
                 loadPrivateChats();
             });
             
             socket.on('disconnect', () => {
                 document.getElementById('connectionStatus').innerHTML = '⛔ غير متصل';
-                document.getElementById('connectionStatus').className = 'status disconnected';
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
             });
             
             socket.on('rooms_list', (rooms) => { roomsList = rooms; renderRoomsList(); });
             socket.on('private_conversations_list', (chats) => { privateChats = chats; renderPrivateList(); });
             
             socket.on('new_message', (msg) => {
-    console.log('📩 Room message received:', msg);
-    
-    // التحقق إذا كانت الرسالة من نفس الغرفة المفتوحة
-    if (currentChatType === 'room' && currentChat === msg.roomId) {
-        // تجنب إضافة الرسالة مرتين (إذا كانت من نفس المستخدم)
-        const existingMessages = document.querySelectorAll('.message');
-        const lastMessage = existingMessages[existingMessages.length - 1];
-        const lastMessageText = lastMessage?.querySelector('.message-bubble')?.innerText;
-        
-        if (lastMessageText !== msg.text) {
-            appendMessage(msg);
-        }
-    }
-});
+                if (currentChatType === 'room' && currentChat === msg.roomId) {
+                    appendMessage(msg);
+                }
+                loadRooms();
+            });
             
-            // ✅ استقبال رسالة خاصة - تضاف فوراً
             socket.on('private_message_received', (msg) => {
-                console.log('📩 Private message received:', msg);
-                
-                // إضافة الرسالة للشاشة إذا كانت المحادثة مفتوحة
                 if (currentChatType === 'private' && currentPrivateUserId === msg.from) {
                     currentPrivateMessages.push(msg);
                     renderPrivateMessages();
@@ -283,8 +837,6 @@
                         socket.emit('mark_messages_read', currentPrivateConvId);
                     }
                 }
-                
-                // تحديث قائمة المحادثات
                 loadPrivateChats();
                 showAlert(`💬 رسالة من ${msg.fromName}`, 'success');
             });
@@ -305,13 +857,18 @@
         function renderRoomsList() {
             const container = document.getElementById('roomsList');
             if(!roomsList?.length) {
-                container.innerHTML = '<div style="text-align:center;padding:2rem;">📭 لا توجد غرف<br>أنشئ غرفة جديدة</div>';
+                container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">📭 لا توجد غرف<br>أنشئ غرفة جديدة</div>';
                 return;
             }
             container.innerHTML = roomsList.map(room => `
-                <div class="room-item ${currentChatType==='room' && currentChat===room.id ? 'active':''}" onclick="joinRoom('${room.id}','${escapeHtml(room.name)}')">
-                    <div class="room-name"><span>🏠 ${escapeHtml(room.name)}</span></div>
-                    <div class="room-meta">${room.members?.length||0} عضو • ${room.private?'🔒 خاص':'🌐 عام'}</div>
+                <div class="conversation-item" onclick="joinRoom('${room.id}','${escapeHtml(room.name)}')">
+                    <div class="avatar group"><i class="fas fa-users"></i></div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">
+                            <span>${escapeHtml(room.name)}</span>
+                        </div>
+                        <div class="conversation-preview">${room.lastMessage?.text ? escapeHtml(room.lastMessage.text.substring(0,40)) : 'لا توجد رسائل'}</div>
+                    </div>
                 </div>
             `).join('');
         }
@@ -322,14 +879,16 @@
                 if(res?.success) {
                     currentChat = roomId;
                     currentChatType = 'room';
-                    document.getElementById('currentChatName').innerText = roomName;
-                    document.getElementById('currentChatInfo').innerText = `${res.room.members?.length||0} عضو`;
+                    document.getElementById('chatName').innerText = roomName;
+                    document.getElementById('chatStatus').innerText = `${res.room.members?.length||0} عضو`;
+                    document.getElementById('chatAvatar').innerHTML = '<i class="fas fa-users"></i>';
                     document.getElementById('inviteBtn').style.display = 'block';
                     document.getElementById('messageInput').disabled = false;
                     document.querySelector('.send-btn').disabled = false;
                     
                     document.getElementById('chatMessages').innerHTML = '';
                     res.messages?.forEach(m => appendMessage(m));
+                    openChat();
                     loadRooms();
                 } else showAlert('❌ لا يمكن الانضمام','error');
             });
@@ -366,16 +925,19 @@
         function renderPrivateList() {
             const container = document.getElementById('privateList');
             if(!privateChats?.length) {
-                container.innerHTML = '<div style="text-align:center;padding:2rem;">💬 لا توجد محادثات خاصة<br>ابدأ محادثة جديدة</div>';
+                container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">💬 لا توجد محادثات خاصة<br>ابدأ محادثة جديدة</div>';
                 return;
             }
             container.innerHTML = privateChats.map(chat => `
-                <div class="private-item ${currentChatType==='private' && currentPrivateUserId === chat.participant.id ? 'active':''}" onclick="openPrivateChat('${chat.participant.id}','${escapeHtml(chat.participant.name)}','${chat.id}')">
-                    <div class="room-name">
-                        <span><span class="online-status ${chat.isOnline ? 'online':'offline'}"></span> ${escapeHtml(chat.participant.name)}</span>
-                        ${chat.unreadCount ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
+                <div class="conversation-item" onclick="openPrivateChat('${chat.participant.id}','${escapeHtml(chat.participant.name)}','${chat.id}')">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">
+                            <span><span class="online-status ${chat.isOnline ? 'online':'offline'}"></span> ${escapeHtml(chat.participant.name)}</span>
+                            ${chat.unreadCount ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
+                        </div>
+                        <div class="conversation-preview">${chat.lastMessage?.text ? escapeHtml(chat.lastMessage.text.substring(0,40)) : 'لا توجد رسائل'}</div>
                     </div>
-                    <div class="room-meta">${chat.lastMessage?.text ? (chat.lastMessage.text.length>40 ? chat.lastMessage.text.substring(0,40)+'…' : chat.lastMessage.text) : 'لا توجد رسائل'}</div>
                 </div>
             `).join('');
         }
@@ -390,12 +952,13 @@
             currentPrivateConvId = conversationId;
             currentPrivateMessages = [];
             
-            document.getElementById('currentChatName').innerHTML = `💬 ${userName}`;
-            document.getElementById('currentChatInfo').innerHTML = 'محادثة خاصة';
+            document.getElementById('chatName').innerHTML = userName;
+            document.getElementById('chatStatus').innerHTML = 'محادثة خاصة';
+            document.getElementById('chatAvatar').innerHTML = '<i class="fas fa-user"></i>';
             document.getElementById('inviteBtn').style.display = 'none';
             document.getElementById('messageInput').disabled = false;
             document.querySelector('.send-btn').disabled = false;
-            document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;">جاري تحميل المحادثة...</div>';
+            document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">جاري التحميل...</div>';
             
             socket.emit('start_private_chat', userId, (res) => {
                 if(res?.success) {
@@ -404,6 +967,7 @@
                     renderPrivateMessages();
                     socket.emit('mark_messages_read', res.conversation.id);
                     loadPrivateChats();
+                    openChat();
                 } else {
                     showAlert('❌ لا يمكن فتح المحادثة','error');
                 }
@@ -413,7 +977,7 @@
         function renderPrivateMessages() {
             const container = document.getElementById('chatMessages');
             if(!currentPrivateMessages?.length) {
-                container.innerHTML = '<div style="text-align:center;padding:2rem;color:#718096;">لا توجد رسائل بعد<br>أرسل أول رسالة!</div>';
+                container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">لا توجد رسائل بعد<br>أرسل أول رسالة!</div>';
                 return;
             }
             container.innerHTML = currentPrivateMessages.map(msg => {
@@ -439,11 +1003,9 @@
             socket.emit('get_users_for_chat', (res) => {
                 if(res.success) {
                     document.getElementById('usersForChat').innerHTML = res.users.map(u => `
-                        <div onclick="openPrivateChat('${u._id}','${escapeHtml(u.name)}')" style="padding:1rem;margin-bottom:0.5rem;background:white;border-radius:10px;cursor:pointer;border:1px solid #e2e8f0;">
-                            <div style="display:flex;align-items:center;gap:1rem;">
-                                <div style="width:40px;height:40px;background:#667eea;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;"><i class="fas fa-user"></i></div>
-                                <div><strong>${escapeHtml(u.name)}</strong><br><small>${escapeHtml(u.email)}</small></div>
-                            </div>
+                        <div class="user-item" onclick="openPrivateChat('${u._id}','${escapeHtml(u.name)}')">
+                            <div class="avatar" style="width:40px;height:40px;"><i class="fas fa-user"></i></div>
+                            <div><strong>${escapeHtml(u.name)}</strong><br><small style="color:#888;">${escapeHtml(u.email)}</small></div>
                         </div>
                     `).join('');
                     document.getElementById('usersListModal').style.display = 'flex';
@@ -454,94 +1016,81 @@
         function closeUsersListModal() { document.getElementById('usersListModal').style.display = 'none'; }
         
         // ==================== Send Messages ====================
-        // ==================== Send Messages ====================
-function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const text = input.value.trim();
-    if(!text || !currentChat || !socket?.connected) return;
-    
-    if(currentChatType === 'room') {
-        // إضافة رسالة الغرفة محلياً فوراً
-        const tempMessage = {
-            id: 'temp_' + Date.now(),
-            userId: currentUser.id,
-            userName: currentUser.name,
-            text: text,
-            timestamp: new Date(),
-            roomId: currentChat
-        };
-        
-        appendMessage(tempMessage);
-        input.value = '';
-        
-        // إرسال للخادم
-        socket.emit('send_message', { roomId: currentChat, text }, (res) => {
-            if(res?.success) {
-                // تحديث معرف الرسالة المؤقت إذا لزم الأمر
-                const tempMsgElement = document.querySelector(`[data-message-id="${tempMessage.id}"]`);
-                if (tempMsgElement) {
-                    tempMsgElement.setAttribute('data-message-id', res.messageId || tempMessage.id);
-                }
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if(!text || !currentChat || !socket?.connected) return;
+            
+            if(currentChatType === 'room') {
+                const tempMessage = {
+                    id: 'temp_' + Date.now(),
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    text: text,
+                    timestamp: new Date(),
+                    roomId: currentChat
+                };
+                appendMessage(tempMessage);
+                input.value = '';
+                
+                socket.emit('send_message', { roomId: currentChat, text }, (res) => {
+                    if(!res?.success) {
+                        const tempMsg = document.querySelector(`[data-message-id="${tempMessage.id}"]`);
+                        if(tempMsg) tempMsg.remove();
+                        showAlert('❌ فشل إرسال الرسالة', 'error');
+                    }
+                });
             } else {
-                // إزالة الرسالة إذا فشل الإرسال
-                const tempMsgElement = document.querySelector(`[data-message-id="${tempMessage.id}"]`);
-                if (tempMsgElement) tempMsgElement.remove();
-                showAlert('❌ فشل إرسال الرسالة', 'error');
+                const tempMessage = {
+                    id: 'temp_' + Date.now(),
+                    from: currentUser.id,
+                    fromName: currentUser.name,
+                    text: text,
+                    timestamp: new Date(),
+                    read: false
+                };
+                currentPrivateMessages.push(tempMessage);
+                renderPrivateMessages();
+                input.value = '';
+                
+                socket.emit('send_private_message', { 
+                    targetUserId: currentPrivateUserId, 
+                    message: text 
+                }, (res) => {
+                    if(res?.success && res.message) {
+                        const index = currentPrivateMessages.findIndex(m => m.id === tempMessage.id);
+                        if (index !== -1) {
+                            currentPrivateMessages[index] = res.message;
+                            renderPrivateMessages();
+                        }
+                    }
+                });
             }
-        });
-    } else {
-        // رسالة خاصة - تضاف محلياً فوراً
-        const tempMessage = {
-            id: 'temp_' + Date.now(),
-            from: currentUser.id,
-            fromName: currentUser.name,
-            text: text,
-            timestamp: new Date(),
-            read: false
-        };
-        
-        currentPrivateMessages.push(tempMessage);
-        renderPrivateMessages();
-        input.value = '';
-        
-        socket.emit('send_private_message', { 
-            targetUserId: currentPrivateUserId, 
-            message: text 
-        }, (res) => {
-            if(res?.success && res.message) {
-                const index = currentPrivateMessages.findIndex(m => m.id === tempMessage.id);
-                if (index !== -1) {
-                    currentPrivateMessages[index] = res.message;
-                    renderPrivateMessages();
-                }
-            }
-        });
-    }
-}
+        }
         
         function handleKeyPress(e) { if(e.key === 'Enter') sendMessage(); }
         
         function appendMessage(msg) {
-    const isOwn = msg.userId === currentUser?.id;
-    const container = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = `message ${isOwn ? 'own' : 'other'}`;
-    div.setAttribute('data-message-id', msg.id || 'msg_' + Date.now());
-    div.innerHTML = `
-        ${!isOwn ? `<div class="message-sender">${escapeHtml(msg.userName)}</div>` : ''}
-        <div class="message-bubble">
-            ${escapeHtml(msg.text)}
-            <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
-        </div>
-    `;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+            const isOwn = msg.userId === currentUser?.id;
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = `message ${isOwn ? 'own' : 'other'}`;
+            div.setAttribute('data-message-id', msg.id || 'msg_' + Date.now());
+            div.innerHTML = `
+                ${!isOwn ? `<div class="message-sender">${escapeHtml(msg.userName)}</div>` : ''}
+                <div class="message-bubble">
+                    ${escapeHtml(msg.text)}
+                    <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+                </div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
         }
         
         function addSystemMessage(text) {
             const container = document.getElementById('chatMessages');
             const div = document.createElement('div');
-            div.style.cssText = 'text-align:center;color:#718096;font-size:0.7rem;padding:0.5rem';
+            div.style.cssText = 'text-align:center;color:#888;font-size:0.7rem;padding:0.5rem';
             div.innerHTML = `<i class="fas fa-info-circle"></i> ${escapeHtml(text)}`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
@@ -553,12 +1102,12 @@ function sendMessage() {
         document.getElementById('isPrivate').onchange=function(){ document.getElementById('inviteEmailsField').style.display=this.checked?'block':'none'; };
         
         let currentInviteRoomId=null;
-        function inviteToRoom(){ if(!currentChat) return showAlert('❌ اختر محادثة','error'); currentInviteRoomId=currentChat; document.getElementById('inviteModal').style.display='flex'; }
+        function inviteToRoom(){ if(!currentChat || currentChatType !== 'room') return showAlert('❌ اختر غرفة أولاً','error'); currentInviteRoomId=currentChat; document.getElementById('inviteModal').style.display='flex'; }
         function closeInviteModal(){ document.getElementById('inviteModal').style.display='none'; }
         function sendInvite(){
             const email=document.getElementById('inviteEmail').value.trim();
             if(!email) return showAlert('❌ أدخل البريد','error');
-            socket.emit('invite_by_email',{email,roomId:currentInviteRoomId,roomName:document.getElementById('currentChatName').innerText,message:document.getElementById('inviteMessage').value},(res)=>{if(res?.success){showAlert(`✅ تم الإرسال إلى ${email}`,'success');closeInviteModal();}});
+            socket.emit('invite_by_email',{email,roomId:currentInviteRoomId,roomName:document.getElementById('chatName').innerText,message:document.getElementById('inviteMessage').value},(res)=>{if(res?.success){showAlert(`✅ تم الإرسال إلى ${email}`,'success');closeInviteModal();}});
         }
         
         // ==================== Init ====================
