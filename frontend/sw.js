@@ -1,24 +1,42 @@
-const CACHE_NAME = 'engo-v2';
-const urlsToCache = ['/', '/index.html', '/chat.html', '/admin.html', '/manifest.json'];
+// sw.js - Service Worker للإشعارات
+const CACHE_NAME = 'engo-v1';
 
-self.addEventListener('install', event => {
-    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+self.addEventListener('install', (event) => {
+    console.log('Service Worker installed');
+    event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener('fetch', event => {
-    event.respondWith(caches.match(event.request).then(response => response || fetch(event.request)));
+self.addEventListener('activate', (event) => {
+    console.log('Service Worker activated');
+    event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('activate', event => {
-    event.waitUntil(caches.keys().then(cacheNames => Promise.all(cacheNames.map(cache => cache !== CACHE_NAME && caches.delete(cache)))));
-});
-
-self.addEventListener('push', event => {
+self.addEventListener('push', (event) => {
     const data = event.data.json();
-    event.waitUntil(self.registration.showNotification(data.title, { body: data.message, icon: '/icons/icon-192x192.png', data: { url: data.link } }));
+    const options = {
+        body: data.body,
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/badge.png',
+        data: { url: data.url || '/' },
+        vibrate: [200, 100, 200],
+        requireInteraction: true,
+        actions: [
+            { action: 'open', title: 'فتح' },
+            { action: 'close', title: 'إغلاق' }
+        ]
+    };
+    
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
 });
 
-self.addEventListener('notificationclick', event => {
+self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    event.waitUntil(clients.openWindow(event.notification.data.url || '/'));
+    
+    if (event.action === 'open' || !event.action) {
+        event.waitUntil(
+            clients.openWindow(event.notification.data.url || '/')
+        );
+    }
 });
