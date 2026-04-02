@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>المحادثات - EnGo</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -79,6 +79,98 @@
         @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
         
         @media (max-width: 768px) { .chat-container { grid-template-columns: 1fr; } }
+   /* تحسينات للشاشات الصغيرة في صفحة المحادثات */
+@media (max-width: 768px) {
+    .chat-container {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 80px);
+        margin: 1rem auto;
+    }
+    
+    .rooms-sidebar {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        width: 85%;
+        height: 100%;
+        z-index: 1001;
+        transition: left 0.3s ease;
+        border-radius: 0;
+    }
+    
+    .rooms-sidebar.open {
+        left: 0;
+    }
+    
+    .chat-area {
+        height: 100%;
+    }
+    
+    .chat-header {
+        padding: 1rem;
+    }
+    
+    .chat-messages {
+        padding: 1rem;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
+    }
+    
+    .chat-input-area {
+        padding: 0.8rem;
+    }
+    
+    .chat-input {
+        font-size: 0.9rem;
+    }
+    
+    /* زر فتح القائمة الجانبية */
+    .menu-toggle {
+        display: block;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: #667eea;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 1002;
+    }
+}
+
+@media (min-width: 769px) {
+    .menu-toggle {
+        display: none;
+    }
+}
+
+/* تحسين عرض الرسائل على الشاشات الصغيرة */
+@media (max-width: 480px) {
+    .room-name, .private-item .room-name {
+        font-size: 0.9rem;
+    }
+    
+    .room-meta {
+        font-size: 0.65rem;
+    }
+    
+    .message-sender {
+        font-size: 0.65rem;
+    }
+    
+    .message-time {
+        font-size: 0.55rem;
+    }
+}
     </style>
 </head>
 <body>
@@ -540,5 +632,27 @@ socket.on('private_conversations_list', (chats) => {
         }
         init();
     </script>
+    <!-- زر فتح القائمة للهواتف -->
+<div class="menu-toggle" onclick="toggleSidebar()">
+    <i class="fas fa-comments"></i>
+</div>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('.rooms-sidebar');
+    sidebar.classList.toggle('open');
+}
+
+// إغلاق القائمة عند النقر خارجها
+document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.rooms-sidebar');
+    const menuToggle = document.querySelector('.menu-toggle');
+    if (sidebar && sidebar.classList.contains('open')) {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    }
+});
+</script>
 </body>
 </html>
