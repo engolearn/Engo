@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>اختبارات تحديد المستوى - EnGo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* منع تحديد النص */
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* منع لقطة الشاشة */
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e5e5e5;
+            min-height: 100vh;
+        }
+        
+        /* منع النسخ */
+        .no-copy {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* منع الطباعة */
+        @media print {
+            body { display: none; }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            color: #25D366;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #aaa;
+        }
+        
+        .back-home {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        /* قائمة الاختبارات */
+        .tests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+        
+        .test-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .test-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .test-icon.beginner {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .test-icon.advanced {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .test-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .test-description {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .test-details {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            padding: 1rem 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+        
+        .start-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #25D366;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.02);
+        }
+        
+        /* مودال بدء الاختبار */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: #1a1a2e;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 20px;
+            padding: 2rem;
+        }
+        
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .quiz-timer {
+            position: sticky;
+            top: 0;
+            background: #1a1a2e;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #25D366;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 10;
+        }
+        
+        .timer-warning {
+            color: #f5576c;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .question-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .question-title {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .question-points {
+            color: #25D366;
+            font-size: 0.8rem;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .option input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin: 1rem 0;
+        }
+        
+        .quiz-image {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        
+        .matching-pairs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .matching-left, .matching-right {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        
+        .matching-item {
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .matching-item.selected {
+            background: #25D366;
+            color: white;
+        }
+        
+        .fill-input {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .essay-textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            resize: vertical;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #25D366;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 2rem;
+        }
+        
+        .result-modal {
+            text-align: center;
+        }
+        
+        .result-score {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        .result-pass {
+            color: #25D366;
+        }
+        
+        .result-fail {
+            color: #f5576c;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            .tests-grid {
+                grid-template-columns: 1fr;
+            }
+            .matching-pairs {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="no-copy">
+    <button class="back-home" onclick="window.location.href='/'">
+        <i class="fas fa-home"></i>
+    </button>
+    
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-graduation-cap"></i> اختبارات تحديد المستوى</h1>
+            <p>اختبر مستواك في اللغة الإنجليزية وابدأ رحلة التعلم المناسبة لك</p>
+        </div>
+        
+        <div class="tests-grid" id="testsGrid">
+            <div class="loading-spinner">جاري تحميل الاختبارات...</div>
+        </div>
+    </div>
+    
+    <!-- مودال عرض تفاصيل الاختبار -->
+    <div id="testInfoModal" class="modal">
+        <div class="modal-content">
+            <div id="testInfoContent"></div>
+            <button class="start-btn" onclick="startQuiz()" style="margin-top: 1rem;">🚀 بدء الاختبار</button>
+            <button class="start-btn" onclick="closeTestInfo()" style="background: #555; margin-top: 0.5rem;">إلغاء</button>
+        </div>
+    </div>
+    
+    <!-- مودال أداء الاختبار -->
+    <div id="quizModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div id="quizContent"></div>
+        </div>
+    </div>
+    
+    <!-- مودال النتيجة -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content result-modal">
+            <div id="resultContent"></div>
+            <button class="start-btn" onclick="closeResult()" style="background: #25D366;">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin + '/api';
+        let currentQuiz = null;
+        let userAnswers = [];
+        let timerInterval = null;
+        let timeLeft = 0;
+        
+        // منع اختصارات النسخ واللصق
+        document.addEventListener('copy', (e) => e.preventDefault());
+        document.addEventListener('cut', (e) => e.preventDefault());
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'p')) {
+                e.preventDefault();
+            }
+            if (e.key === 'PrintScreen') {
+                e.preventDefault();
+            }
+        });
+        
+        // تحميل الاختبارات
+        async function loadTests() {
+            try {
+                const res = await fetch(API_URL + '/quizzes');
+                const quizzes = await res.json();
+                renderTests(quizzes);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('testsGrid').innerHTML = '<div style="text-align:center;padding:2rem;">⚠️ حدث خطأ في تحميل الاختبارات</div>';
+            }
+        }
+        
+        function renderTests(quizzes) {
+            const container = document.getElementById('testsGrid');
+            if (!quizzes || quizzes.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:2rem;">📝 لا توجد اختبارات متاحة حالياً</div>';
+                return;
+            }
+            
+            container.innerHTML = quizzes.map(quiz => `
+                <div class="test-card">
+                    <div class="test-icon ${quiz.level}">
+                        <i class="fas ${quiz.level === 'beginner' ? 'fa-seedling' : 'fa-rocket'}"></i>
+                    </div>
+                    <div class="test-title">${escapeHtml(quiz.name)}</div>
+                    <div class="test-description">${escapeHtml(quiz.description || (quiz.level === 'beginner' ? 'اختبار المستوى المبتدئ - مناسب لمن بدأوا تعلم اللغة الإنجليزية' : 'اختبار المستوى المتقدم - مناسب لمن يتقنون اللغة الإنجليزية'))}</div>
+                    <div class="test-details">
+                        <span class="detail-item"><i class="fas fa-clock"></i> ${quiz.duration} دقائق</span>
+                        <span class="detail-item"><i class="fas fa-question-circle"></i> ${quiz.questions?.length || 0} سؤال</span>
+                        <span class="detail-item"><i class="fas fa-star"></i> درجة النجاح: ${quiz.passingScore}%</span>
+                    </div>
+                    <button class="start-btn" onclick="showTestInfo('${quiz._id}')">ابدأ الاختبار</button>
+                </div>
+            `).join('');
+        }
+        
+        async function showTestInfo(quizId) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    alert('❌ يرجى تسجيل الدخول أولاً');
+                    window.location.href = '/';
+                    return;
+                }
+                
+                const res = await fetch(API_URL + '/quizzes/' + quizId, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                currentQuiz = await res.json();
+                
+                document.getElementById('testInfoContent').innerHTML = `
+                    <div class="quiz-header">
+                        <h2>${escapeHtml(currentQuiz.name)}</h2>
+                        <p>${escapeHtml(currentQuiz.description || 'اختبار تحديد المستوى')}</p>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <h3>📋 تفاصيل الاختبار:</h3>
+                        <ul style="margin-top: 0.5rem; list-style: none;">
+                            <li>⏱️ المدة: ${currentQuiz.duration} دقائق</li>
+                            <li>📝 عدد الأسئلة: ${currentQuiz.questions?.length || 0}</li>
+                            <li>⭐ درجة النجاح: ${currentQuiz.passingScore}%</li>
+                            <li>🔒 يمنع لقطة الشاشة والنسخ أثناء الاختبار</li>
+                        </ul>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 10px;">
+                        <h3>📌 تعليمات الاختبار:</h3>
+                        <ul style="margin-top: 0.5rem; padding-right: 1rem;">
+                            <li>اقرأ كل سؤال بعناية قبل الإجابة</li>
+                            <li>يمكنك تغيير إجابتك قبل التقديم</li>
+                            <li>سيتم حساب نتيجتك تلقائياً بعد التقديم</li>
+                            <li>الوقت محدود، انتبه للساعة</li>
+                        </ul>
+                    </div>
+                `;
+                document.getElementById('testInfoModal').style.display = 'flex';
+            } catch (error) {
+                console.error(error);
+                alert('❌ حدث خطأ في تحميل الاختبار');
+            }
+        }
+        
+        function closeTestInfo() {
+            document.getElementById('testInfoModal').style.display = 'none';
+            currentQuiz = null;
+        }
+        
+        function startQuiz() {
+            if (!currentQuiz) return;
+            document.getElementById('testInfoModal').style.display = 'none';
+            
+            // تهيئة الإجابات
+            userAnswers = new Array(currentQuiz.questions.length).fill(null);
+            timeLeft = currentQuiz.duration * 60;
+            
+            renderQuiz();
+            startTimer();
+            document.getElementById('quizModal').style.display = 'flex';
+            
+            // منع لقطة الشاشة أثناء الاختبار
+            document.body.style.background = 'black';
+        }
+        
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitQuiz();
+                } else {
+                    timeLeft--;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            const timerElement = document.getElementById('quizTimer');
+            if (timerElement) {
+                timerElement.innerHTML = `⏱️ ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                if (timeLeft < 60) {
+                    timerElement.classList.add('timer-warning');
+                }
+            }
+        }
+        
+        function renderQuiz() {
+            const container = document.getElementById('quizContent');
+            
+            container.innerHTML = `
+                <div class="quiz-timer" id="quizTimer">⏱️ ${Math.floor(timeLeft/60).toString().padStart(2,'0')}:${(timeLeft%60).toString().padStart(2,'0')}</div>
+                <div class="quiz-header">
+                    <h2>${escapeHtml(currentQuiz.name)}</h2>
+                    <p>أجب على جميع الأسئلة</p>
+                </div>
+                <div id="questionsContainer">
+                    ${currentQuiz.questions.map((q, index) => renderQuestion(q, index)).join('')}
+                </div>
+                <button class="submit-btn" onclick="submitQuiz()">📝 تقديم الاختبار</button>
+            `;
+            
+            // إضافة مستمعين للأحداث
+            currentQuiz.questions.forEach((q, index) => {
+                if (q.type === 'matching') {
+                    setupMatching(index);
+                }
+            });
+        }
+        
+        function renderQuestion(q, index) {
+            let optionsHtml = '';
+            
+            switch(q.type) {
+                case 'multiple_choice':
+                    optionsHtml = `
+                        <div class="options">
+                            ${q.options.map((opt, optIndex) => `
+                                <label class="option">
+                                    <input type="radio" name="q${index}" value="${optIndex}" onchange="saveAnswer(${index}, this.value)">
+                                    <span>${escapeHtml(opt)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                    break;
+                    
+                case 'true_false':
+                    optionsHtml = `
+                        <div class="options">
+                            <label class="option"><input type="radio" name="q${index}" value="true" onchange="saveAnswer(${index}, 'true')"><span>✅ صح</span></label>
+                            <label class="option"><input type="radio" name="q${index}" value="false" onchange="saveAnswer(${index}, 'false')"><span>❌ خطأ</span></label>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'fill_blank':
+                    optionsHtml = `
+                        <div class="options">
+                            <input type="text" class="fill-input" placeholder="أدخل إجابتك..." onchange="saveAnswer(${index}, this.value)">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'essay':
+                    optionsHtml = `
+                        <div class="options">
+                            <textarea rows="4" class="essay-textarea" placeholder="اكتب إجابتك هنا..." onchange="saveAnswer(${index}, this.value)"></textarea>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'audio':
+                    optionsHtml = `
+                        <div class="options">
+                            <audio class="audio-player" controls src="${q.audioUrl}"></audio>
+                            <input type="text" class="fill-input" placeholder="ما هي الكلمة أو العبارة التي سمعتها؟" onchange="saveAnswer(${index}, this.value)">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'image':
+                    optionsHtml = `
+                        <div class="options">
+                            <img src="${q.imageUrl}" class="quiz-image" alt="صورة السؤال">
+                            <input type="text" class="fill-input" placeholder="ماذا ترى في الصورة؟ اكتب معناها" onchange="saveAnswer(${index}, this.value)">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'matching':
+                    optionsHtml = `
+                        <div class="matching-pairs" id="matching-${index}">
+                            <div class="matching-left" id="matching-left-${index}">
+                                ${q.matchingPairs.map((pair, i) => `
+                                    <div class="matching-item" data-left="${i}" data-right="">${escapeHtml(pair.left)}</div>
+                                `).join('')}
+                            </div>
+                            <div class="matching-right" id="matching-right-${index}">
+                                ${q.matchingPairs.map((pair, i) => `
+                                    <div class="matching-item" data-right="${i}" data-left="">${escapeHtml(pair.right)}</div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            return `
+                <div class="question-item">
+                    <div class="question-title">
+                        <span>${index + 1}. ${escapeHtml(q.question)}</span>
+                        <span class="question-points">${q.points} نقطة</span>
+                    </div>
+                    ${optionsHtml}
+                </div>
+            `;
+        }
+        
+        function setupMatching(index) {
+            const leftItems = document.querySelectorAll(`#matching-left-${index} .matching-item`);
+            const rightItems = document.querySelectorAll(`#matching-right-${index} .matching-item`);
+            let selectedLeft = null;
+            
+            leftItems.forEach(item => {
+                item.onclick = () => {
+                    leftItems.forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedLeft = item;
+                };
+            });
+            
+            rightItems.forEach(item => {
+                item.onclick = () => {
+                    if (selectedLeft) {
+                        selectedLeft.setAttribute('data-right', item.getAttribute('data-right'));
+                        item.setAttribute('data-left', selectedLeft.getAttribute('data-left'));
+                        selectedLeft.classList.remove('selected');
+                        selectedLeft = null;
+                        saveMatchingAnswer(index);
+                    }
+                };
+            });
+        }
+        
+        function saveMatchingAnswer(index) {
+            const leftItems = document.querySelectorAll(`#matching-left-${index} .matching-item`);
+            const answers = {};
+            leftItems.forEach(item => {
+                const leftId = item.getAttribute('data-left');
+                const rightId = item.getAttribute('data-right');
+                if (leftId && rightId) {
+                    answers[leftId] = rightId;
+                }
+            });
+            saveAnswer(index, answers);
+        }
+        
+        function saveAnswer(index, value) {
+            userAnswers[index] = value;
+        }
+        
+        async function submitQuiz() {
+            clearInterval(timerInterval);
+            
+            // التحقق من الإجابة على جميع الأسئلة
+            const unanswered = userAnswers.filter(a => a === null || a === '' || (typeof a === 'object' && Object.keys(a).length === 0)).length;
+            if (unanswered > 0) {
+                if (!confirm(`⚠️ هناك ${unanswered} سؤال لم يتم الإجابة عليه. هل تريد المتابعة؟`)) {
+                    startTimer();
+                    return;
+                }
+            }
+            
+            const timeSpent = (currentQuiz.duration * 60) - timeLeft;
+            
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/quizzes/' + currentQuiz._id + '/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ answers: userAnswers, timeSpent })
+                });
+                
+                const result = await res.json();
+                showResult(result);
+                
+            } catch (error) {
+                console.error(error);
+                alert('❌ حدث خطأ في تقديم الاختبار');
+            }
+        }
+        
+        function showResult(result) {
+            document.getElementById('quizModal').style.display = 'none';
+            
+            const resultContent = document.getElementById('resultContent');
+            resultContent.innerHTML = `
+                <h2>${result.passed ? '🎉 تهانينا! 🎉' : '📚 حاول مرة أخرى'}</h2>
+                <div class="result-score ${result.passed ? 'result-pass' : 'result-fail'}">
+                    ${Math.round(result.percentage)}%
+                </div>
+                <p>لقد حصلت على ${Math.round(result.score)} من ${result.totalPoints} نقطة</p>
+                <p>درجة النجاح: ${result.passingScore}%</p>
+                ${result.passed ? '<p>✅ لقد اجتزت الاختبار بنجاح! تم تحديث مستواك.</p>' : '<p>❌ لم تجتز الاختبار. حاول مرة أخرى بعد المراجعة.</p>'}
+                <br>
+                <button class="start-btn" onclick="closeResult()" style="background: #25D366;">رجوع للاختبارات</button>
+            `;
+            document.getElementById('resultModal').style.display = 'flex';
+            
+            // تحديث مستوى المستخدم في localStorage
+            if (result.passed) {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.level = currentQuiz.level;
+                user.levelScore = result.percentage;
+                localStorage.setItem('user', JSON.stringify(user));
+            }
+        }
+        
+        function closeResult() {
+            document.getElementById('resultModal').style.display = 'none';
+            document.body.style.background = '';
+            loadTests();
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+        
+        // التحقق من تسجيل الدخول
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/';
+            }
+        }
+        
+        checkAuth();
+        loadTests();
+    </script>
+</body>
+</html>
