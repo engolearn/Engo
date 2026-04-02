@@ -32,6 +32,19 @@ window.showRegisterModal = () => {
 window.closeRegisterModal = () => {
     document.getElementById('registerModal').style.display = 'none';
 };
+// التحقق من صلاحية المستخدم للاختبار
+async function checkTestAccess(level) {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token || !user.id) {
+        showAlert('❌ يرجى تسجيل الدخول أولاً', 'error');
+        window.location.href = '/';
+        return false;
+    }
+    
+    return true;
+}
 
 // تسجيل الدخول
 window.login = async (email, password) => {
