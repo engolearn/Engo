@@ -450,6 +450,18 @@ app.get('/api/progress/:courseId', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// Get all users for private chat
+app.get('/api/users', auth, async (req, res) => {
+    try {
+        const users = await User.find({ 
+            _id: { $ne: req.user._id },
+            role: { $ne: 'admin' }
+        }).select('_id name email');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 // ==================== Socket.IO ====================
 io.on('connection', (socket) => {
@@ -464,6 +476,194 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('❌ A user disconnected:', socket.id);
     });
+});
+// ==================== Private Messaging ====================
+
+// تخزين المحادثات الخاصة
+const privateConversations = new Map(); // key: `${userId1}_${userId2}`
+
+// بدء محادثة خاصة
+socket.on('start_private_chat', async (targetUserId, callback) => {
+    try {
+        const targetUser = await User.findById(targetUserId);
+        if (!targetUser) {
+            return callback({ success: false, error: 'المستخدم غير موجود' });
+        }
+        
+        const conversationId = [socket.user._id, targetUserId].sort().join('_');
+        let conversation = privateConversations.get(conversationId);
+        
+        if (!conversation) {
+            conversation = {
+                id: conversationId,
+                participants: [socket.user._id.toString(), targetUserId],
+                messages: [],
+                createdAt: new Date()
+            };
+            privateConversations.set(conversationId, conversation);
+        }
+        
+        // الانضمام إلى غرفة خاصة بالمحادثة
+        socket.join(`private_${conversationId}`);
+        
+        callback({ 
+            success: true, 
+            conversation: {
+                id: conversation.id,
+                participant: {
+                    id: targetUser._id,
+                    name: targetUser.name,
+                    email: targetUser.email
+                },
+                messages: conversation.messages
+            }
+        });
+        
+        // إشعار للمستخدم الآخر
+        const targetSocket = onlineUsers.get(targetUserId);
+        if (targetSocket) {
+            io.to(targetSocket).emit('private_chat_request', {
+                from: {
+                    id: socket.user._id,
+                    name: socket.user.name
+                },
+                conversationId
+            });
+        }
+        
+    } catch (error) {
+        callback({ success: false, error: error.message });
+    }
+});
+
+// إرسال رسالة خاصة
+socket.on('send_private_message', async (data, callback) => {
+    try {
+        const { targetUserId, message } = data;
+        const conversationId = [socket.user._id, targetUserId].sort().join('_');
+        
+        let conversation = privateConversations.get(conversationId);
+        if (!conversation) {
+            conversation = {
+                id: conversationId,
+                participants: [socket.user._id.toString(), targetUserId],
+                messages: [],
+                createdAt: new Date()
+            };
+            privateConversations.set(conversationId, conversation);
+        }
+        
+        const newMessage = {
+            id: Date.now().toString(),
+            from: socket.user._id,
+            fromName: socket.user.name,
+            text: message,
+            timestamp: new Date(),
+            read: false
+        };
+        
+        conversation.messages.push(newMessage);
+        privateConversations.set(conversationId, conversation);
+        
+        // إرسال الرسالة لكلا الطرفين
+        socket.emit('private_message_received', newMessage);
+        
+        const targetSocket = onlineUsers.get(targetUserId);
+        if (targetSocket) {
+            io.to(targetSocket).emit('private_message_received', {
+                ...newMessage,
+                conversationId
+            });
+            
+            // إضافة إشعار للمستخدم المستلم
+            await addNotification(targetUserId, {
+                title: '💬 رسالة خاصة',
+                message: `لديك رسالة جديدة من ${socket.user.name}`,
+                type: 'private_message',
+                link: `/chat?private=${conversationId}&with=${socket.user._id}`
+            });
+        }
+        
+        callback({ success: true, message: newMessage });
+        
+    } catch (error) {
+        callback({ success: false, error: error.message });
+    }
+});
+
+// جلب قائمة المستخدمين للدردشة الخاصة
+socket.on('get_users_for_chat', async (callback) => {
+    try {
+        const users = await User.find({ 
+            _id: { $ne: socket.user._id },
+            role: { $ne: 'admin' } // أو يمكن عرض الكل
+        }).select('_id name email');
+        
+        callback({ success: true, users });
+    } catch (error) {
+        callback({ success: false, error: error.message });
+    }
+});
+
+// جلب المحادثات الخاصة للمستخدم
+socket.on('get_my_conversations', async (callback) => {
+    try {
+        const myConversations = [];
+        
+        for (const [key, conv] of privateConversations) {
+            if (conv.participants.includes(socket.user._id.toString())) {
+                const otherUserId = conv.participants.find(p => p !== socket.user._id.toString());
+                const otherUser = await User.findById(otherUserId).select('name email');
+                const unreadCount = conv.messages.filter(m => 
+                    m.from.toString() !== socket.user._id.toString() && !m.read
+                ).length;
+                
+                myConversations.push({
+                    id: conv.id,
+                    participant: {
+                        id: otherUser._id,
+                        name: otherUser.name,
+                        email: otherUser.email
+                    },
+                    lastMessage: conv.messages[conv.messages.length - 1],
+                    unreadCount,
+                    createdAt: conv.createdAt
+                });
+            }
+        }
+        
+        // ترتيب حسب آخر رسالة
+        myConversations.sort((a, b) => {
+            const aTime = a.lastMessage?.timestamp || a.createdAt;
+            const bTime = b.lastMessage?.timestamp || b.createdAt;
+            return new Date(bTime) - new Date(aTime);
+        });
+        
+        callback({ success: true, conversations: myConversations });
+    } catch (error) {
+        callback({ success: false, error: error.message });
+    }
+});
+
+// تحديث حالة قراءة الرسائل
+socket.on('mark_messages_read', async (conversationId, callback) => {
+    try {
+        const conversation = privateConversations.get(conversationId);
+        if (conversation) {
+            conversation.messages.forEach(msg => {
+                if (msg.from.toString() !== socket.user._id.toString()) {
+                    msg.read = true;
+                }
+            });
+            privateConversations.set(conversationId, conversation);
+            
+            callback({ success: true });
+        } else {
+            callback({ success: false, error: 'المحادثة غير موجودة' });
+        }
+    } catch (error) {
+        callback({ success: false, error: error.message });
+    }
 });
 
 // ==================== Connect to MongoDB ====================
