@@ -708,36 +708,54 @@ io.on('connection', (socket) => {
     });
 
     socket.on('get_my_conversations', async (callback) => {
-        try {
-            const conversations = await PrivateConversation.find({
-                participants: socket.user._id
-            }).sort({ lastActivity: -1 });
+    try {
+        console.log('📋 Getting conversations for user:', socket.user.name);
+        
+        const conversations = await PrivateConversation.find({
+            participants: socket.user._id
+        }).sort({ lastActivity: -1 });
+        
+        console.log(`📋 Found ${conversations.length} conversations`);
+        
+        const myConversations = [];
+        for (const conv of conversations) {
+            const otherUserId = conv.participants.find(p => p.toString() !== socket.user._id.toString());
+            const otherUser = await User.findById(otherUserId).select('name email');
+            const isOnline = onlineUsers.has(otherUserId);
+            const unreadCount = conv.messages.filter(m => 
+                m.from.toString() !== socket.user._id.toString() && !m.read
+            ).length;
             
-            const myConversations = [];
-            for (const conv of conversations) {
-                const otherUserId = conv.participants.find(p => p.toString() !== socket.user._id.toString());
-                const otherUser = await User.findById(otherUserId).select('name email');
-                const unreadCount = conv.messages.filter(m => 
-                    m.from.toString() !== socket.user._id.toString() && !m.read
-                ).length;
-                
-                myConversations.push({
-                    id: conv.conversationId,
-                    participant: { id: otherUser._id, name: otherUser.name, email: otherUser.email },
-                    lastMessage: conv.messages[conv.messages.length - 1],
-                    unreadCount,
-                    createdAt: conv.createdAt
-                });
-            }
-            
-            if (callback && typeof callback === 'function') {
-                callback({ success: true, conversations: myConversations });
-            }
-        } catch (error) {
-            console.error('Error getting conversations:', error);
-            if (callback) callback({ success: false, error: error.message });
+            myConversations.push({
+                id: conv.conversationId,
+                participant: { 
+                    id: otherUser._id, 
+                    name: otherUser.name, 
+                    email: otherUser.email,
+                    isOnline: isOnline
+                },
+                lastMessage: conv.messages[conv.messages.length - 1],
+                unreadCount: unreadCount,
+                createdAt: conv.createdAt
+            });
         }
-    });
+        
+        console.log(`📋 Sending ${myConversations.length} conversations to client`);
+        
+        // إرسال القائمة مباشرة
+        if (callback && typeof callback === 'function') {
+            callback({ success: true, conversations: myConversations });
+        } else {
+            socket.emit('private_conversations_list', myConversations);
+        }
+        
+    } catch (error) {
+        console.error('Error getting conversations:', error);
+        if (callback && typeof callback === 'function') {
+            callback({ success: false, error: error.message });
+        }
+    }
+});
 
     socket.on('mark_messages_read', async (conversationId, callback) => {
         try {
