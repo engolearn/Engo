@@ -138,11 +138,12 @@
         <div id="alert" class="alert"></div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('courses')">📚 الدورات</button>
-            <button class="tab-btn" onclick="showTab('lessons')">📖 الدروس</button>
-            <button class="tab-btn" onclick="showTab('quizzes')">📝 الاختبارات</button>
-            <button class="tab-btn" onclick="showTab('users')">👥 المستخدمين</button>
-            <button class="tab-btn" onclick="showTab('payments')">💰 طلبات الدفع</button>
+    <button class="tab-btn active" onclick="showTab('courses')">📚 الدورات</button>
+    <button class="tab-btn" onclick="showTab('lessons')">📖 الدروس</button>
+    <button class="tab-btn" onclick="showTab('levelTests')">📝 اختبارات المستوى</button>
+    <button class="tab-btn" onclick="showTab('quizzes')">📝 الاختبارات</button>
+    <button class="tab-btn" onclick="showTab('users')">👥 المستخدمين</button>
+    <button class="tab-btn" onclick="showTab('payments')">💰 طلبات الدفع</button>
         </div>
 
         <!-- تبويب الدورات -->
@@ -245,6 +246,60 @@
             </div>
             <div class="admin-section"><h2><i class="fas fa-list"></i> قائمة الاختبارات</h2><div id="quizzesList"><div class="loading">جاري التحميل...</div></div></div>
         </div>
+<!-- تبويب اختبارات المستوى -->
+<div id="levelTestsTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-plus-circle"></i> إضافة / تعديل اختبار تحديد مستوى</h2>
+        <form id="addLevelTestForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>المستوى</label>
+                    <select id="testLevel" required>
+                        <option value="beginner">مبتدئ (Beginner)</option>
+                        <option value="advanced">متقدم (Advanced)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>عنوان الاختبار</label>
+                    <input type="text" id="testName" placeholder="مثال: اختبار اللغة الإنجليزية - المستوى المبتدئ" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>وصف الاختبار</label>
+                <textarea id="testDescription" rows="2" placeholder="وصف مختصر للاختبار"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>الوقت (دقائق)</label>
+                    <input type="number" id="testDuration" value="30" required>
+                </div>
+                <div class="form-group">
+                    <label>نسبة النجاح (%)</label>
+                    <input type="number" id="testPassingScore" value="70" required>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; margin-bottom: 1rem;">
+                <h3><i class="fas fa-question-circle"></i> أسئلة الاختبار</h3>
+                <button type="button" class="btn-primary" onclick="addTestQuestion()" style="padding: 8px 20px;">
+                    <i class="fas fa-plus"></i> إضافة سؤال
+                </button>
+            </div>
+            
+            <div id="testQuestionsList" style="max-height: 500px; overflow-y: auto;"></div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn-primary" id="saveTestBtn">💾 حفظ الاختبار</button>
+                <button type="button" class="btn-outline" onclick="resetTestForm()">🔄 إلغاء / جديد</button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-list"></i> قائمة اختبارات المستوى</h2>
+        <div id="levelTestsList"><div class="loading">جاري تحميل الاختبارات...</div></div>
+    </div>
+</div>
 
         <!-- تبويب المستخدمين -->
         <div id="usersTab" class="tab-content">
@@ -275,16 +330,17 @@
         }
 
         function showTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            
-            if (tabName === 'courses') loadCourses();
-            if (tabName === 'users') loadUsers();
-            if (tabName === 'payments') loadPayments();
-            if (tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
-            if (tabName === 'quizzes') { loadCoursesForQuiz(); loadQuizzes(); }
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tabName + 'Tab').classList.add('active');
+    
+    if (tabName === 'courses') loadCourses();
+    if (tabName === 'users') loadUsers();
+    if (tabName === 'payments') loadPayments();
+    if (tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
+    if (tabName === 'levelTests') { loadLevelTests(); }
+    if (tabName === 'quizzes') { loadCoursesForQuiz(); loadQuizzes(); }
         }
 
         async function checkAdmin() {
@@ -961,6 +1017,463 @@
             localStorage.removeItem('user'); 
             window.location.href = '/'; 
         }
+
+
+// ==================== Level Tests Management (كامل) ====================
+let currentEditingTest = null;
+let testQuestions = [];
+let testQuestionCounter = 0;
+
+// إضافة سؤال جديد
+function addTestQuestion() {
+    const id = 'test_q_' + Date.now() + '_' + (++testQuestionCounter);
+    
+    const question = {
+        id: id,
+        type: 'multiple_choice',
+        question: '',
+        points: 10,
+        options: ['', '', ''],
+        correctAnswer: 0,
+        essayKeywords: []
+    };
+    
+    testQuestions.push(question);
+    renderTestQuestions();
+}
+
+// عرض قائمة الأسئلة
+function renderTestQuestions() {
+    const container = document.getElementById('testQuestionsList');
+    if (!container) return;
+    
+    if (testQuestions.length === 0) {
+        container.innerHTML = '<div class="empty-message" style="padding: 2rem; text-align: center;">📝 لا توجد أسئلة. أضف سؤالاً جديداً</div>';
+        return;
+    }
+    
+    container.innerHTML = testQuestions.map((q, idx) => `
+        <div class="question-card" style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px; border-right: 4px solid #667eea;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                    <span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">
+                        سؤال ${idx + 1}
+                    </span>
+                    <span style="color: #718096; font-size: 0.8rem;">
+                        <i class="fas fa-star"></i> ${q.points} نقطة
+                    </span>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn-sm" onclick="moveQuestionUp(${idx})" style="background: #ed8936; color: white; border: none; padding: 5px 10px; border-radius: 5px;" ${idx === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button type="button" class="btn-sm" onclick="moveQuestionDown(${idx})" style="background: #ed8936; color: white; border: none; padding: 5px 10px; border-radius: 5px;" ${idx === testQuestions.length - 1 ? 'disabled' : ''}>
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                    <button type="button" class="btn-sm btn-danger" onclick="removeTestQuestion('${q.id}')" style="background: #e53e3e; color: white; border: none; padding: 5px 10px; border-radius: 5px;">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label>نوع السؤال</label>
+                    <select onchange="updateTestQuestion('${q.id}', 'type', this.value)" style="width: 100%; padding: 8px; border-radius: 8px;">
+                        <option value="multiple_choice" ${q.type === 'multiple_choice' ? 'selected' : ''}>📋 اختيار من متعدد</option>
+                        <option value="true_false" ${q.type === 'true_false' ? 'selected' : ''}>✅ صح/خطأ</option>
+                        <option value="fill_blank" ${q.type === 'fill_blank' ? 'selected' : ''}>✏️ اكمل الفراغ</option>
+                        <option value="essay" ${q.type === 'essay' ? 'selected' : ''}>📝 مقال</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>النقاط</label>
+                    <input type="number" value="${q.points}" onchange="updateTestQuestion('${q.id}', 'points', parseInt(this.value))" style="width: 100%; padding: 8px; border-radius: 8px;">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>السؤال</label>
+                <textarea rows="2" placeholder="أدخل نص السؤال..." onchange="updateTestQuestion('${q.id}', 'question', this.value)" style="width: 100%; padding: 8px; border-radius: 8px;">${escapeHtml(q.question)}</textarea>
+            </div>
+            
+            ${q.type === 'multiple_choice' ? `
+                <div class="form-group">
+                    <label>الخيارات</label>
+                    ${q.options.map((opt, i) => `
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+                            <span style="width: 35px; font-weight: bold;">${String.fromCharCode(65+i)}.</span>
+                            <input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${i+1}" 
+                                onchange="updateTestQuestionOption('${q.id}', ${i}, this.value)" style="flex: 1; padding: 8px; border-radius: 8px;">
+                            <button type="button" class="btn-sm" onclick="removeTestOption('${q.id}', ${i})" style="background: #e53e3e; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                    <button type="button" class="btn-sm" onclick="addTestOption('${q.id}')" style="background: #48bb78; color: white; border: none; padding: 5px 15px; border-radius: 20px; margin-top: 5px; cursor: pointer;">
+                        <i class="fas fa-plus"></i> إضافة خيار
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>الإجابة الصحيحة</label>
+                    <select onchange="updateTestQuestion('${q.id}', 'correctAnswer', parseInt(this.value))" style="width: 100%; padding: 8px; border-radius: 8px;">
+                        ${q.options.map((opt, i) => `
+                            <option value="${i}" ${q.correctAnswer === i ? 'selected' : ''}>${String.fromCharCode(65+i)}. ${escapeHtml(opt)}</option>
+                        `).join('')}
+                    </select>
+                </div>
+            ` : q.type === 'true_false' ? `
+                <div class="form-group">
+                    <label>الإجابة الصحيحة</label>
+                    <select onchange="updateTestQuestion('${q.id}', 'correctAnswer', this.value === 'true')" style="width: 100%; padding: 8px; border-radius: 8px;">
+                        <option value="true" ${q.correctAnswer === true ? 'selected' : ''}>✅ صح (True)</option>
+                        <option value="false" ${q.correctAnswer === false ? 'selected' : ''}>❌ خطأ (False)</option>
+                    </select>
+                </div>
+            ` : q.type === 'fill_blank' ? `
+                <div class="form-group">
+                    <label>الإجابة الصحيحة</label>
+                    <input type="text" value="${escapeHtml(q.correctAnswer)}" onchange="updateTestQuestion('${q.id}', 'correctAnswer', this.value)" placeholder="أدخل الإجابة الصحيحة" style="width: 100%; padding: 8px; border-radius: 8px;">
+                    <small style="color: #718096;">يمكن إضافة أكثر من إجابة مفصولة بفاصلة (مثال: كتاب,book)</small>
+                </div>
+            ` : q.type === 'essay' ? `
+                <div class="form-group">
+                    <label>الكلمات المفتاحية (مفصولة بفواصل)</label>
+                    <input type="text" value="${escapeHtml(q.essayKeywords?.join(','))}" 
+                        onchange="updateTestQuestion('${q.id}', 'essayKeywords', this.value.split(',').map(s => s.trim()))" 
+                        placeholder="مثال: hello,greeting,welcome" style="width: 100%; padding: 8px; border-radius: 8px;">
+                    <small>سيتم تقييم الإجابة بناءً على الكلمات المفتاحية</small>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// تحديث السؤال
+function updateTestQuestion(id, field, value) {
+    const question = testQuestions.find(q => q.id === id);
+    if (question) {
+        if (field === 'correctAnswer' && question.type === 'true_false') {
+            question[field] = value === 'true' || value === true;
+        } else {
+            question[field] = value;
+        }
+    }
+}
+
+function updateTestQuestionOption(id, index, value) {
+    const question = testQuestions.find(q => q.id === id);
+    if (question && question.options) {
+        question.options[index] = value;
+        renderTestQuestions();
+    }
+}
+
+function addTestOption(id) {
+    const question = testQuestions.find(q => q.id === id);
+    if (question && question.options) {
+        question.options.push('');
+        renderTestQuestions();
+    }
+}
+
+function removeTestOption(id, index) {
+    const question = testQuestions.find(q => q.id === id);
+    if (question && question.options && question.options.length > 2) {
+        question.options.splice(index, 1);
+        if (question.correctAnswer >= question.options.length) {
+            question.correctAnswer = question.options.length - 1;
+        }
+        renderTestQuestions();
+    } else {
+        showAlert('❌ يجب أن يكون هناك خياران على الأقل', 'error');
+    }
+}
+
+function removeTestQuestion(id) {
+    if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+        testQuestions = testQuestions.filter(q => q.id !== id);
+        renderTestQuestions();
+    }
+}
+
+function moveQuestionUp(index) {
+    if (index > 0) {
+        [testQuestions[index - 1], testQuestions[index]] = [testQuestions[index], testQuestions[index - 1]];
+        renderTestQuestions();
+    }
+}
+
+function moveQuestionDown(index) {
+    if (index < testQuestions.length - 1) {
+        [testQuestions[index + 1], testQuestions[index]] = [testQuestions[index], testQuestions[index + 1]];
+        renderTestQuestions();
+    }
+}
+
+// إعادة تعيين النموذج
+function resetTestForm() {
+    currentEditingTest = null;
+    document.getElementById('addLevelTestForm').reset();
+    document.getElementById('testLevel').value = 'beginner';
+    document.getElementById('testDuration').value = '30';
+    document.getElementById('testPassingScore').value = '70';
+    testQuestions = [];
+    testQuestionCounter = 0;
+    renderTestQuestions();
+    document.getElementById('saveTestBtn').innerHTML = '💾 حفظ الاختبار';
+    showAlert('🔄 تم إعادة تعيين النموذج', 'success');
+}
+
+// إنشاء اختبار جديد
+async function createNewLevelTest() {
+    const token = localStorage.getItem('token');
+    
+    if (testQuestions.length === 0) {
+        showAlert('❌ يرجى إضافة أسئلة للاختبار', 'error');
+        return;
+    }
+    
+    const testData = {
+        title: document.getElementById('testLevel').value === 'beginner' ? 'beginner_level_test' : 'advanced_level_test',
+        level: document.getElementById('testLevel').value,
+        name: document.getElementById('testName').value,
+        description: document.getElementById('testDescription').value,
+        duration: parseInt(document.getElementById('testDuration').value),
+        passingScore: parseInt(document.getElementById('testPassingScore').value),
+        questions: testQuestions.map(q => {
+            const baseQuestion = {
+                type: q.type,
+                question: q.question,
+                points: q.points
+            };
+            if (q.type === 'multiple_choice') {
+                baseQuestion.options = q.options;
+                baseQuestion.correctAnswer = q.correctAnswer;
+            } else if (q.type === 'true_false') {
+                baseQuestion.correctAnswer = q.correctAnswer;
+            } else if (q.type === 'fill_blank') {
+                baseQuestion.correctAnswer = q.correctAnswer;
+            } else if (q.type === 'essay') {
+                baseQuestion.essayKeywords = q.essayKeywords;
+            }
+            return baseQuestion;
+        })
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(testData)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم إنشاء الاختبار بنجاح', 'success');
+            resetTestForm();
+            loadLevelTests();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// تحديث اختبار موجود
+async function updateLevelTest() {
+    const token = localStorage.getItem('token');
+    
+    if (testQuestions.length === 0) {
+        showAlert('❌ يرجى إضافة أسئلة للاختبار', 'error');
+        return false;
+    }
+    
+    const testData = {
+        title: document.getElementById('testLevel').value === 'beginner' ? 'beginner_level_test' : 'advanced_level_test',
+        level: document.getElementById('testLevel').value,
+        name: document.getElementById('testName').value,
+        description: document.getElementById('testDescription').value,
+        duration: parseInt(document.getElementById('testDuration').value),
+        passingScore: parseInt(document.getElementById('testPassingScore').value),
+        questions: testQuestions.map(q => {
+            const baseQuestion = {
+                type: q.type,
+                question: q.question,
+                points: q.points
+            };
+            if (q.type === 'multiple_choice') {
+                baseQuestion.options = q.options;
+                baseQuestion.correctAnswer = q.correctAnswer;
+            } else if (q.type === 'true_false') {
+                baseQuestion.correctAnswer = q.correctAnswer;
+            } else if (q.type === 'fill_blank') {
+                baseQuestion.correctAnswer = q.correctAnswer;
+            } else if (q.type === 'essay') {
+                baseQuestion.essayKeywords = q.essayKeywords;
+            }
+            return baseQuestion;
+        })
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes/' + currentEditingTest._id, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(testData)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم تحديث الاختبار بنجاح', 'success');
+            resetTestForm();
+            loadLevelTests();
+            return true;
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+            return false;
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+        return false;
+    }
+}
+
+// تحميل اختبار للتعديل
+async function editLevelTest(testId) {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/quizzes/' + testId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const test = await res.json();
+        
+        if (!res.ok) throw new Error(test.message);
+        
+        currentEditingTest = test;
+        
+        document.getElementById('testLevel').value = test.level;
+        document.getElementById('testName').value = test.name;
+        document.getElementById('testDescription').value = test.description || '';
+        document.getElementById('testDuration').value = test.duration;
+        document.getElementById('testPassingScore').value = test.passingScore;
+        
+        testQuestions = test.questions.map((q, idx) => ({
+            id: 'test_q_' + Date.now() + '_' + idx,
+            type: q.type,
+            question: q.question,
+            points: q.points || 10,
+            options: q.options || ['', '', ''],
+            correctAnswer: q.correctAnswer,
+            essayKeywords: q.essayKeywords || []
+        }));
+        
+        testQuestionCounter = testQuestions.length;
+        renderTestQuestions();
+        
+        document.getElementById('saveTestBtn').innerHTML = '✏️ تحديث الاختبار';
+        
+        document.getElementById('addLevelTestForm').scrollIntoView({ behavior: 'smooth' });
+        showAlert('✏️ يمكنك الآن تعديل الاختبار', 'success');
+        
+    } catch (error) {
+        console.error('Error loading test:', error);
+        showAlert('❌ فشل تحميل الاختبار', 'error');
+    }
+}
+
+// تحميل قائمة الاختبارات
+async function loadLevelTests() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/quizzes', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const tests = await res.json();
+        
+        const levelTests = tests.filter(t => t.title === 'beginner_level_test' || t.title === 'advanced_level_test');
+        
+        const container = document.getElementById('levelTestsList');
+        if (!levelTests || levelTests.length === 0) {
+            container.innerHTML = '<div class="empty-message">📝 لا توجد اختبارات مستوى. قم بإضافة اختبار جديد</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <table class="table">
+                <thead>
+                    <tr><th>الاسم</th><th>المستوى</th><th>الوقت</th><th>الأسئلة</th><th>نسبة النجاح</th><th>الإجراءات</th></tr>
+                </thead>
+                <tbody>
+                    ${levelTests.map(test => `
+                        <tr>
+                            <td><strong>${escapeHtml(test.name)}</strong><br><small style="color:#718096">${escapeHtml(test.description?.substring(0, 50)) || ''}</small></td>
+                            <td>${test.level === 'beginner' ? '🟢 مبتدئ' : '🟠 متقدم'}</td>
+                            <td>⏱️ ${test.duration} دقيقة</td>
+                            <td>📋 ${test.questions?.length || 0} سؤال</td>
+                            <td>🎯 ${test.passingScore}%</td>
+                            <td class="inline-buttons">
+                                <button class="btn-warning" onclick="editLevelTest('${test._id}')" style="background:#ed8936; color:white; padding:5px 12px; border-radius:8px; margin:2px;">
+                                    <i class="fas fa-edit"></i> تعديل
+                                </button>
+                                <button class="btn-danger" onclick="deleteLevelTest('${test._id}')" style="background:#e53e3e; color:white; padding:5px 12px; border-radius:8px; margin:2px;">
+                                    <i class="fas fa-trash"></i> حذف
+                                </button>
+                             </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error loading tests:', error);
+        document.getElementById('levelTestsList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبارات</div>';
+    }
+}
+
+// حذف اختبار
+async function deleteLevelTest(testId) {
+    if (!confirm('⚠️ هل أنت متأكد من حذف هذا الاختبار؟\nسيتم حذف جميع الأسئلة والنتائج المرتبطة به.')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes/' + testId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم حذف الاختبار بنجاح', 'success');
+            loadLevelTests();
+            if (currentEditingTest && currentEditingTest._id === testId) {
+                resetTestForm();
+            }
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// معالج إرسال النموذج
+document.getElementById('addLevelTestForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (currentEditingTest) {
+        await updateLevelTest();
+    } else {
+        await createNewLevelTest();
+    }
+});
 
         // ==================== Init ====================
         async function init() {
