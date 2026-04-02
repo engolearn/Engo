@@ -1,20 +1,13 @@
-// server.js - نسخة كاملة ومنظمة مع Socket.IO
+// server.js - نسخة مصححة
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
+const http = require('http');
+const socketIo = require('socket.io');
 require('dotenv').config();
 
 const app = express();
-const http = require('http');
-const { Server } = require('socket.io');
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
-});
-
 const PORT = process.env.PORT || 5000;
 
 // ==================== Middleware ====================
@@ -125,6 +118,25 @@ const userProgressSchema = new mongoose.Schema({
 });
 const UserProgress = mongoose.model('UserProgress', userProgressSchema);
 
+// ==================== Helper Functions ====================
+async function addNotification(userId, notifData) {
+    try {
+        const user = await User.findById(userId);
+        if (user) {
+            if (!user.notifications) user.notifications = [];
+            user.notifications.push({
+                id: Date.now().toString(),
+                ...notifData,
+                createdAt: new Date(),
+                read: false
+            });
+            await user.save();
+        }
+    } catch (error) {
+        console.error('Error adding notification:', error);
+    }
+}
+
 // ==================== Auth Middleware ====================
 const auth = async (req, res, next) => {
     try {
@@ -233,15 +245,6 @@ app.post('/api/admin/courses', auth, adminAuth, async (req, res) => {
     }
 });
 
-app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
-    try {
-        const course = await Course.findByIdAndUpdate(req.params.courseId, req.body, { new: true });
-        res.json({ message: '✅ تم تحديث الدورة', course });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
 app.delete('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
     try {
         await Course.findByIdAndDelete(req.params.courseId);
@@ -251,8 +254,6 @@ app.delete('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => 
     }
 });
 
-// ==================== Lesson Routes ====================
-// Get lessons for a course (admin)
 app.get('/api/admin/courses/:courseId/lessons', auth, adminAuth, async (req, res) => {
     try {
         const lessons = await Lesson.find({ courseId: req.params.courseId }).sort({ lessonNumber: 1 });
@@ -262,96 +263,12 @@ app.get('/api/admin/courses/:courseId/lessons', auth, adminAuth, async (req, res
     }
 });
 
-// Add lesson
 app.post('/api/admin/lessons', auth, adminAuth, async (req, res) => {
     try {
-        const { title, content, videoUrl, audioUrl, lessonNumber, courseId, assignment } = req.body;
-        if (!title || !content || !lessonNumber || !courseId) {
-            return res.status(400).json({ message: 'جميع الحقول المطلوبة غير مكتملة' });
-        }
-
-        let cleanAssignment = {
-            title: assignment?.title || 'واجب الدرس',
-            description: assignment?.description || '',
-            questions: [],
-            passingScore: assignment?.passingScore || 70
-        };
-
-        if (assignment && assignment.questions && Array.isArray(assignment.questions)) {
-            cleanAssignment.questions = assignment.questions.map(q => {
-                const question = {
-                    id: q.id || Date.now().toString() + Math.random(),
-                    type: q.type,
-                    title: q.title || '',
-                    points: q.points || 10
-                };
-
-                switch (q.type) {
-                    case 'sentence_arrangement':
-                        question.sentences = q.sentences || [];
-                        question.correctOrder = q.correctOrder || [];
-                        break;
-                    case 'word_match':
-                        question.pairs = q.pairs || [];
-                        question.words = q.words || [];
-                        break;
-                    case 'fill_blank':
-                        question.text = q.text || '';
-                        question.correctAnswer = q.correctAnswer || '';
-                        question.blanks = q.blanks || [];
-                        break;
-                    case 'multiple_choice':
-                        question.question = q.question || '';
-                        question.options = q.options || [];
-                        question.correctOption = q.correctOption || 0;
-                        break;
-                    case 'true_false':
-                        question.statement = q.statement || '';
-                        question.isTrue = q.isTrue || false;
-                        break;
-                }
-                return question;
-            });
-        }
-
-        const lesson = new Lesson({
-            title,
-            content,
-            videoUrl: videoUrl || null,
-            audioUrl: audioUrl || null,
-            lessonNumber,
-            courseId,
-            assignment: cleanAssignment
-        });
-
+        const lesson = new Lesson(req.body);
         await lesson.save();
-
-        await Course.findByIdAndUpdate(courseId, { 
-            $push: { lessons: lesson._id }, 
-            $inc: { totalLessons: 1 } 
-        });
-
+        await Course.findByIdAndUpdate(lesson.courseId, { $push: { lessons: lesson._id }, $inc: { totalLessons: 1 } });
         res.json({ message: '✅ تم إضافة الدرس بنجاح', lesson });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// Get single lesson
-app.get('/api/lessons/:lessonId', auth, async (req, res) => {
-    try {
-        const lesson = await Lesson.findById(req.params.lessonId);
-        if (!lesson) return res.status(404).json({ message: 'الدرس غير موجود' });
-        res.json(lesson);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-app.put('/api/admin/lessons/:lessonId', auth, adminAuth, async (req, res) => {
-    try {
-        const lesson = await Lesson.findByIdAndUpdate(req.params.lessonId, req.body, { new: true });
-        res.json({ message: '✅ تم تحديث الدرس', lesson });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -368,58 +285,74 @@ app.delete('/api/admin/lessons/:lessonId', auth, adminAuth, async (req, res) => 
     }
 });
 
-// ==================== Quiz Routes ====================
-app.post('/api/admin/quizzes', auth, adminAuth, async (req, res) => {
+app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
     try {
-        const quiz = new Quiz(req.body);
-        await quiz.save();
-        res.json({ message: '✅ تم إضافة الاختبار', quiz });
+        const users = await User.find().select('-password');
+        res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-app.get('/api/quizzes/:quizId', auth, async (req, res) => {
+// ==================== Lesson Routes ====================
+app.get('/api/lessons/:lessonId', auth, async (req, res) => {
     try {
-        const quiz = await Quiz.findById(req.params.quizId);
-        res.json(quiz);
+        const lesson = await Lesson.findById(req.params.lessonId);
+        if (!lesson) return res.status(404).json({ message: 'الدرس غير موجود' });
+        res.json(lesson);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
+// ==================== User Stats ====================
+app.get('/api/user/stats', auth, async (req, res) => {
     try {
-        const { answers } = req.body;
-        const quiz = await Quiz.findById(req.params.quizId);
-
-        let score = 0;
-        quiz.questions.forEach((q, i) => {
-            if (answers[i] === q.correctAnswer) score += 100 / quiz.questions.length;
+        const progress = await UserProgress.find({ userId: req.user._id });
+        const completedLessonsCount = progress.reduce((sum, p) => sum + p.completedLessons.length, 0);
+        res.json({
+            points: req.user.points || { totalXP: 0, level: 1, levelProgress: 0, nextLevelXP: 100 },
+            badges: req.user.badges || [],
+            totalLessonsCompleted: completedLessonsCount,
+            totalCoursesCompleted: progress.length,
+            nextLevel: {
+                current: req.user.points?.level || 1,
+                next: (req.user.points?.level || 1) + 1,
+                progress: req.user.points?.levelProgress || 0,
+                needed: req.user.points?.nextLevelXP || 100
+            }
         });
-
-        if (quiz.title === 'level_test') {
-            await User.findByIdAndUpdate(req.user._id, { levelScore: score, level: score >= 70 ? 'beginner' : null });
-        } else {
-            await UserProgress.findOneAndUpdate(
-                { userId: req.user._id, courseId: quiz.courseId },
-                { [quiz.title === 'midterm' ? 'midtermScore' : 'finalScore']: score },
-                { upsert: true }
-            );
-        }
-
-        res.json({ score, passed: score >= quiz.passingScore });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// ==================== Level Test ====================
+// ==================== Notifications ====================
+app.get('/api/notifications', auth, async (req, res) => {
+    try {
+        res.json(req.user.notifications || []);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.put('/api/notifications/:notifId/read', auth, async (req, res) => {
+    try {
+        const notif = req.user.notifications?.find(n => n.id === req.params.notifId);
+        if (notif) notif.read = true;
+        await req.user.save();
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ==================== Quiz Routes ====================
 app.get('/api/level-test', async (req, res) => {
     try {
-        const levelTest = await Quiz.findOne({ title: 'level_test' });
+        let levelTest = await Quiz.findOne({ title: 'level_test' });
         if (!levelTest) {
-            const defaultTest = new Quiz({
+            levelTest = new Quiz({
                 title: 'level_test',
                 questions: [
                     { question: 'What is the correct greeting in English?', options: ['مرحبا', 'Hello', 'السلام عليكم', 'Bonjour'], correctAnswer: 1 },
@@ -430,21 +363,54 @@ app.get('/api/level-test', async (req, res) => {
                 ],
                 passingScore: 70
             });
-            await defaultTest.save();
-            res.json(defaultTest);
-        } else {
-            res.json(levelTest);
+            await levelTest.save();
         }
+        res.json(levelTest);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
+    try {
+        const { answers } = req.body;
+        const quiz = await Quiz.findById(req.params.quizId);
+        let score = 0;
+        quiz.questions.forEach((q, i) => {
+            if (answers[i] === q.correctAnswer) score += 100 / quiz.questions.length;
+        });
+        if (quiz.title === 'level_test') {
+            await User.findByIdAndUpdate(req.user._id, { levelScore: score, level: score >= 70 ? 'beginner' : null });
+        }
+        res.json({ score, passed: score >= quiz.passingScore });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
 // ==================== User Progress ====================
+app.post('/api/progress/:courseId/lessons/:lessonId/complete', auth, async (req, res) => {
+    try {
+        const { score } = req.body;
+        let progress = await UserProgress.findOne({ userId: req.user._id, courseId: req.params.courseId });
+        if (!progress) {
+            progress = new UserProgress({ userId: req.user._id, courseId: req.params.courseId, completedLessons: [] });
+        }
+        const exists = progress.completedLessons.some(l => l.lessonId.toString() === req.params.lessonId);
+        if (!exists) {
+            progress.completedLessons.push({ lessonId: req.params.lessonId, score: score || 100 });
+            await progress.save();
+        }
+        res.json({ message: '✅ تم إكمال الدرس', progress });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 app.get('/api/progress/:courseId', auth, async (req, res) => {
     try {
         const progress = await UserProgress.findOne({ userId: req.user._id, courseId: req.params.courseId });
-        res.json(progress || { completedLessons: [], midtermScore: null, finalScore: null, levelTestScore: null, certificateIssued: false });
+        res.json(progress || { completedLessons: [], midtermScore: null, finalScore: null });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -544,7 +510,7 @@ io.on('connection', (socket) => {
             const targetUser = await User.findById(targetUserId);
             if (!targetUser) return callback({ success: false, error: 'المستخدم غير موجود' });
             
-            const conversationId = [socket.user._id, targetUserId].sort().join('_');
+            const conversationId = [socket.user._id.toString(), targetUserId].sort().join('_');
             let conversation = privateConversations.get(conversationId);
             
             if (!conversation) {
@@ -587,7 +553,7 @@ io.on('connection', (socket) => {
     socket.on('send_private_message', async (data, callback) => {
         try {
             const { targetUserId, message } = data;
-            const conversationId = [socket.user._id, targetUserId].sort().join('_');
+            const conversationId = [socket.user._id.toString(), targetUserId].sort().join('_');
             
             let conversation = privateConversations.get(conversationId);
             if (!conversation) {
@@ -633,8 +599,7 @@ io.on('connection', (socket) => {
     socket.on('get_users_for_chat', async (callback) => {
         try {
             const users = await User.find({ 
-                _id: { $ne: socket.user._id },
-                role: { $ne: 'admin' }
+                _id: { $ne: socket.user._id }
             }).select('_id name email');
             callback({ success: true, users });
         } catch (error) {
@@ -706,12 +671,25 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+// ==================== Serve Frontend ====================
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
+
+app.get('/chat', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'chat.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'admin.html'));
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy', mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
 });
 
 // ==================== Connect to MongoDB ====================
-const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/elearning';
+const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/elearning';
 mongoose.connect(mongoURI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -721,18 +699,9 @@ mongoose.connect(mongoURI, {
     console.error('❌ MongoDB connection error:', err);
 });
 
-// ==================== Serve Frontend ====================
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
-});
-app.get('/chat', (req, res) => { 
-    res.sendFile(path.join(__dirname, 'frontend', 'chat.html')); 
-});
-app.get('/admin', (req, res) => { 
-    res.sendFile(path.join(__dirname, 'frontend', 'admin.html')); 
-});
-
 // ==================== Start Server ====================
-server.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Admin: http://localhost:${PORT}/admin`);
+    console.log(`📍 Chat: http://localhost:${PORT}/chat`);
 });
