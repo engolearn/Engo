@@ -394,6 +394,261 @@
         function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/'; }
         function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
+        // ==================== Assignment Questions Functions ====================
+function addNewQuestion() {
+    const type = document.getElementById('questionTypeSelect').value;
+    const id = 'q_' + Date.now() + '_' + (++questionCounter);
+    
+    const newQuestion = { id, type, title: '', points: 10 };
+    
+    switch(type) {
+        case 'sentence_arrangement':
+            newQuestion.sentences = ['', '', ''];
+            newQuestion.correctOrder = [0, 1, 2];
+            break;
+        case 'word_match':
+            newQuestion.pairs = [{ word: '', meaning: '' }];
+            break;
+        case 'fill_blank':
+            newQuestion.text = '';
+            newQuestion.correctAnswer = '';
+            break;
+        case 'multiple_choice':
+            newQuestion.question = '';
+            newQuestion.options = ['', '', ''];
+            newQuestion.correctOption = 0;
+            break;
+        case 'true_false':
+            newQuestion.statement = '';
+            newQuestion.isTrue = true;
+            break;
+    }
+    
+    questions.push(newQuestion);
+    renderQuestions();
+}
+
+function removeQuestion(id) {
+    questions = questions.filter(q => q.id !== id);
+    renderQuestions();
+}
+
+function updateQuestion(id, field, value, index) {
+    const question = questions.find(q => q.id === id);
+    if (question) {
+        if (field === 'points') question.points = parseInt(value) || 0;
+        else if (field === 'title') question.title = value;
+        else if (field === 'sentences' && index !== undefined) question.sentences[index] = value;
+        else if (field === 'order' && index !== undefined) question.correctOrder[index] = parseInt(value);
+        else if (field === 'pairs_word' && index !== undefined) question.pairs[index].word = value;
+        else if (field === 'pairs_meaning' && index !== undefined) question.pairs[index].meaning = value;
+        else if (field === 'text') question.text = value;
+        else if (field === 'correctAnswer') question.correctAnswer = value;
+        else if (field === 'question') question.question = value;
+        else if (field === 'options' && index !== undefined) question.options[index] = value;
+        else if (field === 'correctOption') question.correctOption = parseInt(value);
+        else if (field === 'statement') question.statement = value;
+        else if (field === 'isTrue') question.isTrue = value === 'true';
+    }
+    renderQuestions();
+}
+
+function renderQuestions() {
+    const container = document.getElementById('questionsList');
+    if (!container) return;
+    
+    if (questions.length === 0) {
+        container.innerHTML = '<div class="empty-message">لا توجد أسئلة. أضف سؤالاً جديداً</div>';
+        return;
+    }
+    
+    container.innerHTML = questions.map(q => {
+        let fieldsHtml = '';
+        
+        switch(q.type) {
+            case 'sentence_arrangement':
+                fieldsHtml = `
+                    <div class="question-field">
+                        <label>الجمل (رتبها بالترتيب الصحيح)</label>
+                        ${q.sentences.map((s, i) => `
+                            <div class="sentence-item">
+                                <input type="text" value="${escapeHtml(s)}" placeholder="جملة ${i+1}" onchange="updateQuestion('${q.id}', 'sentences', this.value, ${i})">
+                                <input type="number" style="width: 80px;" value="${q.correctOrder[i]}" placeholder="ترتيب" onchange="updateQuestion('${q.id}', 'order', this.value, ${i})">
+                                <button class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'sentence', ${i})">✖</button>
+                            </div>
+                        `).join('')}
+                        <button class="btn-primary btn-sm" onclick="addItem('${q.id}', 'sentence')">+ إضافة جملة</button>
+                    </div>
+                `;
+                break;
+            case 'word_match':
+                fieldsHtml = `
+                    <div class="question-field">
+                        <label>الكلمات ومعانيها</label>
+                        ${q.pairs.map((p, i) => `
+                            <div class="sentence-item">
+                                <input type="text" value="${escapeHtml(p.word)}" placeholder="كلمة" onchange="updateQuestion('${q.id}', 'pairs_word', this.value, ${i})">
+                                <input type="text" value="${escapeHtml(p.meaning)}" placeholder="المعنى" onchange="updateQuestion('${q.id}', 'pairs_meaning', this.value, ${i})">
+                                <button class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'pair', ${i})">✖</button>
+                            </div>
+                        `).join('')}
+                        <button class="btn-primary btn-sm" onclick="addItem('${q.id}', 'pair')">+ إضافة زوج</button>
+                    </div>
+                `;
+                break;
+            case 'fill_blank':
+                fieldsHtml = `
+                    <div class="question-field"><label>النص (استخدم ____ للفراغ)</label><textarea rows="2" onchange="updateQuestion('${q.id}', 'text', this.value)">${escapeHtml(q.text || '')}</textarea></div>
+                    <div class="question-field"><label>الإجابة الصحيحة</label><input type="text" value="${escapeHtml(q.correctAnswer || '')}" onchange="updateQuestion('${q.id}', 'correctAnswer', this.value)"></div>
+                `;
+                break;
+            case 'multiple_choice':
+                fieldsHtml = `
+                    <div class="question-field"><label>السؤال</label><input type="text" value="${escapeHtml(q.question || '')}" onchange="updateQuestion('${q.id}', 'question', this.value)"></div>
+                    <div class="question-field"><label>الخيارات</label>
+                        ${q.options.map((opt, i) => `
+                            <div class="sentence-item"><input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${i+1}" onchange="updateQuestion('${q.id}', 'options', this.value, ${i})"><button class="btn-danger btn-sm" onclick="removeItem('${q.id}', 'option', ${i})">✖</button></div>
+                        `).join('')}
+                        <button class="btn-primary btn-sm" onclick="addItem('${q.id}', 'option')">+ إضافة خيار</button>
+                    </div>
+                    <div class="question-field"><label>رقم الإجابة الصحيحة (0,1,2...)</label><input type="number" value="${q.correctOption || 0}" onchange="updateQuestion('${q.id}', 'correctOption', this.value)"></div>
+                `;
+                break;
+            case 'true_false':
+                fieldsHtml = `
+                    <div class="question-field"><label>العبارة</label><input type="text" value="${escapeHtml(q.statement || '')}" onchange="updateQuestion('${q.id}', 'statement', this.value)"></div>
+                    <div class="question-field"><label>الإجابة الصحيحة</label><select onchange="updateQuestion('${q.id}', 'isTrue', this.value)"><option value="true" ${q.isTrue === true ? 'selected' : ''}>✅ صح</option><option value="false" ${q.isTrue === false ? 'selected' : ''}>❌ خطأ</option></select></div>
+                `;
+                break;
+        }
+        
+        return `
+            <div class="question-card">
+                <div class="question-header">
+                    <div><span class="question-type-badge">${getQuestionTypeName(q.type)}</span><span style="margin-right:10px;">${q.points} نقطة</span></div>
+                    <button class="remove-question" onclick="removeQuestion('${q.id}')">✖</button>
+                </div>
+                <div class="question-field"><label>عنوان السؤال</label><input type="text" value="${escapeHtml(q.title)}" onchange="updateQuestion('${q.id}', 'title', this.value)"></div>
+                <div class="question-field"><label>عدد النقاط</label><input type="number" value="${q.points}" style="width:100px" onchange="updateQuestion('${q.id}', 'points', this.value)"></div>
+                ${fieldsHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+function getQuestionTypeName(type) {
+    const names = {
+        'sentence_arrangement': '📝 ترتيب جمل',
+        'word_match': '🔤 كلمة ومعناها',
+        'fill_blank': '✏️ اكمل الفراغ',
+        'multiple_choice': '✅ اختيار من متعدد',
+        'true_false': '⚖️ صح أو خطأ'
+    };
+    return names[type] || type;
+}
+
+function addItem(questionId, type) {
+    const question = questions.find(q => q.id === questionId);
+    if (question) {
+        if (type === 'sentence') {
+            question.sentences.push('');
+            question.correctOrder.push(question.sentences.length - 1);
+        } else if (type === 'pair') {
+            question.pairs.push({ word: '', meaning: '' });
+        } else if (type === 'option') {
+            question.options.push('');
+        }
+        renderQuestions();
+    }
+}
+
+function removeItem(questionId, type, index) {
+    const question = questions.find(q => q.id === questionId);
+    if (question) {
+        if (type === 'sentence') {
+            question.sentences.splice(index, 1);
+            question.correctOrder = question.correctOrder.filter(o => o !== index).map(o => o > index ? o - 1 : o);
+        } else if (type === 'pair') {
+            question.pairs.splice(index, 1);
+        } else if (type === 'option') {
+            question.options.splice(index, 1);
+        }
+        renderQuestions();
+    }
+}
+        async function loadQuizzes() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/quizzes', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const quizzes = await res.json();
+        
+        // تصفية الاختبارات النصفية والنهائية فقط
+        const courseQuizzes = quizzes.filter(q => q.quizType === 'midterm' || q.quizType === 'final');
+        
+        const container = document.getElementById('quizzesList');
+        if (!courseQuizzes || courseQuizzes.length === 0) {
+            container.innerHTML = '<div class="empty-message">📝 لا توجد اختبارات نصفية أو نهائية</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <table class="table">
+                <thead>
+                    <tr><th>الاسم</th><th>النوع</th><th>الدورة</th><th>الوقت</th><th>الأسئلة</th><th>نسبة النجاح</th><th>الإجراءات</th></tr>
+                </thead>
+                <tbody>
+                    ${courseQuizzes.map(quiz => `
+                        <tr>
+                            <td><strong>${escapeHtml(quiz.name)}</strong><br><small>${escapeHtml(quiz.description?.substring(0, 50)) || ''}</small></td>
+                            <td>${quiz.quizType === 'midterm' ? '📝 اختبار نصفي' : '🎓 اختبار نهائي'}</td>
+                            <td>${quiz.courseId?.title || 'غير محدد'}</td>
+                            <td>⏱️ ${quiz.duration} دقيقة</td>
+                            <td>📋 ${quiz.questions?.length || 0}</td>
+                            <td>🎯 ${quiz.passingScore}%</td>
+                            <td class="inline-buttons">
+                                <button class="btn-warning" onclick="editQuiz('${quiz._id}')"><i class="fas fa-edit"></i> تعديل</button>
+                                <button class="btn-danger" onclick="deleteQuiz('${quiz._id}')"><i class="fas fa-trash"></i> حذف</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error loading quizzes:', error);
+        document.getElementById('quizzesList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبارات</div>';
+    }
+}
+
+async function deleteQuiz(quizId) {
+    if (!confirm('⚠️ هل أنت متأكد من حذف هذا الاختبار؟')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes/' + quizId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم حذف الاختبار بنجاح', 'success');
+            loadQuizzes();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+function editQuiz(quizId) {
+    // سيتم إضافة وظيفة تعديل الاختبار لاحقاً
+    showAlert('✏️ وظيفة تعديل الاختبار قيد التطوير', 'success');
+            }
+        
         async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadPayments(); await loadCoursesForSelect(); } }
         init();
     </script>
