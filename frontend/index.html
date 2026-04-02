@@ -888,12 +888,7 @@ function showNotification(title, body, link) {
     setTimeout(() => notification.close(), 5000);
 }
 
-// استقبال الإشعارات من Socket.io
-if (socket) {
-    socket.on('new_notification', (data) => {
-        showNotification(data.title, data.message, data.link);
-    });
-}
+
         // ==================== User Stats ====================
         async function loadUserStats() {
             try {
