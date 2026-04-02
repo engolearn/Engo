@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engo-v1';
+const CACHE_NAME = 'engo-v2';
 const urlsToCache = ['/', '/index.html', '/chat.html', '/admin.html', '/manifest.json'];
 
 self.addEventListener('install', event => {
