@@ -764,11 +764,37 @@ document.getElementById('addLevelTestForm')?.addEventListener('submit', async (e
         }
 
         function showTab(tabName) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById(tabName + 'Tab').classList.add('active');
+    // إخفاء جميع التبويبات
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
     
+    // إزالة الـ active من جميع الأزرار
+    const btns = document.querySelectorAll('.tab-btn');
+    btns.forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // إظهار التبويب المحدد
+    const activeTab = document.getElementById(tabName + 'Tab');
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
+    
+    // تفعيل الزر الحالي
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // إذا لم يكن هناك event، نبحث عن الزر المناسب
+        btns.forEach(btn => {
+            if (btn.getAttribute('onclick')?.includes(tabName)) {
+                btn.classList.add('active');
+            }
+        });
+    }
+    
+    // تحميل البيانات حسب التبويب
     if (tabName === 'courses') loadCourses();
     if (tabName === 'users') loadUsers();
     if (tabName === 'payments') loadPayments();
