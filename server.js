@@ -485,228 +485,360 @@ io.on('connection', (socket) => {
     console.log('🔌 User connected:', socket.user?.name || socket.id);
     onlineUsers.set(socket.user._id.toString(), socket.id);
 
-    // ========== غرف المحادثة العامة ==========
-    socket.on('get_rooms', (callback) => {
-        const roomList = Array.from(rooms.values()).filter(r => 
-            !r.private || r.members.includes(socket.user._id.toString()) || r.createdBy?.toString() === socket.user._id.toString()
-        );
-        if (callback) callback(roomList);
-        else socket.emit('rooms_list', roomList);
-    });
+    
+                
+        // ========== غرف المحادثة العامة (باستخدام قاعدة البيانات) ==========
+socket.on('get_rooms', async (callback) => {
+    try {
+        const rooms = await Room.find({
+            $or: [
+                { isPrivate: false },
+                { members: socket.user._id },
+                { createdBy: socket.user._id }
+            ]
+        }).sort({ lastActivity: -1 });
+        
+        const roomList = rooms.map(room => ({
+            id: room.roomId,
+            name: room.name,
+            members: room.members,
+            private: room.isPrivate,
+            lastMessage: room.messages[room.messages.length - 1]
+        }));
+        
+        if (callback && typeof callback === 'function') {
+            callback(roomList);
+        } else {
+            socket.emit('rooms_list', roomList);
+        }
+    } catch (error) {
+        console.error('Error getting rooms:', error);
+        if (callback) callback([]);
+    }
+});
 
-    socket.on('create_room', (data, callback) => {
+socket.on('create_room', async (data, callback) => {
+    try {
         const roomId = Date.now().toString();
-        const room = {
-            id: roomId,
+        const newRoom = new Room({
+            roomId: roomId,
             name: data.name,
             createdBy: socket.user._id,
             creatorName: socket.user.name,
-            members: [socket.user._id.toString()],
+            members: [socket.user._id],
             messages: [],
+            isPrivate: data.private || false,
+            allowedUsers: data.allowedUsers || [],
             createdAt: new Date(),
-            private: data.private || false,
-            allowedUsers: data.allowedUsers || []
-        };
-        rooms.set(roomId, room);
+            lastActivity: new Date()
+        });
+        
+        await newRoom.save();
         socket.join(roomId);
-        if (callback) callback({ success: true, room });
-        else socket.emit('room_created', room);
-    });
+        
+        const roomData = {
+            id: newRoom.roomId,
+            name: newRoom.name,
+            members: newRoom.members,
+            private: newRoom.isPrivate,
+            messages: []
+        };
+        
+        if (callback && typeof callback === 'function') {
+            callback({ success: true, room: roomData });
+        }
+        
+        // إشعار للمستخدمين المدعوين
+        if (data.allowedUsers && data.allowedUsers.length) {
+            data.allowedUsers.forEach(async (userId) => {
+                const targetSocket = onlineUsers.get(userId);
+                if (targetSocket) {
+                    io.to(targetSocket).emit('room_invite', {
+                        roomId,
+                        roomName: data.name,
+                        invitedBy: socket.user.name
+                    });
+                }
+                // إضافة إشعار في قاعدة البيانات
+                await addNotification(userId, {
+                    title: '📢 دعوة لغرفة',
+                    message: `${socket.user.name} دعاك للانضمام إلى غرفة "${data.name}"`,
+                    type: 'room_invite',
+                    link: `/chat?room=${roomId}`
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error creating room:', error);
+        if (callback) callback({ success: false, error: error.message });
+    }
+});
 
-    socket.on('join_room', (roomId, callback) => {
-        const room = rooms.get(roomId);
-        if (!room) return callback({ success: false, error: 'الغرفة غير موجودة' });
-        if (room.private && !room.allowedUsers.includes(socket.user._id.toString()) && 
-            room.createdBy?.toString() !== socket.user._id.toString()) {
+socket.on('join_room', async (roomId, callback) => {
+    try {
+        const room = await Room.findOne({ roomId: roomId });
+        if (!room) {
+            return callback({ success: false, error: 'الغرفة غير موجودة' });
+        }
+        
+        if (room.isPrivate && !room.allowedUsers.includes(socket.user._id) && 
+            room.createdBy.toString() !== socket.user._id.toString()) {
             return callback({ success: false, error: 'غير مصرح لك بدخول هذه الغرفة' });
         }
-        if (!room.members.includes(socket.user._id.toString())) {
-            room.members.push(socket.user._id.toString());
+        
+        if (!room.members.includes(socket.user._id)) {
+            room.members.push(socket.user._id);
+            await room.save();
         }
+        
         socket.join(roomId);
-        rooms.set(roomId, room);
-        io.to(roomId).emit('user_joined', { userId: socket.user._id, name: socket.user.name });
-        callback({ success: true, room, messages: room.messages });
-    });
+        
+        io.to(roomId).emit('user_joined', { 
+            userId: socket.user._id, 
+            name: socket.user.name 
+        });
+        
+        callback({ 
+            success: true, 
+            room: {
+                id: room.roomId,
+                name: room.name,
+                members: room.members,
+                private: room.isPrivate
+            },
+            messages: room.messages 
+        });
+    } catch (error) {
+        console.error('Error joining room:', error);
+        callback({ success: false, error: error.message });
+    }
+});
 
-    socket.on('send_message', (data, callback) => {
-        const room = rooms.get(data.roomId);
-        if (!room) return callback({ success: false, error: 'الغرفة غير موجودة' });
+socket.on('send_message', async (data, callback) => {
+    try {
+        const room = await Room.findOne({ roomId: data.roomId });
+        if (!room) {
+            return callback({ success: false, error: 'الغرفة غير موجودة' });
+        }
+        
         const message = {
-            id: Date.now().toString(),
             userId: socket.user._id,
             userName: socket.user.name,
             text: data.text,
             timestamp: new Date(),
-            readBy: [socket.user._id.toString()]
+            readBy: [socket.user._id]
         };
+        
         room.messages.push(message);
-        rooms.set(data.roomId, room);
+        room.lastActivity = new Date();
+        await room.save();
+        
         io.to(data.roomId).emit('new_message', message);
-        callback({ success: true });
-    });
+        
+        if (callback) callback({ success: true });
+    } catch (error) {
+        console.error('Error sending message:', error);
+        callback({ success: false, error: error.message });
+    }
+});
 
-    // ========== المحادثات الخاصة ==========
-    socket.on('start_private_chat', async (targetUserId, callback) => {
-        try {
-            const targetUser = await User.findById(targetUserId);
-            if (!targetUser) return callback({ success: false, error: 'المستخدم غير موجود' });
-            
-            const conversationId = [socket.user._id.toString(), targetUserId].sort().join('_');
-            let conversation = privateConversations.get(conversationId);
-            
-            if (!conversation) {
-                conversation = {
-                    id: conversationId,
-                    participants: [socket.user._id.toString(), targetUserId],
-                    messages: [],
-                    createdAt: new Date()
-                };
-                privateConversations.set(conversationId, conversation);
+// ========== المحادثات الخاصة (باستخدام قاعدة البيانات) ==========
+socket.on('start_private_chat', async (targetUserId, callback) => {
+    try {
+        const targetUser = await User.findById(targetUserId);
+        if (!targetUser) {
+            return callback({ success: false, error: 'المستخدم غير موجود' });
+        }
+        
+        const participants = [socket.user._id, targetUserId].sort();
+        const conversationId = `${participants[0]}_${participants[1]}`;
+        
+        let conversation = await PrivateConversation.findOne({ conversationId });
+        
+        if (!conversation) {
+            conversation = new PrivateConversation({
+                conversationId: conversationId,
+                participants: participants,
+                messages: [],
+                createdAt: new Date()
+            });
+            await conversation.save();
+        }
+        
+        socket.join(`private_${conversationId}`);
+        
+        callback({ 
+            success: true, 
+            conversation: {
+                id: conversation.conversationId,
+                participant: {
+                    id: targetUser._id,
+                    name: targetUser.name,
+                    email: targetUser.email
+                },
+                messages: conversation.messages
             }
+        });
+        
+        const targetSocket = onlineUsers.get(targetUserId);
+        if (targetSocket) {
+            io.to(targetSocket).emit('private_chat_request', {
+                from: { id: socket.user._id, name: socket.user.name },
+                conversationId
+            });
+        }
+    } catch (error) {
+        console.error('Error starting private chat:', error);
+        callback({ success: false, error: error.message });
+    }
+});
+
+socket.on('send_private_message', async (data, callback) => {
+    try {
+        const { targetUserId, message } = data;
+        const participants = [socket.user._id, targetUserId].sort();
+        const conversationId = `${participants[0]}_${participants[1]}`;
+        
+        let conversation = await PrivateConversation.findOne({ conversationId });
+        
+        if (!conversation) {
+            conversation = new PrivateConversation({
+                conversationId: conversationId,
+                participants: participants,
+                messages: [],
+                createdAt: new Date()
+            });
+        }
+        
+        const newMessage = {
+            from: socket.user._id,
+            fromName: socket.user.name,
+            text: message,
+            timestamp: new Date(),
+            read: false
+        };
+        
+        conversation.messages.push(newMessage);
+        conversation.lastActivity = new Date();
+        await conversation.save();
+        
+        socket.emit('private_message_received', newMessage);
+        
+        const targetSocket = onlineUsers.get(targetUserId);
+        if (targetSocket) {
+            io.to(targetSocket).emit('private_message_received', { ...newMessage, conversationId });
+            await addNotification(targetUserId, {
+                title: '💬 رسالة خاصة',
+                message: `لديك رسالة جديدة من ${socket.user.name}`,
+                type: 'private_message',
+                link: `/chat?private=${conversationId}&with=${socket.user._id}`
+            });
+        }
+        
+        callback({ success: true, message: newMessage });
+    } catch (error) {
+        console.error('Error sending private message:', error);
+        callback({ success: false, error: error.message });
+    }
+});
+
+socket.on('get_users_for_chat', async (callback) => {
+    try {
+        const users = await User.find({ 
+            _id: { $ne: socket.user._id }
+        }).select('_id name email');
+        callback({ success: true, users });
+    } catch (error) {
+        console.error('Error getting users:', error);
+        callback({ success: false, error: error.message });
+    }
+});
+
+socket.on('get_my_conversations', async (callback) => {
+    try {
+        const conversations = await PrivateConversation.find({
+            participants: socket.user._id
+        }).sort({ lastActivity: -1 });
+        
+        const myConversations = [];
+        for (const conv of conversations) {
+            const otherUserId = conv.participants.find(p => p.toString() !== socket.user._id.toString());
+            const otherUser = await User.findById(otherUserId).select('name email');
+            const unreadCount = conv.messages.filter(m => 
+                m.from.toString() !== socket.user._id.toString() && !m.read
+            ).length;
             
-            socket.join(`private_${conversationId}`);
-            
-            callback({ 
-                success: true, 
-                conversation: {
-                    id: conversation.id,
-                    participant: {
-                        id: targetUser._id,
-                        name: targetUser.name,
-                        email: targetUser.email
-                    },
-                    messages: conversation.messages
+            myConversations.push({
+                id: conv.conversationId,
+                participant: { id: otherUser._id, name: otherUser.name, email: otherUser.email },
+                lastMessage: conv.messages[conv.messages.length - 1],
+                unreadCount,
+                createdAt: conv.createdAt
+            });
+        }
+        
+        callback({ success: true, conversations: myConversations });
+    } catch (error) {
+        console.error('Error getting conversations:', error);
+        callback({ success: false, error: error.message });
+    }
+});
+
+socket.on('mark_messages_read', async (conversationId, callback) => {
+    try {
+        const conversation = await PrivateConversation.findOne({ conversationId });
+        if (conversation) {
+            conversation.messages.forEach(msg => {
+                if (msg.from.toString() !== socket.user._id.toString()) {
+                    msg.read = true;
                 }
             });
-            
-            const targetSocket = onlineUsers.get(targetUserId);
-            if (targetSocket) {
-                io.to(targetSocket).emit('private_chat_request', {
-                    from: { id: socket.user._id, name: socket.user.name },
-                    conversationId
-                });
-            }
-        } catch (error) {
-            callback({ success: false, error: error.message });
+            await conversation.save();
+            callback({ success: true });
+        } else {
+            callback({ success: false, error: 'المحادثة غير موجودة' });
         }
-    });
+    } catch (error) {
+        console.error('Error marking messages read:', error);
+        callback({ success: false, error: error.message });
+    }
+});
 
-    socket.on('send_private_message', async (data, callback) => {
-        try {
-            const { targetUserId, message } = data;
-            const conversationId = [socket.user._id.toString(), targetUserId].sort().join('_');
-            
-            let conversation = privateConversations.get(conversationId);
-            if (!conversation) {
-                conversation = {
-                    id: conversationId,
-                    participants: [socket.user._id.toString(), targetUserId],
-                    messages: [],
-                    createdAt: new Date()
-                };
-                privateConversations.set(conversationId, conversation);
-            }
-            
-            const newMessage = {
-                id: Date.now().toString(),
-                from: socket.user._id,
-                fromName: socket.user.name,
-                text: message,
-                timestamp: new Date(),
-                read: false
-            };
-            
-            conversation.messages.push(newMessage);
-            privateConversations.set(conversationId, conversation);
-            
-            socket.emit('private_message_received', newMessage);
-            
-            const targetSocket = onlineUsers.get(targetUserId);
-            if (targetSocket) {
-                io.to(targetSocket).emit('private_message_received', { ...newMessage, conversationId });
-                await addNotification(targetUserId, {
-                    title: '💬 رسالة خاصة',
-                    message: `لديك رسالة جديدة من ${socket.user.name}`,
-                    type: 'private_message',
-                    link: `/chat?private=${conversationId}&with=${socket.user._id}`
-                });
-            }
-            callback({ success: true, message: newMessage });
-        } catch (error) {
-            callback({ success: false, error: error.message });
-        }
-    });
-
-    socket.on('get_users_for_chat', async (callback) => {
-        try {
-            const users = await User.find({ 
-                _id: { $ne: socket.user._id }
-            }).select('_id name email');
-            callback({ success: true, users });
-        } catch (error) {
-            callback({ success: false, error: error.message });
-        }
-    });
-
-    socket.on('get_my_conversations', async (callback) => {
-        try {
-            const myConversations = [];
-            for (const [key, conv] of privateConversations) {
-                if (conv.participants.includes(socket.user._id.toString())) {
-                    const otherUserId = conv.participants.find(p => p !== socket.user._id.toString());
-                    const otherUser = await User.findById(otherUserId).select('name email');
-                    const unreadCount = conv.messages.filter(m => 
-                        m.from.toString() !== socket.user._id.toString() && !m.read
-                    ).length;
-                    myConversations.push({
-                        id: conv.id,
-                        participant: { id: otherUser._id, name: otherUser.name, email: otherUser.email },
-                        lastMessage: conv.messages[conv.messages.length - 1],
-                        unreadCount,
-                        createdAt: conv.createdAt
-                    });
-                }
-            }
-            myConversations.sort((a, b) => {
-                const aTime = a.lastMessage?.timestamp || a.createdAt;
-                const bTime = b.lastMessage?.timestamp || b.createdAt;
-                return new Date(bTime) - new Date(aTime);
-            });
-            callback({ success: true, conversations: myConversations });
-        } catch (error) {
-            callback({ success: false, error: error.message });
-        }
-    });
-
-    socket.on('mark_messages_read', async (conversationId, callback) => {
-        try {
-            const conversation = privateConversations.get(conversationId);
-            if (conversation) {
-                conversation.messages.forEach(msg => {
-                    if (msg.from.toString() !== socket.user._id.toString()) msg.read = true;
-                });
-                privateConversations.set(conversationId, conversation);
-                callback({ success: true });
-            } else {
-                callback({ success: false, error: 'المحادثة غير موجودة' });
-            }
-        } catch (error) {
-            callback({ success: false, error: error.message });
-        }
-    });
-
-    socket.on('leave_room', (roomId, callback) => {
-        const room = rooms.get(roomId);
+socket.on('leave_room', async (roomId, callback) => {
+    try {
+        const room = await Room.findOne({ roomId: roomId });
         if (room) {
-            room.members = room.members.filter(m => m !== socket.user._id.toString());
-            rooms.set(roomId, room);
+            room.members = room.members.filter(m => m.toString() !== socket.user._id.toString());
+            await room.save();
             socket.leave(roomId);
-            io.to(roomId).emit('user_left', { userId: socket.user._id, name: socket.user.name });
+            io.to(roomId).emit('user_left', { 
+                userId: socket.user._id, 
+                name: socket.user.name 
+            });
         }
         if (callback) callback({ success: true });
-    });
+    } catch (error) {
+        console.error('Error leaving room:', error);
+        if (callback) callback({ success: false, error: error.message });
+    }
+});
 
+    // في بداية الاتصال، استعادة الغرف والمحادثات
+socket.on('restore_data', async (callback) => {
+    try {
+        const rooms = await Room.find({ members: socket.user._id });
+        const conversations = await PrivateConversation.find({ participants: socket.user._id });
+        
+        callback({
+            success: true,
+            rooms: rooms.map(r => ({ id: r.roomId, name: r.name, private: r.isPrivate })),
+            conversations: conversations.map(c => ({ id: c.conversationId, lastMessage: c.messages[c.messages.length - 1] }))
+        });
+    } catch (error) {
+        callback({ success: false, error: error.message });
+    }
+});
+    
     socket.on('disconnect', () => {
         console.log('❌ User disconnected:', socket.user?.name);
         onlineUsers.delete(socket.user._id.toString());
