@@ -233,13 +233,56 @@
                 transports: ['websocket', 'polling'],
                 reconnection: true
             });
+
+
+// استقبال استجابة get_my_conversations
+socket.on('get_my_conversations_response', (response) => {
+    console.log('📋 Conversations response:', response);
+    if (response.success) {
+        privateChats = response.conversations;
+        renderPrivateList();
+    }
+});
             
             socket.on('connect', () => {
-                document.getElementById('connectionStatus').innerHTML = '✅ متصل';
-                document.getElementById('connectionStatus').className = 'status connected';
-                loadRooms();
-                loadPrivateChats();
-            });
+    console.log('✅ Connected to chat server');
+    document.getElementById('connectionStatus').innerHTML = '✅ متصل';
+    document.getElementById('connectionStatus').className = 'status connected';
+    
+    // تحميل البيانات بعد الاتصال مباشرة
+    setTimeout(() => {
+        loadRooms();
+        loadPrivateChats();
+    }, 500);
+});
+
+// استقبال رسالة خاصة جديدة
+socket.on('private_message_received', (msg) => {
+    console.log('📩 Private message received:', msg);
+    
+    // إضافة الرسالة للشاشة إذا كانت المحادثة مفتوحة
+    if (currentChatType === 'private' && currentPrivateUserId === msg.from) {
+        currentPrivateMessages.push(msg);
+        renderPrivateMessages();
+        // تحديث حالة القراءة
+        if (currentPrivateConvId) {
+            socket.emit('mark_messages_read', currentPrivateConvId);
+        }
+    }
+    
+    // تحديث قائمة المحادثات الخاصة
+    loadPrivateChats();
+    
+    // إشعار
+    showAlert(`💬 رسالة من ${msg.fromName}`, 'success');
+});
+
+// استقبال قائمة المحادثات الخاصة
+socket.on('private_conversations_list', (chats) => {
+    console.log('📋 Received private conversations:', chats);
+    privateChats = chats;
+    renderPrivateList();
+});
             
             socket.on('disconnect', () => {
                 document.getElementById('connectionStatus').innerHTML = '⛔ غير متصل';
@@ -256,26 +299,7 @@
                 }
             });
             
-            // استقبال رسالة خاصة جديدة - تحديث فوري
-            socket.on('private_message_received', (msg) => {
-                console.log('📩 Private message received:', msg);
-                
-                // إضافة الرسالة للشاشة إذا كانت المحادثة مفتوحة
-                if (currentChatType === 'private' && currentPrivateUserId === msg.from) {
-                    currentPrivateMessages.push(msg);
-                    renderPrivateMessages();
-                    // تحديث حالة القراءة
-                    if (currentPrivateConvId) {
-                        socket.emit('mark_messages_read', currentPrivateConvId);
-                    }
-                }
-                
-                // تحديث قائمة المحادثات الخاصة
-                loadPrivateChats();
-                
-                // إشعار
-                showAlert(`💬 رسالة من ${msg.fromName}`, 'success');
-            });
+            
             
             socket.on('room_invite', (data) => {
                 if (confirm(`📨 ${data.invitedBy} دعاك للانضمام إلى "${data.roomName}"`)) {
@@ -340,8 +364,20 @@
         }
         
         // ==================== Private Chats ====================
-        function loadPrivateChats() { if(socket?.connected) socket.emit('get_my_conversations'); }
-        
+        function loadPrivateChats() { 
+    if(socket?.connected) {
+        console.log('🔄 Loading private chats...');
+        socket.emit('get_my_conversations', (response) => {
+            console.log('📋 Load private chats response:', response);
+            if (response && response.success) {
+                privateChats = response.conversations;
+                renderPrivateList();
+            } else {
+                console.error('Failed to load private chats:', response);
+            }
+        });
+    }
+        }
         function renderPrivateList() {
             const container = document.getElementById('privateList');
             if(!privateChats?.length) {
