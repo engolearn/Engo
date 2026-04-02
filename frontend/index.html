@@ -46,6 +46,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         
         .logo {
@@ -62,6 +64,7 @@
             display: flex;
             gap: 1.5rem;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         .nav-links a {
@@ -69,6 +72,7 @@
             color: #4a5568;
             transition: color 0.3s;
             cursor: pointer;
+            font-size: 1rem;
         }
         
         .nav-links a:hover {
@@ -347,12 +351,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         
         .level-info {
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex-wrap: wrap;
         }
         
         .progress-bar {
@@ -503,14 +510,21 @@
         }
         
         @media (max-width: 768px) {
+            .navbar .container {
+                flex-direction: column;
+            }
             .nav-links {
-                display: none;
+                justify-content: center;
             }
             .hero h1 {
                 font-size: 1.5rem;
             }
             .courses-grid {
                 grid-template-columns: 1fr;
+            }
+            .user-stats {
+                flex-direction: column;
+                text-align: center;
             }
         }
     </style>
@@ -638,7 +652,7 @@
             <div class="container">
                 <div class="courses-section">
                     <h2>🏅 الشارات التي حصلت عليها</h2>
-                    <div id="badgesList" class="badges-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                    <div id="badgesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                         <div class="loading-spinner">جاري التحميل...</div>
                     </div>
                 </div>
@@ -695,7 +709,7 @@
                     <h4>روابط سريعة</h4>
                     <a onclick="showPage('courses')">الدورات</a>
                     <a onclick="showPage('levelTest')">اختبار المستوى</a>
-                    <a href="/chat">المحادثات</a>
+                    <a onclick="goToChat()">المحادثات</a>
                 </div>
                 <div class="footer-section">
                     <h4>تواصل معنا</h4>
@@ -714,6 +728,20 @@
         const API_URL = window.location.origin + '/api';
         let currentUser = null;
         let userStats = null;
+        
+        // ==================== Navigation Functions ====================
+        function goToAdmin() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.role === 'admin') {
+                window.location.href = '/admin';
+            } else {
+                showAlert('❌ غير مصرح لك بالدخول إلى لوحة التحكم', 'error');
+            }
+        }
+        
+        function goToChat() {
+            window.location.href = '/chat';
+        }
         
         // ==================== Helper Functions ====================
         function showAlert(message, type) {
@@ -746,10 +774,6 @@
             if (pageName === 'dashboard') loadDashboard();
             if (pageName === 'badges') loadBadges();
             if (pageName === 'profile') loadProfile();
-        }
-        
-        function goToAdmin() {
-            window.location.href = '/admin';
         }
         
         // ==================== Auth Functions ====================
@@ -818,9 +842,6 @@
             localStorage.removeItem('user');
             location.reload();
         }
-        function goToChat() {
-    window.location.href = '/chat';
-        }
         
         // ==================== User Stats ====================
         async function loadUserStats() {
@@ -834,26 +855,33 @@
                 if (!res.ok) return;
                 
                 userStats = await res.json();
-                document.getElementById('userStatsSection').style.display = 'block';
-                document.getElementById('userLevel').innerHTML = `المستوى ${userStats.points.level}`;
-                document.getElementById('userXP').innerHTML = `${userStats.points.totalXP} XP`;
+                const statsSection = document.getElementById('userStatsSection');
+                if (statsSection) statsSection.style.display = 'block';
+                
+                const userLevel = document.getElementById('userLevel');
+                const userXP = document.getElementById('userXP');
+                const levelProgress = document.getElementById('levelProgress');
+                
+                if (userLevel) userLevel.innerHTML = `المستوى ${userStats.points.level}`;
+                if (userXP) userXP.innerHTML = `${userStats.points.totalXP} XP`;
                 
                 const progressPercent = (userStats.points.levelProgress / userStats.nextLevel.needed) * 100;
-                document.getElementById('levelProgress').style.width = progressPercent + '%';
+                if (levelProgress) levelProgress.style.width = progressPercent + '%';
                 
-                // عرض معاينة للشارات
                 const badgesPreview = document.getElementById('badgesPreview');
-                if (userStats.badges && userStats.badges.length > 0) {
-                    badgesPreview.innerHTML = userStats.badges.slice(0, 3).map(b => `
-                        <div class="badge-icon" title="${b.name}: ${b.description}">
-                            <i class="fas ${b.icon}"></i>
-                        </div>
-                    `).join('');
-                    if (userStats.badges.length > 3) {
-                        badgesPreview.innerHTML += `<div class="badge-icon" title="و${userStats.badges.length - 3} شارات أخرى">+${userStats.badges.length - 3}</div>`;
+                if (badgesPreview) {
+                    if (userStats.badges && userStats.badges.length > 0) {
+                        badgesPreview.innerHTML = userStats.badges.slice(0, 3).map(b => `
+                            <div class="badge-icon" title="${b.name}: ${b.description}">
+                                <i class="fas ${b.icon}"></i>
+                            </div>
+                        `).join('');
+                        if (userStats.badges.length > 3) {
+                            badgesPreview.innerHTML += `<div class="badge-icon" title="و${userStats.badges.length - 3} شارات أخرى">+${userStats.badges.length - 3}</div>`;
+                        }
+                    } else {
+                        badgesPreview.innerHTML = '<span style="font-size:0.75rem; color:#718096;">لا توجد شارات بعد</span>';
                     }
-                } else {
-                    badgesPreview.innerHTML = '<span style="font-size:0.75rem; color:#718096;">لا توجد شارات بعد</span>';
                 }
             } catch(err) {
                 console.error('Error loading stats:', err);
@@ -863,6 +891,7 @@
         // ==================== Dashboard ====================
         async function loadDashboard() {
             const container = document.getElementById('dashboardContent');
+            if (!container) return;
             if (!userStats) await loadUserStats();
             
             container.innerHTML = `
@@ -910,6 +939,7 @@
         // ==================== Badges ====================
         async function loadBadges() {
             const container = document.getElementById('badgesList');
+            if (!container) return;
             if (!userStats) await loadUserStats();
             
             if (!userStats?.badges || userStats.badges.length === 0) {
@@ -930,7 +960,9 @@
         // ==================== Profile ====================
         async function loadProfile() {
             const container = document.getElementById('profileContent');
+            if (!container) return;
             const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!userStats) await loadUserStats();
             
             container.innerHTML = `
                 <div style="background: white; border-radius: 15px; padding: 2rem; text-align: center;">
@@ -957,6 +989,8 @@
                 const courses = await res.json();
                 const grid = document.getElementById('coursesGrid');
                 
+                if (!grid) return;
+                
                 if (!courses || courses.length === 0) {
                     grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات متاحة حالياً<br>سيتم إضافة دورات قريباً</div>';
                     return;
@@ -968,8 +1002,8 @@
                             <i class="fas fa-book-open"></i>
                         </div>
                         <div class="course-info">
-                            <h3>${course.title}</h3>
-                            <p>${course.description.substring(0, 100)}${course.description.length > 100 ? '...' : ''}</p>
+                            <h3>${escapeHtml(course.title)}</h3>
+                            <p>${escapeHtml(course.description.substring(0, 100))}${course.description.length > 100 ? '...' : ''}</p>
                             <div class="course-meta">
                                 <span><i class="fas fa-book"></i> ${course.totalLessons || 0} درس</span>
                                 <span><i class="fas fa-chart-line"></i> ${course.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
@@ -981,12 +1015,18 @@
                 `).join('');
             } catch(err) {
                 console.error(err);
-                document.getElementById('coursesGrid').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+                const grid = document.getElementById('coursesGrid');
+                if (grid) grid.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
             }
         }
         
         function viewCourse(courseId) {
             window.location.href = `/course-details.html?id=${courseId}`;
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
         
         // ==================== Level Test ====================
@@ -995,6 +1035,8 @@
                 const res = await fetch(API_URL + '/level-test');
                 const test = await res.json();
                 const container = document.getElementById('levelTestContent');
+                
+                if (!container) return;
                 
                 container.innerHTML = `
                     <div style="background: white; border-radius: 15px; padding: 1.5rem;">
@@ -1008,11 +1050,11 @@
                 const questionsContainer = document.getElementById('testQuestions');
                 questionsContainer.innerHTML = test.questions.map((q, i) => `
                     <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 10px;">
-                        <p><strong>${i+1}. ${q.question}</strong></p>
+                        <p><strong>${i+1}. ${escapeHtml(q.question)}</strong></p>
                         <div style="margin-top: 0.5rem;">
                             ${q.options.map((opt, optIndex) => `
                                 <label style="display: block; margin: 0.5rem 0;">
-                                    <input type="radio" name="q${i}" value="${optIndex}"> ${opt}
+                                    <input type="radio" name="q${i}" value="${optIndex}"> ${escapeHtml(opt)}
                                 </label>
                             `).join('')}
                         </div>
@@ -1072,24 +1114,28 @@
                 
                 const notifCount = notifications.filter(n => !n.read).length;
                 const notifBadge = document.getElementById('notifCount');
-                if (notifCount > 0) {
-                    notifBadge.style.display = 'flex';
-                    notifBadge.innerText = notifCount;
-                } else {
-                    notifBadge.style.display = 'none';
+                if (notifBadge) {
+                    if (notifCount > 0) {
+                        notifBadge.style.display = 'flex';
+                        notifBadge.innerText = notifCount;
+                    } else {
+                        notifBadge.style.display = 'none';
+                    }
                 }
                 
                 const notifList = document.getElementById('notificationsList');
-                if (notifications.length === 0) {
-                    notifList.innerHTML = '<div style="padding: 10px; text-align: center;">لا توجد إشعارات</div>';
-                } else {
-                    notifList.innerHTML = notifications.map(n => `
-                        <div class="notif-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead('${n.id}')">
-                            <div class="notif-title">${n.title}</div>
-                            <div class="notif-message">${n.message}</div>
-                            <small style="color: #a0aec0;">${new Date(n.createdAt).toLocaleString()}</small>
-                        </div>
-                    `).join('');
+                if (notifList) {
+                    if (notifications.length === 0) {
+                        notifList.innerHTML = '<div style="padding: 10px; text-align: center;">لا توجد إشعارات</div>';
+                    } else {
+                        notifList.innerHTML = notifications.map(n => `
+                            <div class="notif-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead('${n.id}')">
+                                <div class="notif-title">${escapeHtml(n.title)}</div>
+                                <div class="notif-message">${escapeHtml(n.message)}</div>
+                                <small style="color: #a0aec0;">${new Date(n.createdAt).toLocaleString()}</small>
+                            </div>
+                        `).join('');
+                    }
                 }
             } catch(err) {
                 console.error('Error loading notifications:', err);
@@ -1143,6 +1189,8 @@
                 if (authButtons) authButtons.style.display = 'flex';
                 if (userMenu) userMenu.style.display = 'none';
                 if (notificationsIcon) notificationsIcon.style.display = 'none';
+                if (adminLink) adminLink.style.display = 'none';
+                if (adminDropdownLink) adminDropdownLink.style.display = 'none';
                 return null;
             }
         }
