@@ -415,17 +415,7 @@
             }
         });
         
-        // تحميل الاختبارات
-        async function loadTests() {
-            try {
-                const res = await fetch(API_URL + '/quizzes');
-                const quizzes = await res.json();
-                renderTests(quizzes);
-            } catch (error) {
-                console.error(error);
-                document.getElementById('testsGrid').innerHTML = '<div style="text-align:center;padding:2rem;">⚠️ حدث خطأ في تحميل الاختبارات</div>';
-            }
-        }
+        
         
         function renderTests(quizzes) {
             const container = document.getElementById('testsGrid');
@@ -451,50 +441,145 @@
             `).join('');
         }
         
-        async function showTestInfo(quizId) {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    alert('❌ يرجى تسجيل الدخول أولاً');
-                    window.location.href = '/';
-                    return;
-                }
-                
-                const res = await fetch(API_URL + '/quizzes/' + quizId, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                currentQuiz = await res.json();
-                
-                document.getElementById('testInfoContent').innerHTML = `
-                    <div class="quiz-header">
-                        <h2>${escapeHtml(currentQuiz.name)}</h2>
-                        <p>${escapeHtml(currentQuiz.description || 'اختبار تحديد المستوى')}</p>
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <h3>📋 تفاصيل الاختبار:</h3>
-                        <ul style="margin-top: 0.5rem; list-style: none;">
-                            <li>⏱️ المدة: ${currentQuiz.duration} دقائق</li>
-                            <li>📝 عدد الأسئلة: ${currentQuiz.questions?.length || 0}</li>
-                            <li>⭐ درجة النجاح: ${currentQuiz.passingScore}%</li>
-                            <li>🔒 يمنع لقطة الشاشة والنسخ أثناء الاختبار</li>
-                        </ul>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 10px;">
-                        <h3>📌 تعليمات الاختبار:</h3>
-                        <ul style="margin-top: 0.5rem; padding-right: 1rem;">
-                            <li>اقرأ كل سؤال بعناية قبل الإجابة</li>
-                            <li>يمكنك تغيير إجابتك قبل التقديم</li>
-                            <li>سيتم حساب نتيجتك تلقائياً بعد التقديم</li>
-                            <li>الوقت محدود، انتبه للساعة</li>
-                        </ul>
-                    </div>
-                `;
-                document.getElementById('testInfoModal').style.display = 'flex';
-            } catch (error) {
-                console.error(error);
-                alert('❌ حدث خطأ في تحميل الاختبار');
-            }
+        // تحميل اختبارات تحديد المستوى فقط
+async function loadTests() {
+    try {
+        console.log('🔄 Loading level tests...');
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('❌ يرجى تسجيل الدخول أولاً');
+            window.location.href = '/';
+            return;
         }
+        
+        // استخدام API الخاص باختبارات المستوى
+        const res = await fetch(API_URL + '/level-tests', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        console.log('📡 Response status:', res.status);
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        
+        const tests = await res.json();
+        console.log('📋 Level tests:', tests);
+        
+        renderTests(tests);
+    } catch (error) {
+        console.error('❌ Error loading tests:', error);
+        document.getElementById('testsGrid').innerHTML = `
+            <div style="text-align:center;padding:2rem;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #f5576c;"></i>
+                <p>⚠️ حدث خطأ في تحميل الاختبارات</p>
+                <button onclick="loadTests()" style="margin-top:1rem; padding:0.5rem 1rem; background:#25D366; border:none; border-radius:25px; cursor:pointer;">إعادة المحاولة</button>
+            </div>
+        `;
+    }
+}
+
+// عرض تفاصيل الاختبار
+async function showTestInfo(quizId) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('❌ يرجى تسجيل الدخول أولاً');
+            window.location.href = '/';
+            return;
+        }
+        
+        // استخدام API الخاص باختبارات المستوى
+        const res = await fetch(API_URL + '/level-tests/' + quizId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!res.ok) {
+            throw new Error('فشل تحميل الاختبار');
+        }
+        
+        currentQuiz = await res.json();
+        console.log('📋 Test loaded:', currentQuiz);
+        
+        document.getElementById('testInfoContent').innerHTML = `
+            <div class="quiz-header">
+                <h2>${escapeHtml(currentQuiz.name)}</h2>
+                <p>${escapeHtml(currentQuiz.description || 'اختبار تحديد المستوى')}</p>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <h3>📋 تفاصيل الاختبار:</h3>
+                <ul style="margin-top: 0.5rem; list-style: none;">
+                    <li>🎓 المستوى: ${currentQuiz.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</li>
+                    <li>⏱️ المدة: ${currentQuiz.duration} دقائق</li>
+                    <li>📝 عدد الأسئلة: ${currentQuiz.questions?.length || 0}</li>
+                    <li>⭐ درجة النجاح: ${currentQuiz.passingScore}%</li>
+                    <li>🔒 يمنع لقطة الشاشة والنسخ أثناء الاختبار</li>
+                </ul>
+            </div>
+            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 10px;">
+                <h3>📌 تعليمات الاختبار:</h3>
+                <ul style="margin-top: 0.5rem; padding-right: 1rem;">
+                    <li>اقرأ كل سؤال بعناية قبل الإجابة</li>
+                    <li>يمكنك تغيير إجابتك قبل التقديم</li>
+                    <li>سيتم حساب نتيجتك تلقائياً بعد التقديم</li>
+                    <li>الوقت محدود، انتبه للساعة</li>
+                </ul>
+            </div>
+        `;
+        document.getElementById('testInfoModal').style.display = 'flex';
+        
+    } catch (error) {
+        console.error('❌ Error loading test details:', error);
+        alert('❌ حدث خطأ في تحميل تفاصيل الاختبار');
+    }
+}
+
+// تقديم الاختبار
+async function submitQuiz() {
+    clearInterval(timerInterval);
+    
+    const unanswered = userAnswers.filter(a => a === null || a === '' || (typeof a === 'object' && Object.keys(a).length === 0)).length;
+    if (unanswered > 0) {
+        if (!confirm(`⚠️ هناك ${unanswered} سؤال لم يتم الإجابة عليه. هل تريد المتابعة؟`)) {
+            startTimer();
+            return;
+        }
+    }
+    
+    const timeSpent = (currentQuiz.duration * 60) - timeLeft;
+    
+    try {
+        const token = localStorage.getItem('token');
+        
+        // استخدام API الخاص بتقديم اختبار المستوى
+        const res = await fetch(API_URL + '/level-tests/' + currentQuiz._id + '/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ 
+                answers: userAnswers, 
+                timeSpent,
+                startedAt: new Date(Date.now() - (timeSpent * 1000))
+            })
+        });
+        
+        const result = await res.json();
+        console.log('📊 Result:', result);
+        
+        if (result.success) {
+            showResult(result);
+        } else {
+            alert('❌ ' + (result.message || 'حدث خطأ'));
+        }
+        
+    } catch (error) {
+        console.error('❌ Error submitting test:', error);
+        alert('❌ حدث خطأ في تقديم الاختبار');
+    }
+}
         
         function closeTestInfo() {
             document.getElementById('testInfoModal').style.display = 'none';
@@ -698,40 +783,8 @@
             userAnswers[index] = value;
         }
         
-        async function submitQuiz() {
-            clearInterval(timerInterval);
-            
-            // التحقق من الإجابة على جميع الأسئلة
-            const unanswered = userAnswers.filter(a => a === null || a === '' || (typeof a === 'object' && Object.keys(a).length === 0)).length;
-            if (unanswered > 0) {
-                if (!confirm(`⚠️ هناك ${unanswered} سؤال لم يتم الإجابة عليه. هل تريد المتابعة؟`)) {
-                    startTimer();
-                    return;
-                }
-            }
-            
-            const timeSpent = (currentQuiz.duration * 60) - timeLeft;
-            
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/quizzes/' + currentQuiz._id + '/submit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ answers: userAnswers, timeSpent })
-                });
-                
-                const result = await res.json();
-                showResult(result);
-                
-            } catch (error) {
-                console.error(error);
-                alert('❌ حدث خطأ في تقديم الاختبار');
-            }
-        }
         
+            
         function showResult(result) {
             document.getElementById('quizModal').style.display = 'none';
             
