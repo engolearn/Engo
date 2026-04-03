@@ -689,6 +689,134 @@ app.get('/api/level-tests', async (req, res) => {
     }
 });
 
+// تقديم اختبار تحديد المستوى
+app.post('/api/level-tests/:testId/submit', auth, async (req, res) => {
+    try {
+        const { answers, timeSpent, startedAt } = req.body;
+        const test = await Quiz.findById(req.params.testId);
+        
+        if (!test) return res.status(404).json({ message: 'الاختبار غير موجود' });
+        
+        let totalScore = 0;
+        let maxScore = 0;
+        const results = [];
+        
+        for (const question of test.questions) {
+            const points = question.points || 10;
+            maxScore += points;
+            const userAnswer = answers[question.id];
+            let isCorrect = false;
+            let pointsEarned = 0;
+            
+            switch(question.type) {
+                case 'multiple_choice':
+                    isCorrect = userAnswer == question.correctOption;
+                    break;
+                case 'true_false':
+                    isCorrect = userAnswer === true || userAnswer === 'true' ? 
+                        (question.isTrue === true) : (question.isTrue === false);
+                    break;
+                case 'fill_blank':
+                    if (question.correctAnswers && Array.isArray(question.correctAnswers)) {
+                        const userAns = String(userAnswer).toLowerCase().trim();
+                        isCorrect = question.correctAnswers.some(a => 
+                            String(a).toLowerCase().trim() === userAns
+                        );
+                    } else if (question.correctAnswer) {
+                        isCorrect = String(userAnswer).toLowerCase().trim() === 
+                                   String(question.correctAnswer).toLowerCase().trim();
+                    }
+                    break;
+                case 'essay':
+                    if (question.essayKeywords && userAnswer) {
+                        let matched = 0;
+                        question.essayKeywords.forEach(keyword => {
+                            if (String(userAnswer).toLowerCase().includes(keyword.toLowerCase())) {
+                                matched++;
+                            }
+                        });
+                        pointsEarned = Math.floor((matched / question.essayKeywords.length) * points);
+                        isCorrect = pointsEarned > points / 2;
+                    }
+                    break;
+                case 'audio':
+                case 'image':
+                    isCorrect = String(userAnswer).toLowerCase().trim() === 
+                               String(question.correctAnswer).toLowerCase().trim();
+                    break;
+                case 'matching':
+                    if (question.correctAnswer) {
+                        isCorrect = JSON.stringify(userAnswer) === JSON.stringify(question.correctAnswer);
+                    }
+                    break;
+                default:
+                    isCorrect = false;
+            }
+            
+            if (isCorrect && pointsEarned === 0) {
+                pointsEarned = points;
+            }
+            
+            totalScore += pointsEarned;
+            results.push({
+                questionId: question.id,
+                userAnswer: userAnswer,
+                isCorrect: isCorrect,
+                pointsEarned: pointsEarned
+            });
+        }
+        
+        const percentage = (totalScore / maxScore) * 100;
+        const passed = percentage >= test.passingScore;
+        
+        // حفظ النتيجة
+        const QuizResult = mongoose.model('QuizResult');
+        const quizResult = new QuizResult({
+            userId: req.user._id,
+            quizId: test._id,
+            score: totalScore,
+            percentage: percentage,
+            passed: passed,
+            answers: results,
+            timeSpent: timeSpent,
+            startedAt: new Date(startedAt),
+            completedAt: new Date(),
+            ipAddress: req.ip,
+            deviceInfo: req.headers['user-agent']
+        });
+        
+        await quizResult.save();
+        
+        // تحديث مستوى المستخدم
+        if (passed) {
+            await User.findByIdAndUpdate(req.user._id, { 
+                level: test.level, 
+                levelScore: percentage 
+            });
+            
+            // تحديث localStorage للمستخدم
+            const user = await User.findById(req.user._id);
+            // الإشعار سيرسل عبر Socket.io
+        }
+        
+        res.json({
+            success: true,
+            score: totalScore,
+            maxScore: maxScore,
+            percentage: Math.round(percentage),
+            passed: passed,
+            passingScore: test.passingScore,
+            message: passed ? 
+                '🎉 تهانينا! لقد اجتزت الاختبار بنجاح' : 
+                '📚 للأسف لم تجتز الاختبار، حاول مرة أخرى بعد المراجعة'
+        });
+        
+    } catch (error) {
+        console.error('Error submitting test:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 app.get('/api/level-tests/:testId', auth, async (req, res) => {
     try {
         const test = await Quiz.findOne({ _id: req.params.testId, quizType: 'level_test' });
