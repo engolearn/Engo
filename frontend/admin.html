@@ -274,21 +274,130 @@
         function resetTestForm() { currentEditingTest = null; document.getElementById('addLevelTestForm').reset(); testQuestions = []; testQuestionCounter = 0; renderTestQuestions(); document.getElementById('saveTestBtn').innerHTML = '💾 حفظ الاختبار'; showAlert('تم إعادة تعيين النموذج','success'); }
         
         async function createNewLevelTest() {
-            const token = localStorage.getItem('token');
-            if(testQuestions.length===0) { showAlert('أضف أسئلة للاختبار','error'); return; }
-            const testData = { quizType: 'level_test', level: document.getElementById('testLevel').value, name: document.getElementById('testName').value, description: document.getElementById('testDescription').value, duration: parseInt(document.getElementById('testDuration').value), passingScore: parseInt(document.getElementById('testPassingScore').value), questions: testQuestions.map(q => ({ id: q.id, type: q.type, question: q.question, points: q.points, options: q.options, correctOption: q.correctAnswer, isTrue: q.correctAnswer, correctAnswers: [q.correctAnswer], essayKeywords: q.essayKeywords })) };
-            const res = await fetch(API_URL + '/admin/quizzes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(testData) });
-            if(res.ok) { showAlert('✅ تم إنشاء الاختبار','success'); resetTestForm(); loadLevelTests(); } else { showAlert('❌ خطأ','error'); }
+    const token = localStorage.getItem('token');
+    
+    if (testQuestions.length === 0) {
+        showAlert('❌ يرجى إضافة أسئلة للاختبار', 'error');
+        return;
+    }
+    
+    const testData = {
+        quizType: 'level_test',
+        level: document.getElementById('testLevel').value,
+        name: document.getElementById('testName').value,
+        description: document.getElementById('testDescription').value,
+        duration: parseInt(document.getElementById('testDuration').value),
+        passingScore: parseInt(document.getElementById('testPassingScore').value),
+        questions: testQuestions.map(q => {
+            const baseQuestion = {
+                id: q.id,
+                type: q.type,
+                question: q.question,
+                points: q.points
+            };
+            if (q.type === 'multiple_choice') {
+                baseQuestion.options = q.options;
+                baseQuestion.correctOption = q.correctAnswer;
+            } else if (q.type === 'true_false') {
+                baseQuestion.isTrue = q.correctAnswer;
+            } else if (q.type === 'fill_blank') {
+                baseQuestion.correctAnswers = [q.correctAnswer];
+            } else if (q.type === 'essay') {
+                baseQuestion.essayKeywords = q.essayKeywords;
+            }
+            return baseQuestion;
+        })
+    };
+    
+    console.log('📤 Sending test data:', testData);
+    
+    try {
+        const res = await fetch(API_URL + '/admin/quizzes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(testData)
+        });
+        
+        const result = await res.json();
+        console.log('📥 Response:', result);
+        
+        if (res.ok) {
+            showAlert('✅ تم إنشاء الاختبار بنجاح', 'success');
+            resetTestForm();
+            loadLevelTests();
+        } else {
+            showAlert('❌ ' + (result.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showAlert('❌ خطأ في الاتصال: ' + error.message, 'error');
+    }
         }
         
         async function loadLevelTests() {
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_URL + '/admin/quizzes', { headers: { 'Authorization': 'Bearer ' + token } });
-            const tests = await res.json();
-            const levelTests = tests.filter(t => t.quizType === 'level_test');
-            const container = document.getElementById('levelTestsList');
-            if(!levelTests.length) { container.innerHTML = '<div class="empty-message">لا توجد اختبارات</div>'; return; }
-            container.innerHTML = `<table class="table"><thead><tr><th>الاسم</th><th>المستوى</th><th>الوقت</th><th>الأسئلة</th><th>نسبة النجاح</th><th>الإجراءات</th></tr></thead><tbody>${levelTests.map(t => `<tr><td><strong>${escapeHtml(t.name)}</strong><br><small>${escapeHtml(t.description?.substring(0,50))||''}</small></td><td>${t.level==='beginner'?'مبتدئ':'متقدم'}</td><td>${t.duration} د</td><td>${t.questions?.length||0}</td><td>${t.passingScore}%</td><td><button class="btn-danger" onclick="deleteLevelTest('${t._id}')">حذف</button></td></tr>`).join('')}</tbody></table>`;
+    try {
+        const token = localStorage.getItem('token');
+        console.log('🔄 Loading level tests...');
+        
+        const res = await fetch(API_URL + '/admin/quizzes', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!res.ok) {
+            console.error('Failed to load tests:', res.status);
+            showAlert('❌ فشل تحميل الاختبارات', 'error');
+            return;
+        }
+        
+        const tests = await res.json();
+        console.log('📋 All tests:', tests);
+        
+        // تصفية اختبارات المستوى فقط
+        const levelTests = tests.filter(t => t.quizType === 'level_test');
+        console.log('📋 Level tests:', levelTests);
+        
+        const container = document.getElementById('levelTestsList');
+        if (!container) return;
+        
+        if (!levelTests || levelTests.length === 0) {
+            container.innerHTML = '<div class="empty-message">📝 لا توجد اختبارات مستوى. قم بإضافة اختبار جديد</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <table class="table">
+                <thead>
+                    <tr><th>الاسم</th><th>المستوى</th><th>الوقت</th><th>الأسئلة</th><th>نسبة النجاح</th><th>الإجراءات</th></tr>
+                </thead>
+                <tbody>
+                    ${levelTests.map(test => `
+                        <tr>
+                            <td><strong>${escapeHtml(test.name)}</strong><br><small style="color:#718096">${escapeHtml(test.description?.substring(0, 50)) || ''}</small></td>
+                            <td>${test.level === 'beginner' ? '🟢 مبتدئ' : '🟠 متقدم'}</td>
+                            <td>⏱️ ${test.duration} دقيقة</td>
+                            <td>📋 ${test.questions?.length || 0} سؤال</td>
+                            <td>🎯 ${test.passingScore}%</td>
+                            <td class="inline-buttons">
+                                <button class="btn-warning" onclick="editLevelTest('${test._id}')" style="background:#ed8936; color:white; padding:5px 12px; border-radius:8px; margin:2px;">
+                                    <i class="fas fa-edit"></i> تعديل
+                                </button>
+                                <button class="btn-danger" onclick="deleteLevelTest('${test._id}')" style="background:#e53e3e; color:white; padding:5px 12px; border-radius:8px; margin:2px;">
+                                    <i class="fas fa-trash"></i> حذف
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('❌ Error loading tests:', error);
+        document.getElementById('levelTestsList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبارات: ' + error.message + '</div>';
+        showAlert('❌ خطأ في تحميل الاختبارات', 'error');
+    }
         }
         async function deleteLevelTest(id) { if(confirm('حذف الاختبار؟')) { const token = localStorage.getItem('token'); await fetch(API_URL + '/admin/quizzes/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } }); showAlert('✅ تم الحذف','success'); loadLevelTests(); } }
         
