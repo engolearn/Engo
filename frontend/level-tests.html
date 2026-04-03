@@ -539,7 +539,18 @@ async function showTestInfo(quizId) {
 async function submitQuiz() {
     clearInterval(timerInterval);
     
-    const unanswered = userAnswers.filter(a => a === null || a === '' || (typeof a === 'object' && Object.keys(a).length === 0)).length;
+    // تجهيز الإجابات بشكل صحيح
+    const formattedAnswers = {};
+    currentQuiz.questions.forEach((question, idx) => {
+        const answer = userAnswers[idx];
+        if (answer !== null && answer !== undefined && answer !== '') {
+            formattedAnswers[question.id] = answer;
+        } else {
+            formattedAnswers[question.id] = null;
+        }
+    });
+    
+    const unanswered = Object.values(formattedAnswers).filter(a => a === null).length;
     if (unanswered > 0) {
         if (!confirm(`⚠️ هناك ${unanswered} سؤال لم يتم الإجابة عليه. هل تريد المتابعة؟`)) {
             startTimer();
@@ -548,11 +559,23 @@ async function submitQuiz() {
     }
     
     const timeSpent = (currentQuiz.duration * 60) - timeLeft;
+    const startedAt = new Date(Date.now() - (timeSpent * 1000));
+    
+    console.log('📤 Submitting test:', {
+        testId: currentQuiz._id,
+        answers: formattedAnswers,
+        timeSpent: timeSpent,
+        startedAt: startedAt
+    });
     
     try {
         const token = localStorage.getItem('token');
+        if (!token) {
+            alert('❌ يرجى تسجيل الدخول');
+            window.location.href = '/';
+            return;
+        }
         
-        // استخدام API الخاص بتقديم اختبار المستوى
         const res = await fetch(API_URL + '/level-tests/' + currentQuiz._id + '/submit', {
             method: 'POST',
             headers: {
@@ -560,24 +583,26 @@ async function submitQuiz() {
                 'Authorization': 'Bearer ' + token
             },
             body: JSON.stringify({ 
-                answers: userAnswers, 
-                timeSpent,
-                startedAt: new Date(Date.now() - (timeSpent * 1000))
+                answers: formattedAnswers,
+                timeSpent: timeSpent,
+                startedAt: startedAt.toISOString()
             })
         });
+        
+        console.log('📥 Response status:', res.status);
         
         const result = await res.json();
         console.log('📊 Result:', result);
         
-        if (result.success) {
+        if (res.ok && result.success) {
             showResult(result);
         } else {
-            alert('❌ ' + (result.message || 'حدث خطأ'));
+            alert('❌ ' + (result.message || 'حدث خطأ في تقديم الاختبار'));
         }
         
     } catch (error) {
         console.error('❌ Error submitting test:', error);
-        alert('❌ حدث خطأ في تقديم الاختبار');
+        alert('❌ حدث خطأ في الاتصال بالخادم: ' + error.message);
     }
 }
         
