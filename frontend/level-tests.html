@@ -402,18 +402,131 @@
         let timerInterval = null;
         let timeLeft = 0;
         
-        // منع اختصارات النسخ واللصق
-        document.addEventListener('copy', (e) => e.preventDefault());
-        document.addEventListener('cut', (e) => e.preventDefault());
-        document.addEventListener('contextmenu', (e) => e.preventDefault());
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'p')) {
-                e.preventDefault();
-            }
-            if (e.key === 'PrintScreen') {
-                e.preventDefault();
-            }
-        });
+        // ==================== حماية الاختبار ====================
+
+// 1. منع النسخ
+document.addEventListener('copy', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+document.addEventListener('cut', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+document.addEventListener('paste', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+// 2. منع تحديد النص
+document.addEventListener('selectstart', (e) => {
+    if (e.target.closest('.question-item, .quiz-content')) {
+        e.preventDefault();
+    }
+});
+
+// 3. منع قائمة السياق
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+// 4. منع اختصارات لوحة المفاتيح
+document.addEventListener('keydown', (e) => {
+    // منع F12
+    if (e.key === 'F12') {
+        e.preventDefault();
+        alert('❌ هذه الخاصية معطلة أثناء الاختبار');
+        return false;
+    }
+    // منع Ctrl+Shift+I
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        alert('❌ هذه الخاصية معطلة أثناء الاختبار');
+        return false;
+    }
+    // منع Ctrl+Shift+C
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        alert('❌ هذه الخاصية معطلة أثناء الاختبار');
+        return false;
+    }
+    // منع Ctrl+U
+    if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        alert('❌ هذه الخاصية معطلة أثناء الاختبار');
+        return false;
+    }
+    // منع Ctrl+P (طباعة)
+    if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        alert('❌ الطباعة معطلة أثناء الاختبار');
+        return false;
+    }
+    // منع Ctrl+S (حفظ)
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// 5. إضافة علامة مائية
+function addWatermark() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const watermark = document.createElement('div');
+    watermark.style.cssText = `
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        opacity: 0.2;
+        font-size: 10px;
+        color: #666;
+        z-index: 9999;
+        pointer-events: none;
+        font-family: monospace;
+    `;
+    watermark.innerHTML = `${user.email || user.name || 'EnGo'} | ${new Date().toLocaleString()}`;
+    document.body.appendChild(watermark);
+}
+
+// 6. كشف أدوات المطور (محاولة)
+let devtools = /./;
+devtools.toString = function() {
+    this.open = true;
+    console.log('DevTools detected');
+    alert('❌ تم اكتشاف فتح أدوات المطور! سيتم إلغاء الاختبار.');
+    window.location.href = '/level-tests.html';
+};
+
+// 7. منع لقطة الشاشة عبر CSS (تأثير محدود)
+const style = document.createElement('style');
+style.textContent = `
+    @media print {
+        body { display: none; }
+    }
+    * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+`;
+document.head.appendChild(style);
+
+// 8. تنبيه عند محاولة لقطة شاشة (لا يمنعها ولكن ينبه)
+let lastBlur = Date.now();
+window.addEventListener('blur', () => {
+    const now = Date.now();
+    if (now - lastBlur < 100) {
+        // قد تكون محاولة لقطة شاشة
+        console.log('⚠️ Possible screenshot attempt detected');
+    }
+    lastBlur = now;
+});
+
+// استدعاء العلامة المائية
+addWatermark();
         
         
         
