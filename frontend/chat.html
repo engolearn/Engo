@@ -1050,6 +1050,12 @@ function hideAITypingIndicator() {
             }
         }
         init();
+        document.addEventListener("DOMContentLoaded", async () => {
+    const ok = await checkAuth();
+    if (ok) {
+        connectSocket();
+    }
+});
     </script>
 </body>
 </html>
