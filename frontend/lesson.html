@@ -255,7 +255,53 @@
             
             assignmentAnswers = {};
         }
-
+// عرض محتوى الدرس (فقرات متسلسلة)
+function renderLessonContent(lesson) {
+    let contentHtml = '';
+    
+    if (lesson.content && Array.isArray(lesson.content)) {
+        contentHtml = lesson.content.map((item, idx) => {
+            let mediaHtml = '';
+            
+            switch(item.type) {
+                case 'video':
+                    const videoId = extractYouTubeId(item.mediaUrl);
+                    if (videoId) {
+                        mediaHtml = `<div class="video-container"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                    }
+                    break;
+                case 'audio':
+                    if (item.mediaUrl) {
+                        mediaHtml = `<div class="audio-container"><i class="fas fa-headphones"></i><audio controls src="${item.mediaUrl}"></audio></div>`;
+                    }
+                    break;
+                case 'image':
+                    if (item.mediaUrl) {
+                        mediaHtml = `<div class="image-container"><img src="${item.mediaUrl}" style="max-width:100%; border-radius:15px;" onerror="this.src='https://placehold.co/600x400/667eea/white?text=صورة'"></div>`;
+                    }
+                    break;
+                case 'text':
+                default:
+                    mediaHtml = '';
+            }
+            
+            return `
+                <div class="lesson-paragraph" style="margin-bottom: 2rem;">
+                    ${mediaHtml}
+                    <div class="lesson-text" style="margin-top: ${mediaHtml ? '1rem' : '0'};">${item.content || ''}</div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        // توافق مع الإصدار القديم (نص عادي)
+        contentHtml = `<div class="lesson-text">${lesson.content || ''}</div>`;
+    }
+    
+    document.getElementById('lessonContent').innerHTML = `
+        <h1 class="lesson-title">${escapeHtml(lesson.title)}</h1>
+        ${contentHtml}
+    `;
+}
         function renderAssignmentQuestions(questions) {
             return questions.map((q, idx) => {
                 switch(q.type) {
