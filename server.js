@@ -343,7 +343,92 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// ==================== إدارة الإشعارات (Admin) ====================
 
+// إرسال إشعار
+app.post('/api/admin/notifications/send', auth, adminAuth, async (req, res) => {
+    try {
+        const { target, specificUserId, type, title, message, link, expiry, image } = req.body;
+        
+        let targetUsers = [];
+        
+        // تحديد المستخدمين المستهدفين
+        switch(target) {
+            case 'all':
+                targetUsers = await User.find({ role: 'user' }).select('_id');
+                break;
+            case 'specific':
+                if (specificUserId) {
+                    targetUsers = [{ _id: specificUserId }];
+                }
+                break;
+            case 'beginner':
+                targetUsers = await User.find({ level: 'beginner', role: 'user' }).select('_id');
+                break;
+            case 'advanced':
+                targetUsers = await User.find({ level: 'advanced', role: 'user' }).select('_id');
+                break;
+        }
+        
+        // إنشاء الإشعار
+        const notification = {
+            id: Date.now().toString(),
+            title: title,
+            message: message,
+            type: type,
+            link: link || '/',
+            image: image || null,
+            expiry: expiry || null,
+            read: false,
+            createdAt: new Date()
+        };
+        
+        // إرسال الإشعار لكل مستخدم
+        let sentCount = 0;
+        for (const user of targetUsers) {
+            await addNotification(user._id, notification);
+            sentCount++;
+        }
+        
+        // تسجيل الإشعار في سجل الأدمن
+        const adminLog = {
+            target: target,
+            targetCount: sentCount,
+            type: type,
+            title: title,
+            message: message,
+            sentBy: req.user.name,
+            sentAt: new Date(),
+            link: link
+        };
+        
+        // حفظ السجل (يمكن تخزينه في قاعدة بيانات منفصلة)
+        // هنا نستخدم مؤقتاً متغير في الذاكرة
+        if (!global.notificationsHistory) global.notificationsHistory = [];
+        global.notificationsHistory.unshift(adminLog);
+        if (global.notificationsHistory.length > 50) global.notificationsHistory = global.notificationsHistory.slice(0, 50);
+        
+        res.json({ 
+            success: true, 
+            message: `تم إرسال الإشعار إلى ${sentCount} مستخدم`,
+            sentCount: sentCount
+        });
+        
+    } catch (error) {
+        console.error('Error sending notification:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب سجل الإشعارات
+app.get('/api/admin/notifications/history', auth, adminAuth, (req, res) => {
+    try {
+        const history = global.notificationsHistory || [];
+        res.json(history);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 // ==================== Admin Routes ====================
 app.get('/api/admin/courses', auth, adminAuth, async (req, res) => {
     try {
