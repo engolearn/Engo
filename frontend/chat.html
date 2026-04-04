@@ -8,669 +8,97 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-top: env(safe-area-inset-top, 0px);
         }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            font-family: 'Cairo', sans-serif;
-            background: #0a0a0a;
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        /* ==================== App Container ==================== */
-        .app {
-            display: flex;
-            height: 100vh;
-            background: #0a0a0a;
-            position: relative;
-        }
-        
-        /* ==================== قائمة المحادثات ==================== */
-        .conversations-list {
-            width: 100%;
-            max-width: 400px;
-            background: #111111;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            transition: transform 0.3s ease;
-            z-index: 20;
-        }
-        
-        /* للهواتف - القائمة تظهر افتراضياً */
-        @media (max-width: 768px) {
-            .conversations-list {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                transform: translateX(0);
-                z-index: 10;
-            }
-            
-            .conversations-list.hide {
-                transform: translateX(-100%);
-            }
-            
-            .chat-area {
-                width: 100%;
-                position: absolute;
-                left: 0;
-                top: 0;
-                height: 100%;
-                z-index: 5;
-                background: #0e0e0e;
-            }
-            
-            .chat-area.show {
-                z-index: 15;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .conversations-list {
-                display: flex;
-                position: relative;
-            }
-            
-            .chat-area {
-                flex: 1;
-                position: relative;
-            }
-            
-            .back-to-list {
-                display: none !important;
-            }
-        }
-        /* إضافة مسافة أمان من أسفل الشاشة للأجهزة الحديثة */
-.safe-bottom {
-    padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
-}
-
-/* تعديل منطقة الإدخال لتكون فوق أزرار الهاتف */
-.input-area {
-    background: #1f1f1f;
-    padding: 0.8rem;
-    padding-bottom: calc(0.8rem + var(--safe-bottom));
-    display: flex;
-    gap: 0.8rem;
-    align-items: center;
-    border-top: 1px solid #2a2a2a;
-}
-
-/* تعديل القائمة السفلية */
-.conversations-list {
-    padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* تعديل شريط الحالة */
-.connection-status {
-    position: fixed;
-    bottom: calc(10px + var(--safe-bottom));
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    z-index: 100;
-    pointer-events: none;
-}
-        /* Header القائمة */
-        .conversations-header {
-    background: #1f1f1f;
-    padding: 1rem;
-    padding-top: calc(1rem + var(--safe-top));
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #2a2a2a;
-        }
-        
-        .conversations-header h2 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #25D366;
-        }
-        
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-        }
-        
-        .header-actions button {
-            background: none;
-            border: none;
-            color: #25D366;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-        }
-        
-        .header-actions button:active {
-            background: #2a2a2a;
-        }
-        
-        /* Search Bar */
-        .search-bar {
-            background: #1f1f1f;
-            padding: 0.8rem;
-        }
-        
-        .search-bar input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background: #2a2a2a;
-            border: none;
-            border-radius: 25px;
-            color: white;
-            font-family: 'Cairo', sans-serif;
-            font-size: 0.9rem;
-        }
-        
-        .search-bar input::placeholder {
-            color: #888;
-        }
-        
-        /* Tabs */
-        .chat-tabs {
-            display: flex;
-            background: #1f1f1f;
-            border-bottom: 1px solid #2a2a2a;
-        }
-        
-        .chat-tab {
-            flex: 1;
-            padding: 0.8rem;
-            text-align: center;
-            cursor: pointer;
-            color: #888;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        
-        .chat-tab.active {
-            color: #25D366;
-            border-bottom: 2px solid #25D366;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Cairo', sans-serif; background: #0a0a0a; height: 100vh; overflow: hidden; }
+        .app { display: flex; height: 100vh; background: #0a0a0a; position: relative; }
         
         /* قائمة المحادثات */
-        .conversations-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0.5rem 0;
-        }
+        .conversations-list { width: 100%; max-width: 400px; background: #111111; display: flex; flex-direction: column; height: 100vh; transition: transform 0.3s ease; z-index: 20; }
+        @media (max-width: 768px) { .conversations-list { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform: translateX(0); z-index: 10; } .conversations-list.hide { transform: translateX(-100%); } .chat-area { width: 100%; position: absolute; left: 0; top: 0; height: 100%; z-index: 5; background: #0e0e0e; } .chat-area.show { z-index: 15; } }
+        @media (min-width: 769px) { .conversations-list { display: flex; position: relative; } .chat-area { flex: 1; position: relative; } .back-to-list { display: none !important; } }
         
-        .conversation-item {
-            display: flex;
-            align-items: center;
-            padding: 0.8rem 1rem;
-            cursor: pointer;
-            transition: background 0.2s;
-            border-bottom: 1px solid #1f1f1f;
-        }
+        .conversations-header { background: #1f1f1f; padding: 1rem; padding-top: calc(1rem + var(--safe-top)); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a2a; }
+        .conversations-header h2 { font-size: 1.3rem; font-weight: 600; color: #25D366; }
+        .header-actions { display: flex; gap: 1rem; }
+        .header-actions button, .header-actions a { background: none; border: none; color: #25D366; font-size: 1.2rem; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+        .header-actions button:active, .header-actions a:active { background: #2a2a2a; }
         
-        .conversation-item:active {
-            background: #1f1f1f;
-        }
+        .search-bar { background: #1f1f1f; padding: 0.8rem; }
+        .search-bar input { width: 100%; padding: 0.8rem 1rem; background: #2a2a2a; border: none; border-radius: 25px; color: white; font-family: 'Cairo', sans-serif; font-size: 0.9rem; }
+        .search-bar input::placeholder { color: #888; }
         
-        .avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            color: white;
-            margin-left: 1rem;
-            flex-shrink: 0;
-        }
+        .chat-tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #2a2a2a; }
+        .chat-tab { flex: 1; padding: 0.8rem; text-align: center; cursor: pointer; color: #888; font-weight: 500; transition: all 0.2s; }
+        .chat-tab.active { color: #25D366; border-bottom: 2px solid #25D366; }
         
-        .avatar.group {
-            background: #2a5f3a;
-        }
+        .conversations-scroll { flex: 1; overflow-y: auto; padding: 0.5rem 0; }
+        .conversation-item { display: flex; align-items: center; padding: 0.8rem 1rem; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #1f1f1f; }
+        .conversation-item:active { background: #1f1f1f; }
+        .avatar { width: 50px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: white; margin-left: 1rem; flex-shrink: 0; }
+        .avatar.group { background: #2a5f3a; }
+        .conversation-info { flex: 1; min-width: 0; }
+        .conversation-name { font-weight: 600; font-size: 1rem; color: white; margin-bottom: 0.2rem; display: flex; justify-content: space-between; align-items: center; }
+        .conversation-preview { font-size: 0.8rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-badge { background: #25D366; color: white; border-radius: 50%; min-width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; padding: 0 5px; }
+        .online-status { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-left: 6px; }
+        .online-status.online { background: #25D366; box-shadow: 0 0 5px #25D366; }
         
-        .conversation-info {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .conversation-name {
-            font-weight: 600;
-            font-size: 1rem;
-            color: white;
-            margin-bottom: 0.2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .conversation-preview {
-            font-size: 0.8rem;
-            color: #888;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .unread-badge {
-            background: #25D366;
-            color: white;
-            border-radius: 50%;
-            min-width: 20px;
-            height: 20px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            padding: 0 5px;
-        }
-        
-        .online-status {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-left: 6px;
-        }
-        
-        .online-status.online {
-            background: #25D366;
-            box-shadow: 0 0 5px #25D366;
-        }
-        
-        /* ==================== منطقة المحادثة ==================== */
-        .chat-area {
-            display: flex;
-            flex-direction: column;
-            background: #0e0e0e;
-            height: 100vh;
-        }
-        
-        .chat-header {
-    background: #1f1f1f;
-    padding: 0.8rem 1rem;
-    padding-top: calc(0.8rem + var(--safe-top));
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    border-bottom: 1px solid #2a2a2a;
-        }
-        
-        .back-to-list {
-            background: none;
-            border: none;
-            color: #25D366;
-            font-size: 1.2rem;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .back-to-list:active {
-            background: #2a2a2a;
-        }
-        
-        .chat-header .avatar {
-            width: 40px;
-            height: 40px;
-            margin-left: 0;
-        }
-        
-        .chat-header-info {
-            flex: 1;
-        }
-        
-        .chat-header-name {
-            font-weight: 600;
-            color: white;
-            font-size: 1rem;
-        }
-        
-        .chat-header-status {
-            font-size: 0.7rem;
-            color: #888;
-        }
-        
-        .chat-actions button {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-        }
-        
-        /* منطقة الرسائل */
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .message {
-            display: flex;
-            flex-direction: column;
-            max-width: 80%;
-            animation: fadeIn 0.2s ease;
-        }
-        
-        .message.own {
-            align-self: flex-end;
-        }
-        
-        .message.other {
-            align-self: flex-start;
-        }
-        
-        .message-bubble {
-            padding: 0.7rem 1rem;
-            border-radius: 18px;
-            word-wrap: break-word;
-        }
-        
-        .message.own .message-bubble {
-            background: #25D366;
-            color: white;
-            border-bottom-left-radius: 4px;
-        }
-        
-        .message.other .message-bubble {
-            background: #2a2a2a;
-            color: #e5e5e5;
-            border-bottom-right-radius: 4px;
-        }
-        
-        .message-sender {
-            font-size: 0.7rem;
-            color: #888;
-            margin-bottom: 0.2rem;
-            margin-right: 0.5rem;
-        }
-        
-        .message-time {
-            font-size: 0.6rem;
-            margin-top: 0.2rem;
-            opacity: 0.6;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            justify-content: flex-end;
-        }
-        
-        /* Input Area */
-        .input-area {
-            background: #1f1f1f;
-            padding: 0.8rem;
-            display: flex;
-            gap: 0.8rem;
-            align-items: center;
-            border-top: 1px solid #2a2a2a;
-            padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
-        }
-        
-        .input-area input {
-            flex: 1;
-            padding: 0.8rem 1rem;
-            background: #2a2a2a;
-            border: none;
-            border-radius: 25px;
-            color: white;
-            font-family: 'Cairo', sans-serif;
-            font-size: 0.9rem;
-        }
-        
-        .input-area input:focus {
-            outline: none;
-            background: #333;
-        }
-        
-        .send-btn {
-            background: #25D366;
-            color: white;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        
-        .send-btn:active {
-            transform: scale(0.95);
-        }
-        
-        /* Connection Status */
-        .connection-status {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            z-index: 100;
-            pointer-events: none;
-        }
-        
-        .connection-status.connected {
-            background: #25D366;
-            color: white;
-        }
-        
-        .connection-status.disconnected {
-            background: #e53e3e;
-            color: white;
-        }
-        
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            color: #888;
-            padding: 2rem;
-        }
-        
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-content {
-            background: #1f1f1f;
-            width: 90%;
-            max-width: 400px;
-            padding: 1.5rem;
-            border-radius: 20px;
-        }
-        
-        .modal-content h3 {
-            color: white;
-            margin-bottom: 1rem;
-        }
-        
-        .modal-content input,
-        .modal-content textarea {
-            width: 100%;
-            padding: 0.8rem;
-            background: #2a2a2a;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            margin: 0.5rem 0;
-        }
-        
-        .modal-content button {
-            width: 100%;
-            padding: 0.8rem;
-            margin-top: 0.5rem;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-        }
-        
-        .user-item {
-            padding: 0.8rem;
-            background: #2a2a2a;
-            border-radius: 10px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #1f1f1f;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #25D366;
-            border-radius: 4px;
-        }
-        /* رفع المحتوى من الأسفل */
-.input-area {
-    padding-bottom: 25px !important;
-}
-        .header-actions a,
-.header-actions button {
-    background: none;
-    border: none;
-    color: #25D366;
-    font-size: 1.2rem;
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-}
         /* محادثة AI مميزة */
-#aiChatItem {
-    background: linear-gradient(135deg, rgba(37, 211, 102, 0.15), rgba(7, 94, 84, 0.15));
-    border: 1px solid rgba(37, 211, 102, 0.3);
-    margin-bottom: 1rem;
-    border-radius: 12px;
-}
-
-#aiChatItem:hover {
-    background: linear-gradient(135deg, rgba(37, 211, 102, 0.25), rgba(7, 94, 84, 0.25));
-    transform: translateX(-5px);
-}
-
-/* مؤشر كتابة AI */
-.typing-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 15px;
-    background: #2a2a2a;
-    border-radius: 20px;
-    width: fit-content;
-}
-
-.typing-dots {
-    display: flex;
-    gap: 3px;
-}
-
-.typing-dots span {
-    width: 6px;
-    height: 6px;
-    background: #888;
-    border-radius: 50%;
-    animation: typing 1.4s infinite;
-}
-
-@keyframes typing {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-5px); }
-}
-
-.header-actions a:hover,
-.header-actions button:hover {
-    background: #2a2a2a;
-}
-
-.connection-status {
-    bottom: 25px !important;
-}
-
-.conversations-list {
-    padding-bottom: 20px;
-}
-
-/* للشاشات الطويلة (iPhone وغيرها) */
-@media (min-height: 700px) {
-    .input-area {
-        padding-bottom: 35px !important;
-    }
-    
-    .connection-status {
-        bottom: 35px !important;
-    }
-}
-
-/* للشاشات الصغيرة جداً */
-@media (max-height: 600px) {
-    .input-area {
-        padding-bottom: 15px !important;
-    }
-    
-    .connection-status {
-        bottom: 15px !important;
-    }
-}
+        #aiChatItem { background: linear-gradient(135deg, rgba(37, 211, 102, 0.15), rgba(7, 94, 84, 0.15)); border: 1px solid rgba(37, 211, 102, 0.3); margin-bottom: 1rem; border-radius: 12px; }
+        #aiChatItem:hover { background: linear-gradient(135deg, rgba(37, 211, 102, 0.25), rgba(7, 94, 84, 0.25)); transform: translateX(-5px); }
+        
+        /* منطقة المحادثة */
+        .chat-area { display: flex; flex-direction: column; background: #0e0e0e; height: 100vh; }
+        .chat-header { background: #1f1f1f; padding: 0.8rem 1rem; padding-top: calc(0.8rem + var(--safe-top)); display: flex; align-items: center; gap: 0.8rem; border-bottom: 1px solid #2a2a2a; }
+        .back-to-list { background: none; border: none; color: #25D366; font-size: 1.2rem; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .chat-header .avatar { width: 40px; height: 40px; margin-left: 0; }
+        .chat-header-info { flex: 1; }
+        .chat-header-name { font-weight: 600; color: white; font-size: 1rem; }
+        .chat-header-status { font-size: 0.7rem; color: #888; }
+        .chat-actions button { background: none; border: none; color: #888; font-size: 1.2rem; cursor: pointer; padding: 0.5rem; border-radius: 50%; width: 40px; height: 40px; }
+        
+        .chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .message { display: flex; flex-direction: column; max-width: 80%; animation: fadeIn 0.2s ease; }
+        .message.own { align-self: flex-end; }
+        .message.other { align-self: flex-start; }
+        .message-bubble { padding: 0.7rem 1rem; border-radius: 18px; word-wrap: break-word; }
+        .message.own .message-bubble { background: #25D366; color: white; border-bottom-left-radius: 4px; }
+        .message.other .message-bubble { background: #2a2a2a; color: #e5e5e5; border-bottom-right-radius: 4px; }
+        .message-sender { font-size: 0.7rem; color: #888; margin-bottom: 0.2rem; margin-right: 0.5rem; }
+        .message-time { font-size: 0.6rem; margin-top: 0.2rem; opacity: 0.6; display: flex; align-items: center; gap: 3px; justify-content: flex-end; }
+        
+        .input-area { background: #1f1f1f; padding: 0.8rem; display: flex; gap: 0.8rem; align-items: center; border-top: 1px solid #2a2a2a; padding-bottom: max(0.8rem, env(safe-area-inset-bottom)); }
+        .input-area input { flex: 1; padding: 0.8rem 1rem; background: #2a2a2a; border: none; border-radius: 25px; color: white; font-family: 'Cairo', sans-serif; font-size: 0.9rem; }
+        .input-area input:focus { outline: none; background: #333; }
+        .send-btn { background: #25D366; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; }
+        .send-btn:active { transform: scale(0.95); }
+        
+        .connection-status { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.7rem; z-index: 100; pointer-events: none; }
+        .connection-status.connected { background: #25D366; color: white; }
+        .connection-status.disconnected { background: #e53e3e; color: white; }
+        
+        .empty-state { text-align: center; color: #888; padding: 2rem; }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1f1f1f; width: 90%; max-width: 400px; padding: 1.5rem; border-radius: 20px; }
+        .modal-content h3 { color: white; margin-bottom: 1rem; }
+        .modal-content input, .modal-content textarea { width: 100%; padding: 0.8rem; background: #2a2a2a; border: none; border-radius: 10px; color: white; margin: 0.5rem 0; }
+        .modal-content button { width: 100%; padding: 0.8rem; margin-top: 0.5rem; border: none; border-radius: 25px; cursor: pointer; }
+        .user-item { padding: 0.8rem; background: #2a2a2a; border-radius: 10px; margin-bottom: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 1rem; }
+        
+        .typing-indicator { display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #2a2a2a; border-radius: 20px; width: fit-content; }
+        .typing-dots { display: flex; gap: 3px; }
+        .typing-dots span { width: 6px; height: 6px; background: #888; border-radius: 50%; animation: typing 1.4s infinite; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #1f1f1f; }
+        ::-webkit-scrollbar-thumb { background: #25D366; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -678,12 +106,12 @@
         <!-- قائمة المحادثات -->
         <div class="conversations-list" id="conversationsList">
             <div class="conversations-header">
-    <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
-    <div class="header-actions">
-        <a href="/"><i class="fas fa-home"></i></a>
-        <button onclick="showCreateRoomModal()"><i class="fas fa-plus"></i></button>
-        <button onclick="showUsersList()"><i class="fas fa-user-plus"></i></button>
-    </div>
+                <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
+                <div class="header-actions">
+                    <a href="/"><i class="fas fa-home"></i></a>
+                    <button onclick="showCreateRoomModal()"><i class="fas fa-plus"></i></button>
+                    <button onclick="showUsersList()"><i class="fas fa-user-plus"></i></button>
+                </div>
             </div>
             
             <div class="search-bar">
@@ -696,27 +124,26 @@
             </div>
             
             <div class="conversations-scroll">
-    <div id="roomsList">
-        <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل الغرف...</div>
-    </div>
-    <div id="privateList" style="display: none;">
-        <!-- 🤖 AI Assistant -->
-        <div class="conversation-item" id="aiChatItem" onclick="openAIChat()">
-            <div class="avatar" style="background: linear-gradient(135deg, #25D366, #075E54);">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="conversation-info">
-                <div class="conversation-name">
-                    <span><span class="online-status online"></span> 🤖 EnGo AI Assistant</span>
+                <div id="roomsList">
+                    <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل الغرف...</div>
                 </div>
-                <div class="conversation-preview">اسألني أي شيء عن اللغة الإنجليزية...</div>
+                <div id="privateList" style="display: none;">
+                    <!-- 🤖 AI Assistant -->
+                    <div class="conversation-item" id="aiChatItem" onclick="openAIChat()">
+                        <div class="avatar" style="background: linear-gradient(135deg, #25D366, #075E54);">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">
+                                <span><span class="online-status online"></span> 🤖 EnGo AI Assistant</span>
+                            </div>
+                            <div class="conversation-preview">اسألني أي شيء عن اللغة الإنجليزية...</div>
+                        </div>
+                    </div>
+                    <div id="privateChatsList"></div>
+                </div>
             </div>
         </div>
-        
-        <!-- باقي المحادثات الخاصة -->
-        <div id="privateChatsList"></div>
-    </div>
-            </div>
         
         <!-- منطقة المحادثة -->
         <div class="chat-area" id="chatArea" style="display: none;">
@@ -791,6 +218,9 @@
         let roomsList = [];
         let privateChats = [];
         
+        // ==================== AI Variables ====================
+        let currentAIConversationId = null;
+        
         // ==================== UI Functions ====================
         function showConversationsList() {
             document.getElementById('conversationsList').classList.remove('hide');
@@ -800,7 +230,7 @@
             }
         }
         
-        function openChat(chatId, chatName, chatType) {
+        function openChatArea() {
             document.getElementById('chatArea').style.display = 'flex';
             if (window.innerWidth <= 768) {
                 document.getElementById('conversationsList').classList.add('hide');
@@ -829,7 +259,6 @@
                     item.style.display = name.includes(search) ? 'flex' : 'none';
                 });
             }
-            
             if (privateContainer) {
                 const items = privateContainer.querySelectorAll('.conversation-item');
                 items.forEach(item => {
@@ -935,9 +364,7 @@
                 <div class="conversation-item" onclick="joinRoom('${room.id}','${escapeHtml(room.name)}')">
                     <div class="avatar group"><i class="fas fa-users"></i></div>
                     <div class="conversation-info">
-                        <div class="conversation-name">
-                            <span>${escapeHtml(room.name)}</span>
-                        </div>
+                        <div class="conversation-name"><span>${escapeHtml(room.name)}</span></div>
                         <div class="conversation-preview">${room.lastMessage?.text ? escapeHtml(room.lastMessage.text.substring(0,40)) : 'لا توجد رسائل'}</div>
                     </div>
                 </div>
@@ -956,10 +383,9 @@
                     document.getElementById('inviteBtn').style.display = 'block';
                     document.getElementById('messageInput').disabled = false;
                     document.querySelector('.send-btn').disabled = false;
-                    
                     document.getElementById('chatMessages').innerHTML = '';
                     res.messages?.forEach(m => appendMessage(m));
-                    openChat();
+                    openChatArea();
                     loadRooms();
                 } else showAlert('❌ لا يمكن الانضمام','error');
             });
@@ -996,7 +422,8 @@
         function renderPrivateList() {
             const container = document.getElementById('privateList');
             if(!privateChats?.length) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-friends"></i>لا توجد محادثات خاصة<br>ابدأ محادثة جديدة</div>';
+                const aiElement = document.getElementById('aiChatItem');
+                if(aiElement) aiElement.style.display = 'flex';
                 return;
             }
             container.innerHTML = privateChats.map(chat => `
@@ -1038,7 +465,7 @@
                     renderPrivateMessages();
                     socket.emit('mark_messages_read', res.conversation.id);
                     loadPrivateChats();
-                    openChat();
+                    openChatArea();
                 } else {
                     showAlert('❌ لا يمكن فتح المحادثة','error');
                 }
@@ -1086,18 +513,161 @@
         
         function closeUsersListModal() { document.getElementById('usersListModal').style.display = 'none'; }
         
+        // ==================== AI Chat Functions ====================
+        async function openAIChat() {
+            if (!socket || !socket.connected) {
+                showAlert('❌ غير متصل بالخادم', 'error');
+                return;
+            }
+            
+            currentChat = 'ai';
+            currentChatType = 'ai';
+            
+            document.getElementById('chatName').innerHTML = '<i class="fas fa-robot"></i> EnGo AI Assistant';
+            document.getElementById('chatStatus').innerHTML = '🤖 ذكي • متعلم • متاح 24/7';
+            document.getElementById('inviteBtn').style.display = 'none';
+            document.getElementById('messageInput').disabled = false;
+            document.querySelector('.send-btn').disabled = false;
+            document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المحادثة...</div>';
+            
+            await loadOrCreateAIConversation();
+            openChatArea();
+        }
+        
+        async function loadOrCreateAIConversation() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/ai/conversations', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const conversations = await res.json();
+                
+                if (conversations && conversations.length > 0) {
+                    currentAIConversationId = conversations[0]._id;
+                    await loadAIConversation(currentAIConversationId);
+                } else {
+                    await startNewAIConversation();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                await startNewAIConversation();
+            }
+        }
+        
+        async function startNewAIConversation() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/ai/chat/start', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ context: 'general' })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    currentAIConversationId = data.conversationId;
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div class="message other">
+                            <div class="message-bubble">
+                                🤖 ${data.message}
+                                <div class="message-time">الآن</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error starting AI chat:', error);
+                document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;color:red;">⚠️ حدث خطأ في بدء المحادثة</div>';
+            }
+        }
+        
+        async function loadAIConversation(conversationId) {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/ai/conversations/' + conversationId, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const conversation = await res.json();
+                
+                const container = document.getElementById('chatMessages');
+                container.innerHTML = '';
+                
+                conversation.messages.forEach(msg => {
+                    if (msg.role === 'user') {
+                        appendAIMessage(msg.content, 'own');
+                    } else if (msg.role === 'assistant') {
+                        appendAIMessage(msg.content, 'other');
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading AI conversation:', error);
+                await startNewAIConversation();
+            }
+        }
+        
+        async function sendAIMessage(message) {
+            if (!message || !currentAIConversationId) return;
+            
+            appendAIMessage(message, 'own');
+            showAITypingIndicator();
+            
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/ai/chat/' + currentAIConversationId + '/message', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+                
+                hideAITypingIndicator();
+                
+                if (data.success) {
+                    appendAIMessage(data.message, 'other');
+                } else {
+                    appendAIMessage('عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.', 'other');
+                }
+            } catch (error) {
+                hideAITypingIndicator();
+                appendAIMessage('عذراً، حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت.', 'other');
+            }
+        }
+        
+        function appendAIMessage(text, sender) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = `message ${sender === 'own' ? 'own' : 'other'}`;
+            div.innerHTML = `<div class="message-bubble">${text}<div class="message-time">${new Date().toLocaleTimeString()}</div></div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function showAITypingIndicator() {
+            const container = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'aiTypingIndicator';
+            typingDiv.className = 'message other';
+            typingDiv.innerHTML = `<div class="typing-indicator"><span>🤖 EnGo AI يكتب</span><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function hideAITypingIndicator() {
+            const indicator = document.getElementById('aiTypingIndicator');
+            if (indicator) indicator.remove();
+        }
+        
         // ==================== Send Messages ====================
         function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const text = input.value.trim();
-    if (!text || !currentChat) return;
-    
-    if (currentChatType === 'ai') {
-        sendAIMessage(text);
-        input.value = '';
-        return;
-    }
-    
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !currentChat) return;
+            
+            if (currentChatType === 'ai') {
+                sendAIMessage(text);
+                input.value = '';
+                return;
+            }
             
             if(currentChatType === 'room') {
                 const tempMessage = {
@@ -1118,7 +688,7 @@
                         showAlert('❌ فشل إرسال الرسالة', 'error');
                     }
                 });
-            } else {
+            } else if (currentChatType === 'private') {
                 const tempMessage = {
                     id: 'temp_' + Date.now(),
                     from: currentUser.id,
@@ -1187,157 +757,11 @@
             if(!email) return showAlert('❌ أدخل البريد','error');
             socket.emit('invite_by_email',{email,roomId:currentInviteRoomId,roomName:document.getElementById('chatName').innerText,message:document.getElementById('inviteMessage').value},(res)=>{if(res?.success){showAlert(`✅ تم الإرسال إلى ${email}`,'success');closeInviteModal();}});
         }
-        // ==================== AI Chat Functions ====================
-let currentAIConversationId = null;
-
-async function openAIChat() {
-    if (!socket || !socket.connected) {
-        showAlert('❌ غير متصل بالخادم', 'error');
-        return;
-    }
-    
-    currentChat = 'ai';
-    currentChatType = 'ai';
-    
-    document.getElementById('currentChatName').innerHTML = '<i class="fas fa-robot"></i> EnGo AI Assistant';
-    document.getElementById('currentChatInfo').innerHTML = '🤖 ذكي • متعلم • متاح 24/7';
-    document.getElementById('inviteBtn').style.display = 'none';
-    document.getElementById('messageInput').disabled = false;
-    document.querySelector('.send-btn').disabled = false;
-    document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المحادثة...</div>';
-    
-    await loadOrCreateAIConversation();
-    openChat();
-}
-
-async function loadOrCreateAIConversation() {
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL + '/ai/conversations', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const conversations = await res.json();
         
-        if (conversations && conversations.length > 0) {
-            currentAIConversationId = conversations[0]._id;
-            await loadAIConversation(currentAIConversationId);
-        } else {
-            await startNewAIConversation();
-        }
-    } catch (error) {
-        await startNewAIConversation();
-    }
-}
-
-async function startNewAIConversation() {
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL + '/ai/chat/start', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ context: 'general' })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            currentAIConversationId = data.conversationId;
-            document.getElementById('chatMessages').innerHTML = `
-                <div class="message other">
-                    <div class="message-bubble">
-                        ${data.message}
-                        <div class="message-time">الآن</div>
-                    </div>
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-async function loadAIConversation(conversationId) {
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL + '/ai/conversations/' + conversationId, {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const conversation = await res.json();
-        
-        const container = document.getElementById('chatMessages');
-        container.innerHTML = '';
-        
-        conversation.messages.forEach(msg => {
-            if (msg.role === 'user') {
-                appendAIMessage(msg.content, 'own');
-            } else if (msg.role === 'assistant') {
-                appendAIMessage(msg.content, 'other');
-            }
-        });
-    } catch (error) {
-        await startNewAIConversation();
-    }
-}
-
-async function sendAIMessage(message) {
-    if (!message || !currentAIConversationId) return;
-    
-    appendAIMessage(message, 'own');
-    showAITypingIndicator();
-    
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL + '/ai/chat/' + currentAIConversationId + '/message', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ message })
-        });
-        const data = await res.json();
-        
-        hideAITypingIndicator();
-        
-        if (data.success) {
-            appendAIMessage(data.message, 'other');
-        }
-    } catch (error) {
-        hideAITypingIndicator();
-        appendAIMessage('عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.', 'other');
-    }
-}
-
-function appendAIMessage(text, sender) {
-    const container = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = `message ${sender === 'own' ? 'own' : 'other'}`;
-    div.innerHTML = `<div class="message-bubble">${text}<div class="message-time">${new Date().toLocaleTimeString()}</div></div>`;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-}
-
-function showAITypingIndicator() {
-    const container = document.getElementById('chatMessages');
-    const typingDiv = document.createElement('div');
-    typingDiv.id = 'aiTypingIndicator';
-    typingDiv.className = 'message other';
-    typingDiv.innerHTML = `<div class="typing-indicator"><span>🤖 EnGo AI يكتب</span><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-    container.appendChild(typingDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-function hideAITypingIndicator() {
-    const indicator = document.getElementById('aiTypingIndicator');
-    if (indicator) indicator.remove();
-}
-        function openChat() {
-    document.getElementById('chatArea').style.display = 'flex';
-    if (window.innerWidth <= 768) {
-        document.getElementById('conversationsList').classList.add('hide');
-    }
-        }
         // ==================== Init ====================
         async function init() {
             if(await checkAuth()) {
                 connectSocket();
-                // عرض القائمة في البداية
                 showConversationsList();
             }
         }
