@@ -6,6 +6,21 @@ const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
+// ==================== AI Chat Models ====================
+
+// نموذج محادثات AI
+const aiConversationSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    messages: [{
+        role: { type: String, enum: ['user', 'assistant', 'system'], required: true },
+        content: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now }
+    }],
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const AIConversation = mongoose.model('AIConversation', aiConversationSchema);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -959,6 +974,271 @@ app.get('/api/progress/:courseId', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// ==================== AI Chatbot Routes ====================
+
+// بدء محادثة جديدة مع AI
+app.post('/api/ai/chat/start', auth, async (req, res) => {
+    try {
+        const conversation = new AIConversation({
+            userId: req.user._id,
+            messages: [{
+                role: 'system',
+                content: `أنت مساعد تعليمي ذكي لمنصة EnGo لتعلم اللغة الإنجليزية. 
+                         اسمك "EnGo AI". أنت تتحدث العربية الفصحى.
+                         تساعد الطلاب في:
+                         - شرح قواعد اللغة الإنجليزية
+                         - تصحيح الأخطاء اللغوية
+                         - تقديم أمثلة وتدريبات
+                         - شرح الكلمات والمفردات
+                         - مساعدة في حل الواجبات
+                         - التحضير للاختبارات
+                         
+                         كن ودوداً ومشجعاً. قدم إجابات مفيدة ومختصرة.`
+            }]
+        });
+        
+        await conversation.save();
+        
+        res.json({
+            success: true,
+            conversationId: conversation._id,
+            message: "✨ مرحباً! أنا EnGo AI، مساعدك الذكي لتعلم اللغة الإنجليزية. كيف يمكنني مساعدتك اليوم؟"
+        });
+        
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// إرسال رسالة إلى AI
+app.post('/api/ai/chat/:conversationId/message', auth, async (req, res) => {
+    try {
+        const { message } = req.body;
+        const conversation = await AIConversation.findOne({
+            _id: req.params.conversationId,
+            userId: req.user._id
+        });
+        
+        if (!conversation) {
+            return res.status(404).json({ message: 'المحادثة غير موجودة' });
+        }
+        
+        // إضافة رسالة المستخدم
+        conversation.messages.push({
+            role: 'user',
+            content: message,
+            timestamp: new Date()
+        });
+        
+        // ردود مبرمجة (بدون API خارجي - مجاني بالكامل)
+        let aiResponse = getAIResponse(message, req.user.name);
+        
+        // إضافة رد AI
+        conversation.messages.push({
+            role: 'assistant',
+            content: aiResponse,
+            timestamp: new Date()
+        });
+        
+        conversation.updatedAt = new Date();
+        await conversation.save();
+        
+        res.json({
+            success: true,
+            message: aiResponse
+        });
+        
+    } catch (error) {
+        console.error('AI Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب جميع محادثات AI للمستخدم
+app.get('/api/ai/conversations', auth, async (req, res) => {
+    try {
+        const conversations = await AIConversation.find({ userId: req.user._id })
+            .sort({ updatedAt: -1 });
+        
+        res.json(conversations);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب محادثة AI محددة
+app.get('/api/ai/conversations/:conversationId', auth, async (req, res) => {
+    try {
+        const conversation = await AIConversation.findOne({
+            _id: req.params.conversationId,
+            userId: req.user._id
+        });
+        
+        if (!conversation) {
+            return res.status(404).json({ message: 'المحادثة غير موجودة' });
+        }
+        
+        res.json(conversation);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// دالة الردود المبرمجة (مجانية ولا تحتاج API)
+function getAIResponse(message, userName) {
+    const msg = message.toLowerCase();
+    
+    // ردود الترحيب
+    if (msg.includes('مرحب') || msg.includes('السلام') || msg.includes('hi') || msg.includes('hello')) {
+        return `👋 وعليكم السلام ورحمة الله ${userName || 'صديقي'}! أنا سعيد بمساعدتك. كيف يمكنني مساعدتك في تعلم اللغة الإنجليزية اليوم؟ 📚`;
+    }
+    
+    // شرح القواعد
+    if (msg.includes('قاعدة') || msg.includes('grammar')) {
+        if (msg.includes('present simple') || msg.includes('مضارع بسيط')) {
+            return `📖 **قاعدة Present Simple (المضارع البسيط):**
+            
+✅ نستخدمه لوصف:
+• حقائق عامة: The sun rises in the east
+• عادات روتينية: I wake up at 7 AM
+• مشاعر وأفكار: I like coffee
+
+🔹 التكوين:
+• I/You/We/They + الفعل الأساسي
+• He/She/It + الفعل+s/es
+
+📝 أمثلة:
+• I play football every Friday
+• She plays tennis on weekends
+
+هل تريد تدريبات على هذه القاعدة؟`;
+        }
+        
+        return `📚 بالتأكيد! القواعد مهمة جداً في اللغة الإنجليزية.
+        
+يمكنني مساعدتك في شرح:
+• Present Simple (المضارع البسيط)
+• Past Simple (الماضي البسيط)
+• Future Tense (المستقبل)
+• Comparative & Superlative (المقارنة والتفضيل)
+
+أي قاعدة تريد أن أشرحها لك؟`;
+    }
+    
+    // شرح كلمة
+    if (msg.includes('معنى') || msg.includes('كلمة')) {
+        const wordMatch = message.match(/كلمة\s+([^\s]+)/i) || message.match(/معنى\s+([^\s]+)/i);
+        const word = wordMatch ? wordMatch[1] : 'the word';
+        
+        return `📖 **معنى كلمة "${word}":**
+        
+${getWordMeaning(word)}
+
+📝 **أمثلة:**
+• ${getExampleSentence(word)}
+
+💡 **نصيحة:** حاول استخدام الكلمة في جملة بنفسك لتتذكرها بشكل أفضل!`;
+    }
+    
+    // تصحيح جملة
+    if (msg.includes('صحح') || msg.includes('correct')) {
+        return `✏️ **تصحيح الجملة:**
+
+سأقوم بتحليل جملتك وتصحيح الأخطاء إن وجدت.
+
+🔹 **القاعدة:** تأكد من تطابق الفعل مع الفاعل (He/She/It + s)
+
+📝 **جرب كتابة الجملة التي تريد تصحيحها، وسأقوم بمساعدتك!**`;
+    }
+    
+    // تحسين النطق
+    if (msg.includes('نطق') || msg.includes('pronunciation')) {
+        return `🗣️ **نصائح لتحسين النطق:**
+
+1️⃣ **استمع ثم كرر** - استمع للمتحدثين الأصليين وكرر ما يقولونه
+2️⃣ **سجل صوتك** - سجل نفسك وقارن بالنطق الصحيح
+3️⃣ **تعلم الأصوات الصعبة** - ركز على الأصوات مثل 'th' و 'r'
+4️⃣ **استخدم تطبيقات النطق** - مثل YouGlish أو Forvo
+
+💡 **نصيحة ذهبية:** النطق يحتاج إلى ممارسة يومية لمدة 10-15 دقيقة فقط!
+
+هل تريد مساعدة في نطق كلمة معينة؟`;
+    }
+    
+    // اختبارات
+    if (msg.includes('اختبار') || msg.includes('exam') || msg.includes('test')) {
+        return `📝 **الاستعداد للاختبارات:**
+
+🎯 **نصائح للنجاح:**
+1. راجع الدروس أولاً
+2. حل الواجبات والتمارين
+3. ركز على النقاط التي تجدها صعبة
+4. خذ قسطاً كافياً من الراحة قبل الاختبار
+
+📚 **الاختبارات المتوفرة في EnGo:**
+• اختبار تحديد المستوى
+• اختبارات نصفية
+• اختبارات نهائية
+
+هل تريد مساعدة في التحضير لاختبار معين؟`;
+    }
+    
+    // شهادة
+    if (msg.includes('شهادة') || msg.includes('certificate')) {
+        return `🏆 **شهادات EnGo:**
+
+✅ تحصل على شهادة عند إكمال دورة بنجاح (نسبة 70% فأكثر)
+✅ يمكنك مشاركة شهادتك على LinkedIn
+✅ الشهادة قابلة للتحقق عبر رابط فريد
+
+استمر في التعلم لتحصل على شهاداتك! 🚀`;
+    }
+    
+    // رد عام
+    return `📚 سؤال ممتاز يا ${userName || 'صديقي'}!
+
+أنا هنا لمساعدتك في تعلم اللغة الإنجليزية. يمكنني:
+
+✅ **شرح قواعد اللغة** (اسألني عن أي قاعدة)
+✅ **تصحيح جملتك** (أرسل لي الجملة وأصححها)
+✅ **شرح معاني الكلمات** (قل لي الكلمة)
+✅ **تقديم نصائح للتعلم** (كيف تحسن مستواك)
+✅ **مساعدتك للاستعداد للاختبارات**
+
+ما الذي تود أن تتعلمه اليوم؟ 🎓`;
+}
+
+// دوال مساعدة للمعاني
+function getWordMeaning(word) {
+    const dictionary = {
+        'beautiful': 'جميل/جميلة - يوصف به الشيء الجميل',
+        'challenge': 'تحدي - أمر صعب يتطلب جهداً',
+        'opportunity': 'فرصة - موقف مناسب لتحقيق شيء',
+        'important': 'مهم - له قيمة كبيرة',
+        'difficult': 'صعب - ليس سهلاً',
+        'amazing': 'مذهل - يثير الدهشة والإعجاب',
+        'excellent': 'ممتاز - عالي الجودة',
+        'wonderful': 'رائع - جميل جداً'
+    };
+    
+    return dictionary[word.toLowerCase()] || `هذه كلمة إنجليزية جميلة! معناها يعتمد على السياق. هل تريد مني أن أشرحها بشكل أعمق؟`;
+}
+
+function getExampleSentence(word) {
+    const examples = {
+        'beautiful': 'The sunset is beautiful (الغروب جميل)',
+        'challenge': 'Learning English is a fun challenge (تعلم الإنجليزية تحدٍ ممتع)',
+        'opportunity': 'This is a great opportunity to learn (هذه فرصة رائعة للتعلم)',
+        'important': 'Education is very important (التعليم مهم جداً)',
+        'difficult': 'Some words are difficult to pronounce (بعض الكلمات صعبة النطق)',
+        'amazing': 'You are doing an amazing job! (أنت تقوم بعمل مذهل!)',
+        'excellent': 'You got an excellent score! (حصلت على درجة ممتازة!)',
+        'wonderful': "It's a wonderful day to learn English (إنه يوم رائع لتعلم الإنجليزية)"
+    };
+    
+    return examples[word.toLowerCase()] || `This is an example sentence with the word "${word}"`;
+}
+
 
 // ==================== Socket.IO ====================
 const server = http.createServer(app);
