@@ -784,21 +784,20 @@ app.post('/api/level-tests/:testId/submit', auth, async (req, res) => {
         const percentage = (totalScore / maxScore) * 100;
         const passed = percentage >= test.passingScore;
         
-        // حفظ النتيجة
-        const QuizResult = mongoose.model('QuizResult');
-        const quizResult = new QuizResult({
-            userId: req.user._id,
-            quizId: test._id,
-            score: totalScore,
-            percentage: percentage,
-            passed: passed,
-            answers: results,
-            timeSpent: timeSpent,
-            startedAt: new Date(startedAt),
-            completedAt: new Date(),
-            ipAddress: req.ip,
-            deviceInfo: req.headers['user-agent']
-        });
+        // حفظ النتيجة - استخدم النموذج الموجود
+const quizResult = new QuizResult({
+    userId: req.user._id,
+    quizId: test._id,
+    score: totalScore,
+    percentage: percentage,
+    passed: passed,
+    answers: results,
+    timeSpent: timeSpent,
+    startedAt: new Date(startedAt),
+    completedAt: new Date(),
+    ipAddress: req.ip,
+    deviceInfo: req.headers['user-agent']
+});
         
         await quizResult.save();
         
