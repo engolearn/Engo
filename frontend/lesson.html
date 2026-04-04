@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>الدرس - EnGo</title>
+    <title>عرض الدرس - EnGo</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -15,64 +15,179 @@
         .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
         .btn-back { background: #e2e8f0; color: #4a5568; padding: 8px 20px; border: none; border-radius: 25px; cursor: pointer; }
         
-        .lesson-container { max-width: 1200px; margin: 2rem auto; padding: 0 20px; }
+        .lesson-container { max-width: 1000px; margin: 2rem auto; padding: 0 20px; }
         
-        /* التنقل بين الدروس */
-        .lesson-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-        .lesson-nav button { background: #667eea; color: white; border: none; padding: 10px 25px; border-radius: 25px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 1rem; }
-        .lesson-nav button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .lesson-nav button:not(:disabled):hover { background: #5a67d8; transform: scale(1.02); }
+        /* رأس الدرس */
+        .lesson-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 20px; margin-bottom: 1.5rem; text-align: center; }
+        .lesson-header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .lesson-header .lesson-number { opacity: 0.9; font-size: 0.9rem; }
         
-        /* محتوى الدرس */
-        .lesson-content { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 2rem; }
-        .lesson-title { font-size: 1.8rem; color: #2d3748; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 3px solid #667eea; }
-        .lesson-text { line-height: 1.8; color: #4a5568; font-size: 1.05rem; }
+        /* مؤشر التقدم */
+        .progress-indicator {
+            background: white;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .progress-bar-container {
+            background: #e2e8f0;
+            border-radius: 30px;
+            height: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: #667eea;
+            height: 100%;
+            border-radius: 30px;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            color: #4a5568;
+            font-size: 0.85rem;
+        }
         
-        /* الفيديو */
-        .video-container { margin: 1.5rem 0; border-radius: 15px; overflow: hidden; background: #000; }
-        .video-container iframe { width: 100%; height: 450px; border: none; }
+        /* محتوى الفقرة */
+        .paragraph-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .paragraph-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            width: fit-content;
+            margin-bottom: 1rem;
+        }
+        .type-text { background: #667eea; color: white; }
+        .type-video { background: #e53e3e; color: white; }
+        .type-audio { background: #38a169; color: white; }
+        .type-image { background: #d97706; color: white; }
         
-        /* الصوت */
-        .audio-container { background: #f7fafc; padding: 1rem; border-radius: 15px; margin: 1rem 0; display: flex; align-items: center; gap: 1rem; }
-        .audio-container audio { flex: 1; }
+        .paragraph-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+        }
         
-        /* الصور التفاعلية */
-        .images-section { margin: 1.5rem 0; }
-        .images-section h4 { margin-bottom: 1rem; color: #2d3748; }
-        .images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-        .image-card { background: #f7fafc; border-radius: 15px; overflow: hidden; cursor: pointer; transition: transform 0.3s; }
-        .image-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .image-card img { width: 100%; height: 180px; object-fit: cover; }
-        .image-info { padding: 1rem; }
-        .image-caption { font-weight: bold; color: #667eea; margin-bottom: 0.5rem; }
-        .image-description { color: #718096; font-size: 0.85rem; line-height: 1.5; }
+        .paragraph-media {
+            margin: 1rem 0;
+            text-align: center;
+        }
+        .paragraph-media iframe {
+            width: 100%;
+            height: 400px;
+            border-radius: 16px;
+            border: none;
+        }
+        .paragraph-media audio {
+            width: 100%;
+        }
+        .paragraph-media img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 16px;
+            object-fit: cover;
+        }
+        
+        /* أزرار التنقل */
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .nav-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: scale(1.02);
+        }
+        .nav-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .nav-btn.prev { background: #718096; }
+        .nav-btn.prev:hover:not(:disabled) { background: #4a5568; }
+        .nav-btn.next { background: #48bb78; }
+        .nav-btn.next:hover:not(:disabled) { background: #38a169; }
         
         /* الواجب */
-        .assignment-section { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 20px; padding: 1.5rem; margin-top: 1.5rem; }
-        .assignment-section h3 { color: #92400e; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-        .assignment-question { background: white; border-radius: 15px; padding: 1.5rem; margin-bottom: 1rem; }
-        .assignment-question h4 { color: #667eea; margin-bottom: 0.5rem; }
-        .assignment-options { margin-top: 1rem; padding-right: 1rem; }
-        .assignment-option { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
-        .assignment-input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; font-family: 'Cairo', sans-serif; }
-        .btn-submit { background: #48bb78; color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 1rem; margin-top: 1rem; transition: all 0.3s; }
-        .btn-submit:hover { background: #38a169; transform: scale(1.02); }
+        .assignment-section {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .assignment-section h3 {
+            color: #92400e;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .assignment-question {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .assignment-options {
+            margin-top: 1rem;
+            padding-right: 1rem;
+        }
+        .assignment-option {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-submit {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+            width: 100%;
+        }
         
-        /* مودال الصورة */
-        .image-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
-        .image-modal.active { display: flex; }
-        .image-modal-content { max-width: 90%; max-height: 90%; position: relative; }
-        .image-modal-content img { width: 100%; border-radius: 10px; }
-        .image-modal-caption { position: absolute; bottom: -50px; left: 0; right: 0; text-align: center; color: white; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; }
-        .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
-        
-        .loading-spinner { text-align: center; padding: 3rem; color: #667eea; }
+        .loading-spinner {
+            text-align: center;
+            padding: 3rem;
+            color: #667eea;
+        }
         
         @media (max-width: 768px) {
-            .video-container iframe { height: 250px; }
-            .images-grid { grid-template-columns: 1fr; }
-            .lesson-nav { flex-direction: column; }
-            .lesson-nav button { width: 100%; justify-content: center; }
+            .paragraph-media iframe { height: 250px; }
+            .paragraph-card { padding: 1.5rem; }
+            .navigation-buttons button { padding: 10px 20px; font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -85,42 +200,54 @@
     </nav>
 
     <div class="lesson-container">
-        <div class="lesson-nav">
-            <button id="prevLessonBtn" onclick="previousLesson()" disabled>
-                <i class="fas fa-arrow-right"></i> الدرس السابق
-            </button>
-            <span id="lessonCounter"></span>
-            <button id="nextLessonBtn" onclick="nextLesson()" disabled>
-                الدرس التالي <i class="fas fa-arrow-left"></i>
-            </button>
+        <!-- رأس الدرس -->
+        <div class="lesson-header" id="lessonHeader">
+            <h1 id="lessonTitle">جاري التحميل...</h1>
+            <div class="lesson-number" id="lessonNumber"></div>
         </div>
 
-        <div class="lesson-content" id="lessonContent">
+        <!-- مؤشر التقدم -->
+        <div class="progress-indicator" id="progressIndicator" style="display: none;">
+            <div class="progress-text">
+                <span id="currentParaNum">0</span> / <span id="totalParas">0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- محتوى الفقرة الحالية -->
+        <div class="paragraph-card" id="paragraphContent">
             <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدرس...</div>
         </div>
-    </div>
 
-    <div id="imageModal" class="image-modal" onclick="closeImageModal()">
-        <span class="close-modal" onclick="closeImageModal()">&times;</span>
-        <div class="image-modal-content">
-            <img id="modalImage" src="">
-            <div id="modalCaption" class="image-modal-caption"></div>
+        <!-- أزرار التنقل -->
+        <div class="navigation-buttons" id="navButtons" style="display: none;">
+            <button class="nav-btn prev" id="prevBtn" onclick="previousParagraph()" disabled>
+                <i class="fas fa-arrow-right"></i> السابق
+            </button>
+            <button class="nav-btn next" id="nextBtn" onclick="nextParagraph()">
+                التالي <i class="fas fa-arrow-left"></i>
+            </button>
         </div>
+
+        <!-- الواجب (يظهر بعد آخر فقرة) -->
+        <div id="assignmentContainer" style="display: none;"></div>
     </div>
 
     <script>
         const API_URL = window.location.origin + '/api';
-        let courseData = null;
-        let currentLesson = null;
-        let currentLessonIndex = 0;
+        let lessonData = null;
+        let currentParagraphIndex = 0;
+        let totalParagraphs = 0;
         let assignmentAnswers = {};
 
+        // الحصول على معرف الدورة والدرس من الرابط
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
             return {
                 courseId: params.get('courseId'),
-                lessonId: params.get('lessonId'),
-                lessonIndex: parseInt(params.get('lessonIndex')) || 0
+                lessonId: params.get('lessonId')
             };
         }
 
@@ -147,168 +274,194 @@
             return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
 
-        async function loadCourse() {
-            const { courseId } = getUrlParams();
-            if (!courseId) {
-                document.getElementById('lessonContent').innerHTML = '<div class="loading-spinner">❌ لم يتم تحديد الدورة</div>';
+        function extractYouTubeId(url) {
+            if (!url) return '';
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : '';
+        }
+
+        // تحميل الدرس
+        async function loadLesson() {
+            const { lessonId } = getUrlParams();
+            if (!lessonId) {
+                document.getElementById('paragraphContent').innerHTML = '<div class="loading-spinner">❌ لم يتم تحديد الدرس</div>';
                 return;
             }
 
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/courses/' + courseId, {
+                const res = await fetch(API_URL + '/lessons/' + lessonId, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 
-                if (!res.ok) throw new Error('فشل تحميل الدورة');
-                courseData = await res.json();
+                if (!res.ok) throw new Error('فشل تحميل الدرس');
                 
-                const { lessonId, lessonIndex } = getUrlParams();
-                if (lessonId) {
-                    const index = courseData.lessons.findIndex(l => l._id === lessonId);
-                    currentLessonIndex = index !== -1 ? index : 0;
+                lessonData = await res.json();
+                
+                // عرض معلومات الدرس
+                document.getElementById('lessonTitle').innerText = lessonData.title;
+                document.getElementById('lessonNumber').innerHTML = `<i class="fas fa-book"></i> الدرس ${lessonData.lessonNumber}`;
+                
+                // تحضير الفقرات
+                if (lessonData.content && Array.isArray(lessonData.content) && lessonData.content.length > 0) {
+                    totalParagraphs = lessonData.content.length;
+                    document.getElementById('progressIndicator').style.display = 'block';
+                    document.getElementById('navButtons').style.display = 'flex';
+                    document.getElementById('totalParas').innerText = totalParagraphs;
+                    
+                    currentParagraphIndex = 0;
+                    renderCurrentParagraph();
                 } else {
-                    currentLessonIndex = lessonIndex || 0;
+                    // توافق مع الإصدار القديم (نص عادي)
+                    totalParagraphs = 1;
+                    document.getElementById('progressIndicator').style.display = 'none';
+                    document.getElementById('navButtons').style.display = 'flex';
+                    document.getElementById('prevBtn').disabled = true;
+                    document.getElementById('nextBtn').disabled = true;
+                    
+                    renderLegacyContent();
                 }
                 
-                await loadLesson(currentLessonIndex);
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('lessonContent').innerHTML = '<div class="loading-spinner">❌ حدث خطأ في تحميل الدورة</div>';
+                document.getElementById('paragraphContent').innerHTML = '<div class="loading-spinner">❌ حدث خطأ في تحميل الدرس</div>';
             }
         }
 
-        async function loadLesson(index) {
-            if (!courseData || !courseData.lessons || index >= courseData.lessons.length) {
-                return;
-            }
-
-            const lesson = courseData.lessons[index];
-            if (lesson.isLocked) {
-                showAlert('⚠️ هذا الدرس مقفل', 'error');
-                window.location.href = `/course.html?id=${courseData._id}`;
-                return;
-            }
-
-            currentLesson = lesson;
-            currentLessonIndex = index;
-
-            document.getElementById('prevLessonBtn').disabled = index === 0;
-            document.getElementById('nextLessonBtn').disabled = index === courseData.lessons.length - 1;
-            document.getElementById('lessonCounter').innerHTML = `الدرس ${lesson.lessonNumber} من ${courseData.lessons.length}`;
-
-            let imagesHtml = '';
-            if (lesson.images && lesson.images.length > 0) {
-                imagesHtml = `
-                    <div class="images-section">
-                        <h4><i class="fas fa-images"></i> صور توضيحية</h4>
-                        <div class="images-grid">
-                            ${lesson.images.map(img => `
-                                <div class="image-card" onclick="openImageModal('${img.url}', '${escapeHtml(img.caption)}', '${escapeHtml(img.description)}')">
-                                    <img src="${img.url}" onerror="this.src='https://placehold.co/400x200/667eea/white?text=صورة'">
-                                    <div class="image-info">
-                                        <div class="image-caption">📷 ${escapeHtml(img.caption || 'صورة توضيحية')}</div>
-                                        <div class="image-description">${escapeHtml(img.description || 'اضغط لمشاهدة الصورة بشكل أكبر')}</div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            let videoHtml = '';
-            if (lesson.videoUrl) {
-                const videoId = extractYouTubeId(lesson.videoUrl);
-                if (videoId) {
-                    videoHtml = `<div class="video-container"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
-                }
-            }
-
-            let audioHtml = '';
-            if (lesson.audioUrl) {
-                audioHtml = `<div class="audio-container"><i class="fas fa-headphones"></i><audio controls src="${lesson.audioUrl}"></audio></div>`;
-            }
-
-            let assignmentHtml = '';
-            if (lesson.assignment && lesson.assignment.questions && lesson.assignment.questions.length > 0) {
-                assignmentHtml = `
-                    <div class="assignment-section">
-                        <h3><i class="fas fa-tasks"></i> ${escapeHtml(lesson.assignment.title || 'واجب الدرس')}</h3>
-                        <p>${escapeHtml(lesson.assignment.description || '')}</p>
-                        <div id="assignmentQuestions">
-                            ${renderAssignmentQuestions(lesson.assignment.questions)}
-                        </div>
-                        <button class="btn-submit" onclick="submitAssignment()">✅ تقديم الواجب</button>
-                    </div>
-                `;
-            }
-
-            document.getElementById('lessonContent').innerHTML = `
-                <h1 class="lesson-title">${escapeHtml(lesson.title)}</h1>
-                <div class="lesson-text">${lesson.content || ''}</div>
-                ${videoHtml}
-                ${audioHtml}
-                ${imagesHtml}
-                ${assignmentHtml}
-            `;
+        // عرض الفقرة الحالية
+        function renderCurrentParagraph() {
+            if (!lessonData.content || !lessonData.content[currentParagraphIndex]) return;
             
-            assignmentAnswers = {};
-        }
-// عرض محتوى الدرس (فقرات متسلسلة)
-function renderLessonContent(lesson) {
-    let contentHtml = '';
-    
-    if (lesson.content && Array.isArray(lesson.content)) {
-        contentHtml = lesson.content.map((item, idx) => {
+            const para = lessonData.content[currentParagraphIndex];
+            
+            // تحديث مؤشر التقدم
+            document.getElementById('currentParaNum').innerText = currentParagraphIndex + 1;
+            const progressPercent = ((currentParagraphIndex + 1) / totalParagraphs) * 100;
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+            
+            // تحديث أزرار التنقل
+            document.getElementById('prevBtn').disabled = currentParagraphIndex === 0;
+            document.getElementById('nextBtn').disabled = false;
+            
+            // تغيير نص زر التالي إذا كانت هذه آخر فقرة
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentParagraphIndex === totalParagraphs - 1) {
+                nextBtn.innerHTML = 'إكمال الدرس <i class="fas fa-check"></i>';
+            } else {
+                nextBtn.innerHTML = 'التالي <i class="fas fa-arrow-left"></i>';
+            }
+            
+            // عرض الفقرة
+            let typeClass = '';
+            let typeIcon = '';
+            let typeName = '';
             let mediaHtml = '';
             
-            switch(item.type) {
+            switch(para.type) {
+                case 'text':
+                    typeClass = 'type-text';
+                    typeIcon = 'fa-file-alt';
+                    typeName = 'نص';
+                    break;
                 case 'video':
-                    const videoId = extractYouTubeId(item.mediaUrl);
-                    if (videoId) {
-                        mediaHtml = `<div class="video-container"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                    typeClass = 'type-video';
+                    typeIcon = 'fa-video';
+                    typeName = 'فيديو';
+                    if (para.mediaUrl) {
+                        const videoId = extractYouTubeId(para.mediaUrl);
+                        if (videoId) {
+                            mediaHtml = `<div class="paragraph-media"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                        }
                     }
                     break;
                 case 'audio':
-                    if (item.mediaUrl) {
-                        mediaHtml = `<div class="audio-container"><i class="fas fa-headphones"></i><audio controls src="${item.mediaUrl}"></audio></div>`;
+                    typeClass = 'type-audio';
+                    typeIcon = 'fa-headphones';
+                    typeName = 'صوت';
+                    if (para.mediaUrl) {
+                        mediaHtml = `<div class="paragraph-media"><audio controls src="${para.mediaUrl}"></audio></div>`;
                     }
                     break;
                 case 'image':
-                    if (item.mediaUrl) {
-                        mediaHtml = `<div class="image-container"><img src="${item.mediaUrl}" style="max-width:100%; border-radius:15px;" onerror="this.src='https://placehold.co/600x400/667eea/white?text=صورة'"></div>`;
+                    typeClass = 'type-image';
+                    typeIcon = 'fa-image';
+                    typeName = 'صورة';
+                    if (para.mediaUrl) {
+                        mediaHtml = `<div class="paragraph-media"><img src="${para.mediaUrl}" onerror="this.src='https://placehold.co/600x400/667eea/white?text=صورة'"></div>`;
                     }
                     break;
-                case 'text':
-                default:
-                    mediaHtml = '';
             }
             
-            return `
-                <div class="lesson-paragraph" style="margin-bottom: 2rem;">
-                    ${mediaHtml}
-                    <div class="lesson-text" style="margin-top: ${mediaHtml ? '1rem' : '0'};">${item.content || ''}</div>
+            document.getElementById('paragraphContent').innerHTML = `
+                <div class="paragraph-type-badge ${typeClass}">
+                    <i class="fas ${typeIcon}"></i> ${typeName}
+                </div>
+                <div class="paragraph-content">
+                    ${para.content || ''}
+                </div>
+                ${mediaHtml}
+            `;
+            
+            // إخفاء الواجب إذا كان ظاهراً
+            document.getElementById('assignmentContainer').style.display = 'none';
+        }
+
+        // عرض المحتوى القديم (نص عادي)
+        function renderLegacyContent() {
+            document.getElementById('paragraphContent').innerHTML = `
+                <div class="paragraph-type-badge type-text">
+                    <i class="fas fa-file-alt"></i> نص
+                </div>
+                <div class="paragraph-content">
+                    ${lessonData.content || ''}
                 </div>
             `;
-        }).join('');
-    } else {
-        // توافق مع الإصدار القديم (نص عادي)
-        contentHtml = `<div class="lesson-text">${lesson.content || ''}</div>`;
-    }
-    
-    document.getElementById('lessonContent').innerHTML = `
-        <h1 class="lesson-title">${escapeHtml(lesson.title)}</h1>
-        ${contentHtml}
-    `;
-}
-        function renderAssignmentQuestions(questions) {
-            return questions.map((q, idx) => {
+            
+            // إذا كان هناك واجب، عرضه
+            if (lessonData.assignment && lessonData.assignment.questions && lessonData.assignment.questions.length > 0) {
+                renderAssignment();
+            }
+        }
+
+        // الانتقال إلى الفقرة التالية
+        function nextParagraph() {
+            if (currentParagraphIndex < totalParagraphs - 1) {
+                currentParagraphIndex++;
+                renderCurrentParagraph();
+            } else {
+                // آخر فقرة - عرض الواجب
+                if (lessonData.assignment && lessonData.assignment.questions && lessonData.assignment.questions.length > 0) {
+                    renderAssignment();
+                } else {
+                    completeLesson();
+                }
+            }
+        }
+
+        // الانتقال إلى الفقرة السابقة
+        function previousParagraph() {
+            if (currentParagraphIndex > 0) {
+                currentParagraphIndex--;
+                renderCurrentParagraph();
+            }
+        }
+
+        // عرض الواجب
+        function renderAssignment() {
+            const assignment = lessonData.assignment;
+            if (!assignment || !assignment.questions || assignment.questions.length === 0) {
+                completeLesson();
+                return;
+            }
+            
+            let questionsHtml = '';
+            assignment.questions.forEach((q, idx) => {
                 switch(q.type) {
                     case 'multiple_choice':
-                        return `
+                        questionsHtml += `
                             <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.question)} (${q.points} نقطة)</h4>
+                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
                                 <div class="assignment-options">
                                     ${q.options.map((opt, optIdx) => `
                                         <label class="assignment-option">
@@ -319,40 +472,58 @@ function renderLessonContent(lesson) {
                                 </div>
                             </div>
                         `;
+                        break;
                     case 'true_false':
-                        return `
+                        questionsHtml += `
                             <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.question)} (${q.points} نقطة)</h4>
+                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
                                 <div class="assignment-options">
                                     <label class="assignment-option"><input type="radio" name="q_${q.id}" value="true" onchange="assignmentAnswers['${q.id}'] = true"> ✅ صح</label>
                                     <label class="assignment-option"><input type="radio" name="q_${q.id}" value="false" onchange="assignmentAnswers['${q.id}'] = false"> ❌ خطأ</label>
                                 </div>
                             </div>
                         `;
+                        break;
                     case 'fill_blank':
-                        return `
+                        questionsHtml += `
                             <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.question)} (${q.points} نقطة)</h4>
+                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
                                 <input type="text" class="assignment-input" placeholder="أدخل إجابتك..." 
+                                    style="width:100%; padding:10px; border-radius:10px; border:1px solid #e2e8f0;"
                                     onchange="assignmentAnswers['${q.id}'] = this.value">
                             </div>
                         `;
-                    default:
-                        return '';
+                        break;
                 }
-            }).join('');
+            });
+            
+            document.getElementById('paragraphContent').innerHTML = `
+                <div class="assignment-section">
+                    <h3><i class="fas fa-tasks"></i> ${escapeHtml(assignment.title || 'واجب الدرس')}</h3>
+                    <p>${escapeHtml(assignment.description || '')}</p>
+                    ${questionsHtml}
+                    <button class="btn-submit" onclick="submitAssignment()">✅ تقديم الواجب</button>
+                </div>
+            `;
+            
+            document.getElementById('assignmentContainer').style.display = 'none';
+            document.getElementById('navButtons').style.display = 'none';
+            document.getElementById('progressIndicator').style.display = 'none';
         }
 
+        // تقديم الواجب
         async function submitAssignment() {
             const token = localStorage.getItem('token');
+            const { courseId, lessonId } = getUrlParams();
+            
             let score = 0;
             let totalPoints = 0;
-
-            currentLesson.assignment.questions.forEach(q => {
+            
+            lessonData.assignment.questions.forEach(q => {
                 totalPoints += q.points;
                 const userAnswer = assignmentAnswers[q.id];
                 let isCorrect = false;
-
+                
                 switch(q.type) {
                     case 'multiple_choice':
                         isCorrect = userAnswer === q.correctOption;
@@ -366,15 +537,15 @@ function renderLessonContent(lesson) {
                         }
                         break;
                 }
-
+                
                 if (isCorrect) score += q.points;
             });
-
+            
             const percentage = (score / totalPoints) * 100;
-            const passed = percentage >= currentLesson.assignment.passingScore;
-
+            const passed = percentage >= lessonData.assignment.passingScore;
+            
             try {
-                const res = await fetch(API_URL + '/progress/' + courseData._id + '/lessons/' + currentLesson._id + '/complete', {
+                const res = await fetch(API_URL + '/progress/' + courseId + '/lessons/' + lessonId + '/complete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -382,10 +553,11 @@ function renderLessonContent(lesson) {
                     },
                     body: JSON.stringify({ score: percentage })
                 });
-
+                
                 if (res.ok) {
                     if (passed) {
                         showAlert(`✅ أحسنت! حصلت على ${Math.round(percentage)}% في الواجب`, 'success');
+                        completeLesson();
                     } else {
                         showAlert(`📚 حصلت على ${Math.round(percentage)}%. حاول مرة أخرى`, 'error');
                     }
@@ -395,40 +567,18 @@ function renderLessonContent(lesson) {
             }
         }
 
-        function previousLesson() {
-            if (currentLessonIndex > 0) {
-                loadLesson(currentLessonIndex - 1);
-            }
+        // إكمال الدرس
+        function completeLesson() {
+            showAlert('🎉 تهانينا! لقد أكملت هذا الدرس بنجاح', 'success');
+            setTimeout(() => {
+                window.location.href = '/course.html?id=' + getUrlParams().courseId;
+            }, 2000);
         }
 
-        function nextLesson() {
-            if (currentLessonIndex < courseData.lessons.length - 1) {
-                loadLesson(currentLessonIndex + 1);
-            }
-        }
-
-        function extractYouTubeId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : '';
-        }
-
-        function openImageModal(url, caption, description) {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            const modalCaption = document.getElementById('modalCaption');
-            modalImg.src = url;
-            modalCaption.innerHTML = `<strong>${caption}</strong><br>${description}`;
-            modal.classList.add('active');
-        }
-
-        function closeImageModal() {
-            document.getElementById('imageModal').classList.remove('active');
-        }
-
+        // تهيئة الصفحة
         async function init() {
             if (await checkAuth()) {
-                await loadCourse();
+                await loadLesson();
             }
         }
 
