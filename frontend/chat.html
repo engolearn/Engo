@@ -591,6 +591,9 @@
 .input-area {
     padding-bottom: 25px !important;
 }
+        .chat-container {
+    height: var(--app-height);
+        }
         .header-actions a,
 .header-actions button {
     background: none;
@@ -742,6 +745,15 @@
                 document.getElementById('conversationsList').classList.add('hide');
             }
         }
+        function updateHeight() {
+    document.documentElement.style.setProperty(
+        '--app-height',
+        `${window.innerHeight}px`
+    );
+}
+
+window.addEventListener('resize', updateHeight);
+updateHeight();
         
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
