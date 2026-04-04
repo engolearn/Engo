@@ -314,7 +314,6 @@
                 document.getElementById('roomsList').style.display = 'none';
                 document.getElementById('privateList').style.display = 'block';
                 loadPrivateChats();
-                ensureAIInList();
             }
         }
         
@@ -939,8 +938,7 @@ function showAITypingIndicator() {
 function hideAITypingIndicator() {
     const indicator = document.getElementById('aiTypingIndicator');
     if (indicator) indicator.remove();
-        }
-        
+}
 
                 
         // ==================== Send Messages ====================
