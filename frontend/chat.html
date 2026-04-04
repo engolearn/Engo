@@ -595,6 +595,47 @@
     justify-content: center;
     text-decoration: none;
 }
+        /* محادثة AI مميزة */
+#aiChatItem {
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.15), rgba(7, 94, 84, 0.15));
+    border: 1px solid rgba(37, 211, 102, 0.3);
+    margin-bottom: 1rem;
+    border-radius: 12px;
+}
+
+#aiChatItem:hover {
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.25), rgba(7, 94, 84, 0.25));
+    transform: translateX(-5px);
+}
+
+/* مؤشر كتابة AI */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: #2a2a2a;
+    border-radius: 20px;
+    width: fit-content;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 3px;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    background: #888;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+}
 
 .header-actions a:hover,
 .header-actions button:hover {
@@ -654,15 +695,28 @@
                 <div class="chat-tab" onclick="switchTab('private')">الخاص</div>
             </div>
             
-            <div class="conversations-scroll">
-                <div id="roomsList">
-                    <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل الغرف...</div>
+            <<div class="conversations-scroll">
+    <div id="roomsList">
+        <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل الغرف...</div>
+    </div>
+    <div id="privateList" style="display: none;">
+        <!-- 🤖 AI Assistant - أضف هذا أولاً داخل privateList -->
+        <div class="private-item" id="aiChatItem" onclick="openAIChat()">
+            <div class="avatar" style="background: linear-gradient(135deg, #25D366, #075E54);">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="conversation-info">
+                <div class="conversation-name">
+                    <span><span class="online-status online"></span> 🤖 EnGo AI Assistant</span>
                 </div>
-                <div id="privateList" style="display: none;">
-                    <div class="empty-state"><i class="fas fa-user-friends"></i>جاري تحميل المحادثات...</div>
-                </div>
+                <div class="conversation-preview">اسألني أي شيء عن اللغة الإنجليزية...</div>
             </div>
         </div>
+        
+        <!-- باقي المحادثات الخاصة ستظهر هنا -->
+        <div id="privateChatsList"></div>
+    </div>
+            </div>
         
         <!-- منطقة المحادثة -->
         <div class="chat-area" id="chatArea" style="display: none;">
@@ -1034,9 +1088,16 @@
         
         // ==================== Send Messages ====================
         function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            if(!text || !currentChat || !socket?.connected) return;
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if (!text || !currentChat) return;
+    
+    if (currentChatType === 'ai') {
+        sendAIMessage(text);
+        input.value = '';
+        return;
+    }
+    
             
             if(currentChatType === 'room') {
                 const tempMessage = {
@@ -1126,6 +1187,146 @@
             if(!email) return showAlert('❌ أدخل البريد','error');
             socket.emit('invite_by_email',{email,roomId:currentInviteRoomId,roomName:document.getElementById('chatName').innerText,message:document.getElementById('inviteMessage').value},(res)=>{if(res?.success){showAlert(`✅ تم الإرسال إلى ${email}`,'success');closeInviteModal();}});
         }
+        // ==================== AI Chat Functions ====================
+let currentAIConversationId = null;
+
+async function openAIChat() {
+    if (!socket || !socket.connected) {
+        showAlert('❌ غير متصل بالخادم', 'error');
+        return;
+    }
+    
+    currentChat = 'ai';
+    currentChatType = 'ai';
+    
+    document.getElementById('currentChatName').innerHTML = '<i class="fas fa-robot"></i> EnGo AI Assistant';
+    document.getElementById('currentChatInfo').innerHTML = '🤖 ذكي • متعلم • متاح 24/7';
+    document.getElementById('inviteBtn').style.display = 'none';
+    document.getElementById('messageInput').disabled = false;
+    document.querySelector('.send-btn').disabled = false;
+    document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المحادثة...</div>';
+    
+    await loadOrCreateAIConversation();
+    openChat();
+}
+
+async function loadOrCreateAIConversation() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/ai/conversations', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const conversations = await res.json();
+        
+        if (conversations && conversations.length > 0) {
+            currentAIConversationId = conversations[0]._id;
+            await loadAIConversation(currentAIConversationId);
+        } else {
+            await startNewAIConversation();
+        }
+    } catch (error) {
+        await startNewAIConversation();
+    }
+}
+
+async function startNewAIConversation() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/ai/chat/start', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ context: 'general' })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            currentAIConversationId = data.conversationId;
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message other">
+                    <div class="message-bubble">
+                        ${data.message}
+                        <div class="message-time">الآن</div>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function loadAIConversation(conversationId) {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/ai/conversations/' + conversationId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const conversation = await res.json();
+        
+        const container = document.getElementById('chatMessages');
+        container.innerHTML = '';
+        
+        conversation.messages.forEach(msg => {
+            if (msg.role === 'user') {
+                appendAIMessage(msg.content, 'own');
+            } else if (msg.role === 'assistant') {
+                appendAIMessage(msg.content, 'other');
+            }
+        });
+    } catch (error) {
+        await startNewAIConversation();
+    }
+}
+
+async function sendAIMessage(message) {
+    if (!message || !currentAIConversationId) return;
+    
+    appendAIMessage(message, 'own');
+    showAITypingIndicator();
+    
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/ai/chat/' + currentAIConversationId + '/message', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        
+        hideAITypingIndicator();
+        
+        if (data.success) {
+            appendAIMessage(data.message, 'other');
+        }
+    } catch (error) {
+        hideAITypingIndicator();
+        appendAIMessage('عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.', 'other');
+    }
+}
+
+function appendAIMessage(text, sender) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `message ${sender === 'own' ? 'own' : 'other'}`;
+    div.innerHTML = `<div class="message-bubble">${text}<div class="message-time">${new Date().toLocaleTimeString()}</div></div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function showAITypingIndicator() {
+    const container = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'aiTypingIndicator';
+    typingDiv.className = 'message other';
+    typingDiv.innerHTML = `<div class="typing-indicator"><span>🤖 EnGo AI يكتب</span><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+    container.appendChild(typingDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+function hideAITypingIndicator() {
+    const indicator = document.getElementById('aiTypingIndicator');
+    if (indicator) indicator.remove();
+}
         
         // ==================== Init ====================
         async function init() {
