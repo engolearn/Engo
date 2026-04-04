@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EnGo AI - المعلم الذكي للغة الإنجليزية</title>
+    <title>EnGo AI - المعلم الذكي للإنجليزية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -30,7 +30,6 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
 
-        /* Header */
         .header {
             background: linear-gradient(105deg, #4f46e5 0%, #7c3aed 100%);
             color: white;
@@ -93,7 +92,6 @@
             background: rgba(255, 255, 255, 0.35);
         }
 
-        /* منطقة المحادثة */
         .chat-area {
             flex: 1;
             overflow-y: auto;
@@ -143,7 +141,6 @@
             opacity: 0.6;
         }
 
-        /* مؤشر الكتابة */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -168,12 +165,14 @@
             animation: typing 1.4s infinite;
         }
 
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
         @keyframes typing {
             0%, 60%, 100% { transform: translateY(0); }
             30% { transform: translateY(-5px); }
         }
 
-        /* منطقة الإدخال */
         .input-area {
             background: white;
             padding: 1rem;
@@ -215,7 +214,6 @@
             transform: scale(0.96);
         }
 
-        /* الاقتراحات الذكية */
         .suggestions {
             background: #ffffff;
             padding: 0.6rem 1rem;
@@ -242,21 +240,72 @@
             transform: translateY(-1px);
         }
 
+        /* لوحة الإعدادات (مخفية للمستخدم العادي) */
+        .admin-panel {
+            background: #f1f5f9;
+            padding: 6px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .api-key-input {
+            flex: 1;
+            padding: 5px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 0.65rem;
+            min-width: 200px;
+        }
+
+        .save-key-btn {
+            background: #4f46e5;
+            border: none;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #e2e8f0;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .api-status.online {
+            background: #10b981;
+            color: white;
+        }
+
+        .api-status.offline {
+            background: #ef4444;
+            color: white;
+        }
+
+        .toggle-admin {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .admin-panel.hidden {
+            display: none;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* زر الترجمة السريعة */
-        .translate-tag {
-            background: #eef2ff;
-            color: #4f46e5;
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 5px;
-            cursor: pointer;
         }
     </style>
 </head>
@@ -267,9 +316,9 @@
                 <i class="fas fa-arrow-right"></i>
             </button>
             <div class="logo">
-                <i class="fas fa-language"></i>
-                <span>EnGo English Tutor</span>
-                <span class="badge">ذكي | ترجمة فورية</span>
+                <i class="fas fa-robot"></i>
+                <span>EnGo AI Assistant</span>
+                <span class="badge">ذكي | تعلم الإنجليزية</span>
             </div>
             <button class="clear-btn" onclick="clearChat()">
                 <i class="fas fa-trash-alt"></i> مسح
@@ -279,22 +328,42 @@
         <div class="chat-area" id="chatArea">
             <div class="message ai">
                 <div class="message-bubble">
-                    🇬🇧✨ أهلاً بك في معلم اللغة الإنجليزية الذكي! <br>
-                    • يمكنك سؤالي عن قواعد، كلمات، نطق، محادثات.<br>
-                    • 🔍 لترجمة أي كلمة: اكتب "ترجم: [كلمة]" أو "meaning of [word]".<br>
-                    • 💡 سأجيب بذكاء حصرياً حول اللغة الإنجليزية.<br>
-                    كيف أخدمك اليوم؟
+                    👋 **مرحباً بك في EnGo AI!** 🤖<br><br>
+                    أنا مساعدك الذكي المتخصص في **اللغة الإنجليزية فقط**.<br><br>
+                    📖 **ماذا أقدم لك؟**<br>
+                    • 🔤 **ترجمة فورية** لأي كلمة أو جملة<br>
+                    • 📚 **شرح قواعد اللغة** ببساطة وأمثلة<br>
+                    • 🗣️ **نصائح لتحسين النطق والمحادثة**<br>
+                    • ✅ **تصحيح الجمل الخاطئة**<br>
+                    • 💡 **فروقات لغوية**<br><br>
+                    ✨ **جرب أن تسألني:**<br>
+                    "ترجم: beautiful" - "شرح present perfect" - "كيف أحسن نطقي؟"<br><br>
+                    أنا هنا لمساعدتك في رحلة تعلم الإنجليزية! 🚀
                     <div class="message-time">الآن</div>
                 </div>
             </div>
         </div>
         
         <div class="suggestions" id="suggestions">
-            <div class="suggestion-chip" onclick="askQuestion('ترجم: beautiful')">📖 ترجم beautiful</div>
-            <div class="suggestion-chip" onclick="askQuestion('شرح قاعدة present continuous مع أمثلة')">📘 قاعدة present continuous</div>
-            <div class="suggestion-chip" onclick="askQuestion('كيف أقول مرحباً بالانجليزية بشكل رسمي؟')">🗣️ تحيات رسمية</div>
-            <div class="suggestion-chip" onclick="askQuestion('ما الفرق بين much و many؟')">⚡ much vs many</div>
-            <div class="suggestion-chip" onclick="askQuestion('معنى كلمة quickly')">🔤 معنى quickly</div>
+            <div class="suggestion-chip" onclick="askQuestion('ترجم: The weather is beautiful today')">📖 ترجمة جملة</div>
+            <div class="suggestion-chip" onclick="askQuestion('شرح قاعدة present perfect مع أمثلة')">📘 Present Perfect</div>
+            <div class="suggestion-chip" onclick="askQuestion('ما الفرق بين affect و effect؟')">🔤 affect vs effect</div>
+            <div class="suggestion-chip" onclick="askQuestion('كيف أحسن طلاقتي في الإنجليزية؟')">🗣️ طلاقة المحادثة</div>
+            <div class="suggestion-chip" onclick="askQuestion('معنى كلمة amazing')">📚 معنى amazing</div>
+            <div class="suggestion-chip" onclick="askQuestion('صحح لي هذه الجملة: He go to school yesterday')">✅ تصحيح</div>
+        </div>
+        
+        <!-- لوحة الإعدادات (تظهر فقط للمطور/المدير) -->
+        <div class="admin-panel" id="adminPanel">
+            <i class="fas fa-key" style="color:#4f46e5;"></i>
+            <input type="password" id="apiKeyInput" class="api-key-input" placeholder="مفتاح API (للمطور)" value="">
+            <button class="save-key-btn" onclick="saveApiKey()">💾 تفعيل</button>
+            <div class="api-status offline" id="apiStatus">
+                <i class="fas fa-circle"></i> <span id="statusText">غير متصل</span>
+            </div>
+            <button class="toggle-admin" onclick="toggleAdminPanel()">
+                <i class="fas fa-cog"></i>
+            </button>
         </div>
         
         <div class="input-area">
@@ -306,133 +375,146 @@
     </div>
 
     <script>
-        // ----------------------------------------------
-        // المساعد حصري للغة الإنجليزية + ترجمة فورية + ردود ذكية
-        // ----------------------------------------------
+        // ============================================
+        // EnGo AI - يعمل عبر API في الخلفية
+        // المستخدم يرى فقط EnGo AI بدون أي ذكر لـ Gemini
+        // ============================================
         
-        let conversationHistory = [];   // لتخزين السياق البسيط
-        let localMode = true;           // وضع ذكي بدون خادم خارجي (يعمل بشكل كامل)
+        let API_KEY = localStorage.getItem('AIzaSyBgKGk6uQbFsbpUa5OYVvDEXKUsm0_HPpU') || '';
+        let isAPIActive = false;
+        let conversationHistory = [];
         
-        // قاموس ترجمة سريع (إنجليزي <=> عربي) + كلمات شائعة
-        const quickDictionary = {
-            // أساسيات
-            "hello": "مرحباً", "world": "عالم", "beautiful": "جميل", "quickly": "بسرعة", "slowly": "ببطء",
-            "big": "كبير", "small": "صغير", "happy": "سعيد", "sad": "حزين", "difficult": "صعب", "easy": "سهل",
-            "apple": "تفاحة", "book": "كتاب", "car": "سيارة", "house": "منزل", "teacher": "معلم", "student": "طالب",
-            "learn": "يتعلم", "speak": "يتحدث", "write": "يكتب", "read": "يقرأ", "understand": "يفهم",
-            "grammar": "قواعد", "vocabulary": "مفردات", "pronunciation": "نطق", "conversation": "محادثة",
-            "future": "المستقبل", "past": "الماضي", "present": "الحاضر",
-            // اضافات للمساعدة
-            "good morning": "صباح الخير", "good night": "تصبح على خير", "thanks": "شكراً", "please": "من فضلك"
+        // قاموس الترجمة السريع (احتياطي في حال فشل API)
+        const fallbackDictionary = {
+            "hello": "مرحباً", "beautiful": "جميل", "amazing": "مذهل", "quickly": "بسرعة",
+            "big": "كبير", "small": "صغير", "happy": "سعيد", "sad": "حزين",
+            "apple": "تفاحة", "book": "كتاب", "car": "سيارة", "house": "منزل",
+            "good morning": "صباح الخير", "thanks": "شكراً", "please": "من فضلك"
         };
         
-        // ردود ذكية متخصصة بالإنجليزية فقط
-        function getSmartEnglishResponse(userMessage) {
-            let msg = userMessage.toLowerCase().trim();
-            
-            // 1. خاصية الترجمة الفورية (ترجم: كلمة  /  meaning of ... / معنى كلمة)
-            const translatePatterns = [
-                /^(ترجم|ترجمة|معنى|meaning of|translate)\s*:?\s*(.+)/i,
-                /^(what is the meaning of|define)\s+(.+)/i,
-                /^معنى كلمة\s+(.+)/i
-            ];
-            
-            for (let pattern of translatePatterns) {
-                let match = msg.match(pattern);
-                if (match) {
-                    let wordOrPhrase = match[2] || match[1];
-                    wordOrPhrase = wordOrPhrase.trim().toLowerCase();
-                    // إذا كانت العبارة موجودة في القاموس
-                    if (quickDictionary[wordOrPhrase]) {
-                        return `📖 **ترجمة كلمة "${wordOrPhrase}"** → 🇸🇦 ${quickDictionary[wordOrPhrase]}\n\n🔊 مثال: I see a ${wordOrPhrase} ${quickDictionary[wordOrPhrase] ? ' - ' + quickDictionary[wordOrPhrase] : ''}`;
-                    } else {
-                        // محاولة ذكية: إذا كانت الكلمة انجليزية نعطي ترجمة تقديرية
-                        if (/^[a-z]+$/.test(wordOrPhrase)) {
-                            return `🔍 **"${wordOrPhrase}"** كلمة إنجليزية. للأسف ليس لدي ترجمة دقيقة في قاموسي الفوري حالياً، لكن يمكنني مساعدتك في جملة توضيحية:\n\n✏️ مثال: "The ${wordOrPhrase} is very important."\nهل تريد مني أن أشرح معناها من السياق؟`;
-                        } else {
-                            return `✨ **الترجمة إلى الإنجليزية:** "${wordOrPhrase}" → 🔹 ${wordOrPhrase.split(' ').map(w => `[${w}]`).join(' ')} \nأقترح عليك كتابة الكلمة بالإنجليزية للحصول على ترجمة دقيقة.`;
-                        }
-                    }
-                }
+        // تحديث حالة الاتصال (للمطور فقط)
+        function updateApiStatus() {
+            const statusDiv = document.getElementById('apiStatus');
+            const statusText = document.getElementById('statusText');
+            if (API_KEY && API_KEY.startsWith('AIza')) {
+                statusDiv.className = 'api-status online';
+                statusText.innerText = 'API متصل';
+                isAPIActive = true;
+            } else {
+                statusDiv.className = 'api-status offline';
+                statusText.innerText = 'API غير متصل';
+                isAPIActive = false;
             }
-            
-            // 2. ردود حصرية للغة الإنجليزية (قواعد، نصائح، فرق، محادثات)
-            if (msg.includes('present continuous') || (msg.includes('قاعدة') && msg.includes('present continuous'))) {
-                return `📗 **قاعدة Present Continuous** (المضارع المستمر)\n\nيستخدم للأحداث الجارية الآن أو خطط قريبة.\n🔹 التكوين: فاعل + am/is/are + فعل+ing\n📌 أمثلة:\n- I am learning English now.\n- She is writing a letter.\n- They are playing football.\n⚠️ كلمات دالة: now, at the moment, today.\n\nهل تريد تدريبات؟`;
-            }
-            
-            if (msg.includes('present simple') || (msg.includes('قاعدة') && msg.includes('present simple'))) {
-                return `📘 **Present Simple** (المضارع البسيط)\nيستخدم للحقائق والعادات والروتين.\n🔹 التكوين: I/You/We/They + فعل مصدر\n He/She/It + فعل+s/es\n✅ أمثلة: He speaks Arabic. The sun rises in the east.\n🕒 كلمات دالة: always, usually, every day.`;
-            }
-            
-            if ((msg.includes('much') && msg.includes('many')) || msg.includes('الفرق بين much')) {
-                return `🔎 **الفرق بين Much و Many**\n✅ Much: يستخدم مع الأسماء غير المعدودة (uncountable) مثل: water, time, money.\n   مثال: How much water do you need?\n✅ Many: يستخدم مع الأسماء المعدودة الجمع (countable) مثل: books, cars, people.\n   مثال: How many books do you have?\n💡 في الجمل المثبتة informal نستخدم "a lot of" بدلاً منهما غالباً.`;
-            }
-            
-            if (msg.includes('الفرق بين') && (msg.includes('a') && msg.includes('an'))) {
-                return `🎯 **الفرق بين A و An**\n🔹 نستخدم "a" قبل الكلمات التي تبدأ بصوت ساكن (consonant sound): a car, a university (يبدأ صوت /ju:/).\n🔹 نستخدم "an" قبل الكلمات التي تبدأ بصوت علة (vowel sound): an apple, an hour (H صامتة).\n✅ ملاحظة: يعتمد على النطق وليس الحرف.`;
-            }
-            
-            if (msg.includes('نطق') || msg.includes('pronunciation') || msg.includes('كيف انطق')) {
-                return `🗣️ **نصائح لتحسين النطق في الإنجليزية:**\n1- استمع للمتحدثين الأصليين (بودكاست، يوتيوب).\n2- استخدم تطبيق نطق مثل YouGlish.\n3- ركز على الأصوات الصعبة: /θ/ (think), /ð/ (this), /r/.\n4- سجل صوتك وقارنه.\n📢 هل تريد مني توضيح نطق كلمة معينة؟ أرسلها لي.`;
-            }
-            
-            if (msg.includes('greeting') || msg.includes('تحية') || msg.includes('كيف أقول مرحبا') || msg.includes('رسمي')) {
-                return `💼 **التحيات الرسمية في الإنجليزية:**\n- Good morning / Good afternoon / Good evening.\n- It's a pleasure to meet you.\n- How do you do? (رسمي جداً)\n👋 **التحيات غير الرسمية:**\n- Hey, Hi, Hello there.\n- What's up? / How's it going?\nيمكنك استخدامها حسب الموقف.`;
-            }
-            
-            if (msg.includes('معنى كلمة') || (msg.includes('معنى') && !msg.includes('ترجم'))) {
-                let possibleWord = msg.replace('معنى كلمة', '').replace('معنى', '').trim();
-                if (possibleWord && quickDictionary[possibleWord]) {
-                    return `📚 **معنى "${possibleWord}":** ${quickDictionary[possibleWord]}\n📍 مثال في جملة: "The ${possibleWord} is amazing!"`;
-                } else if (possibleWord) {
-                    return `🔎 الكلمة "${possibleWord}" يرجى كتابتها بالانجليزية بشكل صحيح لترجمتها بدقة.`;
-                }
-                return `📖 أرسل الكلمة التي تريد معرفة معناها (مثال: meaning of apple)`;
-            }
-            
-            if (msg.includes('how to improve') || msg.includes('طور مستواي') || msg.includes('نصائح لتعلم')) {
-                return `💡 **نصائح فعالة لتطوير الإنجليزية:**\n📌 1- خصص 20 دقيقة يومياً للاستماع.\n📌 2- اقرأ كتباً مبسطة (leveled readers).\n📌 3- كرر المحادثات بصوت عالٍ.\n📌 4- استخدم flashcards للكلمات الجديدة.\n🎯 نصيحة ذهبية: لا تخف من الأخطاء، الممارسة تصنع الفرق.`;
-            }
-            
-            if (msg.includes('اختبار') || msg.includes('exam') || msg.includes('ielts') || msg.includes('toefl')) {
-                return `📝 **الاستعداد لاختبارات اللغة (IELTS/TOEFL):**\n✅ تدرب على الأقسام الأربعة: استماع، قراءة، كتابة، محادثة.\n✅ تعلم استراتيجيات إدارة الوقت.\n✅ حل نماذج سابقة.\n✅ عزز مفرداتك الأكاديمية.\nهل تريد نصائح لقسم معين؟`;
-            }
-            
-            if (msg.includes('شرح قاعدة') || msg.includes('grammar rule')) {
-                return `📖 **القواعد الإنجليزية:** يمكنني شرح:\n- Present Simple / Continuous\n- Past Simple / Perfect\n- Future forms (will, going to)\n- Comparatives & Superlatives\n- Conditional sentences\n✍️ اذكر اسم القاعدة التي تريدها بالتفصيل.`;
-            }
-            
-            // اسئلة عامة ولكن الرد يبقى متعلق بالانجليزية
-            if (msg.includes('كيف حالك') || msg.includes('how are you')) {
-                return `🤖 I'm fine, thanks! I'm your English tutor. How can I help you improve your English today? 😊\n(أنا بخير، كيف أساعدك في رحلتك لتعلم الإنجليزية؟)`;
-            }
-            
-            if (msg.includes('شكر') || msg.includes('thank')) {
-                return `🎉 You're most welcome! I'm always here to help you master English. Feel free to ask any language question. 🌟\nعلى الرحب والسعة، أنا هنا لأجلك.`;
-            }
-            
-            // أي سؤال خارج نطاق الإنجليزية نقوم بتوجيهه بلطف
-            if (!msg.includes('english') && !msg.includes('إنجليزي') && !msg.includes('قاعدة') && !msg.includes('grammar') && !msg.includes('ترجم') && !msg.includes('معنى') && !msg.includes('كلمة') && !msg.includes('نطق') && !msg.includes('محادثة') && !msg.includes('تحدث')) {
-                return `🎓 **تحويل إلى اللغة الإنجليزية:** سؤالك يتعلق بالمجال العام، لكن أنا مساعد متخصص في **اللغة الإنجليزية فقط** 📚.\nيمكنني مساعدتك في:\n✔️ ترجمة أي كلمة أو جملة.\n✔️ شرح قواعد اللغة.\n✔️ تحسين النطق والمفردات.\n✔️ تصحيح الجمل.\n❗ يرجى طرح سؤال حول الإنجليزية. مثال: "كيف أستخدم present perfect؟" أو "ترجم: amazing"`;
-            }
-            
-            // محاولة تصحيح جملة إن أرسل جملة إنجليزية
-            if (/^[a-zA-Z\s\?\.,!]+$/.test(userMessage) && userMessage.length > 3 && !msg.includes('ترجم') && !msg.includes('معنى')) {
-                return `✍️ **تحليل الجملة الإنجليزية:**\n"${userMessage}"\n\n🔍 تبدو الجملة مفهومة. إذا كنت تريد تصحيحاً نحويًا أو تحسينًا، أخبرني.\n💡 مثال: هل تقصد زمناً معيناً؟ يمكنني إعادة صياغتها بطريقة أكثر دقة.`;
-            }
-            
-            // الرد الافتراضي الذكي
-            return `🌟 **سؤال ممتاز عن الإنجليزية!** 🌟\nيمكنني تقديم:\n• ترجمة فورية (اكتب: ترجم: [كلمة])\n• شرح قواعد مثل present simple, past tense\n• تدريبات على المحادثة والنطق\n• الفروقات اللغوية (like & such as, much & many)\n\n📌 كيف تريد أن أساعدك بالتفصيل؟`;
         }
         
-        // إظهار رسالة في واجهة المحادثة
+        // حفظ مفتاح API (للمطور)
+        function saveApiKey() {
+            const input = document.getElementById('apiKeyInput');
+            const key = input.value.trim();
+            if (key && key.startsWith('AIza')) {
+                API_KEY = key;
+                localStorage.setItem('engo_api_key', key);
+                updateApiStatus();
+                appendMessage('✅ **تم تفعيل الذكاء الاصطناعي!** الآن يمكنك سؤالي عن أي شيء في اللغة الإنجليزية وسأرد بذكاء.', 'ai');
+            } else if (key) {
+                appendMessage('⚠️ المفتاح غير صالح. يرجى التأكد من المفتاح.', 'ai');
+            }
+            input.value = '';
+        }
+        
+        // استدعاء API الداخلي (Gemini في الخلفية)
+        async function callAIAPI(userMessage) {
+            if (!API_KEY || !API_KEY.startsWith('AIza')) {
+                throw new Error('API_KEY_MISSING');
+            }
+            
+            const systemPrompt = `أنت "EnGo AI"، مساعد ذكي متخصص في اللغة الإنجليزية فقط. مهمتك:
+1. الرد على أسئلة اللغة الإنجليزية (قواعد، مفردات، نطق، ترجمة، محادثات)
+2. تقديم ترجمة دقيقة لأي كلمة أو جملة من وإلى الإنجليزية
+3. تصحيح الجمل الخاطئة
+4. شرح الفروقات اللغوية
+5. إذا سأل المستخدم عن شيء خارج اللغة الإنجليزية، قم بتوجيهه بلطف إلى أسئلة اللغة الإنجليزية فقط.
+
+أجب باللغة العربية مع تقديم أمثلة إنجليزية واضحة. كن ودوداً ومفيداً. لا تذكر أبداً أنك تستخدم أي تقنية محددة، فقط قل أنك "EnGo AI".`;
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
+            
+            const chatContext = conversationHistory.slice(-8).map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            }));
+            
+            const requestBody = {
+                contents: [
+                    { role: 'user', parts: [{ text: systemPrompt }] },
+                    { role: 'model', parts: [{ text: 'أنا EnGo AI، جاهز للإجابة عن أسئلة اللغة الإنجليزية.' }] },
+                    ...chatContext,
+                    { role: 'user', parts: [{ text: userMessage }] }
+                ],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 800, topP: 0.9 }
+            };
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'API error');
+            }
+            
+            const data = await response.json();
+            const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!aiResponse) throw new Error('No response from API');
+            
+            return aiResponse;
+        }
+        
+        // رد احتياطي (عند عدم وجود API)
+        function getFallbackResponse(userMessage) {
+            const msg = userMessage.toLowerCase().trim();
+            
+            // ترجمة
+            if (msg.includes('ترجم') || msg.includes('معنى')) {
+                let match = msg.match(/(?:ترجم|معنى|meaning of)\s*:?\s*(.+)/i);
+                if (match) {
+                    let word = match[1].trim().toLowerCase();
+                    if (fallbackDictionary[word]) {
+                        return `📖 **ترجمة "${word}":** ${fallbackDictionary[word]}\n\n📝 مثال: "The ${word} is wonderful!"`;
+                    }
+                    return `🔍 الكلمة "${word}" - للترجمة الدقيقة، يرجى تفعيل API في لوحة الإعدادات.`;
+                }
+            }
+            
+            // شرح القواعد
+            if (msg.includes('present perfect')) {
+                return `📘 **Present Perfect Tense**\n\nيستخدم للتعبير عن:\n1️⃣ تجارب سابقة (I have visited London)\n2️⃣ أحداث بدأت بالماضي ومستمرة (She has worked here since 2015)\n3️⃣ تغييرات حدثت (The price has increased)\n\nالتكوين: have/has + past participle`;
+            }
+            
+            if (msg.includes('الفرق بين much') && msg.includes('many')) {
+                return `🔎 **Much vs Many**\n\n• Much → غير معدود (water, money)\n• Many → معدود جمع (books, cars)\n\nمثال: How much water? How many books?`;
+            }
+            
+            if (msg.includes('مرحب') || msg.includes('السلام')) {
+                return `👋 وعليكم السلام! أنا EnGo AI. كيف أساعدك في تعلم الإنجليزية اليوم؟`;
+            }
+            
+            if (msg.includes('شكر')) {
+                return `🎉 العفو! أنا سعيد بمساعدتك. هل هناك سؤال آخر عن الإنجليزية؟`;
+            }
+            
+            return `🌟 **EnGo AI** 🌟\n\nيمكنني مساعدتك في:\n• ترجمة الكلمات والجمل\n• شرح القواعد النحوية\n• تحسين النطق والمحادثة\n• تصحيح الأخطاء\n\n⚠️ **ملاحظة:** للردود الأكثر دقة، يرجى تفعيل API من لوحة الإعدادات (رمز الترس).\n\nما الذي تود تعلمه اليوم؟`;
+        }
+        
+        // عرض الرسائل
         function appendMessage(text, sender) {
             const area = document.getElementById('chatArea');
             const div = document.createElement('div');
             div.className = `message ${sender}`;
-            // دعم التنسيق البسيط وتحويل السطور
-            const formattedText = text.replace(/\n/g, '<br>').replace(/📖|📗|🔍|🎯|💡|🗣️|📝|✨|✅|⚠️|📚/g, match => match);
+            let formattedText = text.replace(/\n/g, '<br>');
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             div.innerHTML = `
                 <div class="message-bubble">
                     ${formattedText}
@@ -443,7 +525,6 @@
             area.scrollTop = area.scrollHeight;
         }
         
-        let typingTimeout = null;
         function showTypingIndicator() {
             const area = document.getElementById('chatArea');
             let existing = document.getElementById('typingIndicator');
@@ -453,7 +534,7 @@
             typingDiv.className = 'message ai';
             typingDiv.innerHTML = `
                 <div class="typing-indicator">
-                    <span>📘 EnGo AI يكتب رداً...</span>
+                    <span>🤖 EnGo AI يكتب...</span>
                     <div class="typing-dots"><span></span><span></span><span></span></div>
                 </div>
             `;
@@ -466,53 +547,42 @@
             if (indicator) indicator.remove();
         }
         
-        // إرسال رسالة المستخدم ومعالجتها بذكاء
+        // إرسال الرسالة
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             if (!message) return;
             
-            // إضافة رسالة المستخدم
             appendMessage(message, 'user');
             input.value = '';
-            
-            // حفظ السياق البسيط
             conversationHistory.push({ role: 'user', content: message });
-            if (conversationHistory.length > 8) conversationHistory.shift();
-            
             showTypingIndicator();
             
-            // محاكاة زمن التفكير (طبيعي)
-            setTimeout(() => {
-                // الحصول على رد ذكي حصري للغة الإنجليزية + ترجمة
-                let aiReply = getSmartEnglishResponse(message);
-                
-                // تحسين إضافي: لو كان السؤال عبارة عن كلمة مفردة إنجليزية ولم يطلب ترجمة صريحة، نقدم ترجمة تلقائية
-                const singleWordMatch = message.trim().match(/^([a-zA-Z]+)$/);
-                if (singleWordMatch && !message.toLowerCase().includes('ترجم') && !message.toLowerCase().includes('معنى')) {
-                    const word = singleWordMatch[1].toLowerCase();
-                    if (quickDictionary[word]) {
-                        aiReply = `🔤 **ترجمة تلقائية للكلمة:** "${word}" → 🇸🇦 ${quickDictionary[word]}\n\n🔊 هل تريد جملة توضيحية؟`;
-                    } else {
-                        aiReply = `📖 كلمة "${word}" إنجليزية. هل تبحث عن معناها؟ يمكنك كتابة "ترجم: ${word}" للحصول على ترجمة دقيقة.`;
-                    }
-                }
-                
-                // تأكيد عدم الخروج عن نطاق الإنجليزية (أمان إضافي)
-                if (!aiReply.includes('اللغة الإنجليزية فقط') && !aiReply.includes('English') && !aiReply.includes('ترجمة') && !aiReply.includes('قاعدة') && message.includes('الرياضة') && !message.includes('english')) {
-                    aiReply = `🎯 أنا خبير في **اللغة الإنجليزية** فقط! يمكنني مساعدتك في التراجم، القواعد، النطق، والمفردات. يرجى سؤال متعلق بالإنجليزية.`;
+            try {
+                let aiResponse;
+                if (isAPIActive && API_KEY) {
+                    aiResponse = await callAIAPI(message);
+                } else {
+                    aiResponse = getFallbackResponse(message);
                 }
                 
                 hideTypingIndicator();
-                appendMessage(aiReply, 'ai');
-                conversationHistory.push({ role: 'assistant', content: aiReply });
-            }, 500 + Math.random() * 300);
+                appendMessage(aiResponse, 'ai');
+                conversationHistory.push({ role: 'assistant', content: aiResponse });
+                
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(-16);
+                }
+            } catch (error) {
+                console.error('API Error:', error);
+                hideTypingIndicator();
+                const fallback = getFallbackResponse(message);
+                appendMessage(fallback, 'ai');
+            }
         }
         
         function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
+            if (event.key === 'Enter') sendMessage();
         }
         
         function askQuestion(question) {
@@ -525,20 +595,38 @@
             area.innerHTML = `
                 <div class="message ai">
                     <div class="message-bubble">
-                        🧹 **تم مسح المحادثة** بنجاح. لا تتردد في سؤالي عن الإنجليزية، الترجمة الفورية أو قواعد اللغة. كيف أساعدك؟
+                        🧹 **تم مسح المحادثة** ✨<br><br>
+                        مرحباً بك مجدداً في EnGo AI! كيف يمكنني مساعدتك اليوم؟
                         <div class="message-time">الآن</div>
                     </div>
                 </div>
             `;
             conversationHistory = [];
-            // إعادة ترحيب صغير
-            appendMessage("✨ مرحباً مجدداً! أنا هنا للإجابة عن كل أسئلتك الخاصة باللغة الإنجليزية فقط. اكتب 'ترجم: hello' أو 'شرح قاعدة الماضي البسيط'", 'ai');
         }
         
-        // محاكاة التحقق من "تسجيل الدخول" بشكل بسيط (للتكامل مع الوهم لكن يعمل فوراً)
+        // إظهار/إخفاء لوحة الإعدادات (للمطور)
+        let adminVisible = false;
+        function toggleAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            adminVisible = !adminVisible;
+            if (adminVisible) {
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+        
+        // التهيئة
         function init() {
-            // نعرض رسالة ترحيب ذكية أن النظام جاهز للترجمة والردود الحصرية
-            console.log("EnGo AI - المعلم الذكي للغة الإنجليزية مع الترجمة الفورية");
+            const savedKey = localStorage.getItem('engo_api_key');
+            if (savedKey) {
+                API_KEY = savedKey;
+                document.getElementById('apiKeyInput').value = '••••••••••';
+                updateApiStatus();
+            }
+            // إخفاء لوحة الإعدادات بدايةً
+            document.getElementById('adminPanel').classList.add('hidden');
+            adminVisible = false;
         }
         
         init();
