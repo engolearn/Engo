@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>تفاصيل الدورة - EnGo</title>
+    <title>دروس الدورة - EnGo</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -24,68 +24,40 @@
         .course-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem; }
         .course-meta span { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; }
         
-        /* أزرار التنقل بين الدروس */
-        .lesson-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-        .lesson-nav button { background: #667eea; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-        .lesson-nav button:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* قائمة الدروس */
+        .lessons-container { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .lessons-container h2 { margin-bottom: 1.5rem; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
         
-        /* محتوى الدرس */
-        .lesson-content { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 2rem; }
-        .lesson-title { font-size: 1.5rem; color: #2d3748; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; }
-        .lesson-text { line-height: 1.8; color: #4a5568; }
+        .lessons-grid { display: flex; flex-direction: column; gap: 1rem; }
         
-        /* الفيديو */
-        .video-container { margin: 1.5rem 0; border-radius: 15px; overflow: hidden; }
-        .video-container iframe { width: 100%; height: 400px; border: none; }
+        .lesson-card { background: #f7fafc; border-radius: 15px; padding: 1rem 1.5rem; transition: all 0.3s; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .lesson-card:hover { transform: translateX(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #667eea; }
+        .lesson-card.locked { opacity: 0.6; background: #f1f5f9; }
+        .lesson-card.locked:hover { transform: none; }
         
-        /* الصوت */
-        .audio-container { background: #f7fafc; padding: 1rem; border-radius: 15px; margin: 1rem 0; display: flex; align-items: center; gap: 1rem; }
-        .audio-container audio { flex: 1; }
+        .lesson-info { display: flex; align-items: center; gap: 1.5rem; flex: 1; }
+        .lesson-number { width: 50px; height: 50px; background: #667eea; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; }
+        .lesson-card.locked .lesson-number { background: #a0aec0; }
+        .lesson-details { flex: 1; }
+        .lesson-title { font-size: 1.1rem; font-weight: bold; color: #2d3748; margin-bottom: 0.25rem; }
+        .lesson-status { font-size: 0.8rem; color: #718096; display: flex; align-items: center; gap: 0.5rem; }
+        .status-completed { color: #48bb78; }
+        .status-locked { color: #e53e3e; }
+        .status-unlocked { color: #667eea; }
         
-        /* الصور التفاعلية */
-        .images-section { margin: 1.5rem 0; }
-        .images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-        .image-card { background: #f7fafc; border-radius: 15px; overflow: hidden; cursor: pointer; transition: transform 0.3s; }
-        .image-card:hover { transform: translateY(-5px); }
-        .image-card img { width: 100%; height: 180px; object-fit: cover; }
-        .image-info { padding: 1rem; }
-        .image-caption { font-weight: bold; color: #667eea; margin-bottom: 0.5rem; }
-        .image-description { color: #718096; font-size: 0.85rem; line-height: 1.5; }
+        .btn-start { background: #48bb78; color: white; border: none; padding: 10px 25px; border-radius: 25px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s; }
+        .btn-start:hover { background: #38a169; transform: scale(1.05); }
+        .btn-start:disabled { background: #a0aec0; cursor: not-allowed; transform: none; }
         
-        /* الواجب */
-        .assignment-section { background: #f7fafc; border-radius: 20px; padding: 1.5rem; margin-top: 1.5rem; }
-        .assignment-section h3 { color: #2d3748; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-        .assignment-question { background: white; border-radius: 15px; padding: 1.5rem; margin-bottom: 1rem; }
-        .assignment-question h4 { color: #667eea; margin-bottom: 0.5rem; }
-        .assignment-options { margin-top: 1rem; padding-right: 1rem; }
-        .assignment-option { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
-        .btn-submit { background: #48bb78; color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 1rem; margin-top: 1rem; }
+        .btn-locked { background: #e2e8f0; color: #718096; border: none; padding: 10px 25px; border-radius: 25px; font-size: 0.9rem; cursor: not-allowed; }
         
-        /* قائمة الدروس الجانبية */
-        .lessons-sidebar { background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .lessons-sidebar h3 { margin-bottom: 1rem; color: #2d3748; }
-        .lessons-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .lesson-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-radius: 10px; cursor: pointer; transition: all 0.3s; border: 1px solid #e2e8f0; }
-        .lesson-item:hover { background: #f7fafc; }
-        .lesson-item.active { background: #667eea20; border-right: 3px solid #667eea; }
-        .lesson-item.locked { opacity: 0.6; cursor: not-allowed; }
-        .lesson-number { font-weight: bold; color: #667eea; margin-left: 0.5rem; }
-        .lesson-title-small { flex: 1; }
-        .lock-icon { color: #e53e3e; }
-        
-        /* مودال الصورة */
-        .image-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
-        .image-modal.active { display: flex; }
-        .image-modal-content { max-width: 90%; max-height: 90%; position: relative; }
-        .image-modal-content img { width: 100%; border-radius: 10px; }
-        .image-modal-caption { position: absolute; bottom: -50px; left: 0; right: 0; text-align: center; color: white; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; }
-        .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
+        .empty-message { text-align: center; padding: 3rem; color: #718096; }
+        .loading-spinner { text-align: center; padding: 2rem; color: #667eea; }
         
         @media (max-width: 768px) {
-            .video-container iframe { height: 250px; }
-            .images-grid { grid-template-columns: 1fr; }
-            .lesson-nav { flex-direction: column; }
-            .lesson-nav button { width: 100%; justify-content: center; }
+            .lesson-card { flex-direction: column; text-align: center; }
+            .lesson-info { flex-direction: column; text-align: center; }
+            .btn-start, .btn-locked { width: 100%; }
         }
     </style>
 </head>
@@ -105,46 +77,19 @@
             <div class="course-meta" id="courseMeta"></div>
         </div>
 
-        <!-- قائمة الدروس الجانبية -->
-        <div class="lessons-sidebar">
-            <h3><i class="fas fa-list"></i> محتوى الدورة</h3>
-            <div class="lessons-list" id="lessonsList">
-                <div class="loading-spinner">جاري تحميل الدروس...</div>
+        <!-- قائمة الدروس -->
+        <div class="lessons-container">
+            <h2><i class="fas fa-list"></i> دروس الدورة</h2>
+            <div class="lessons-grid" id="lessonsList">
+                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدروس...</div>
             </div>
-        </div>
-
-        <!-- التنقل بين الدروس -->
-        <div class="lesson-nav">
-            <button id="prevLessonBtn" onclick="previousLesson()" disabled>
-                <i class="fas fa-arrow-right"></i> الدرس السابق
-            </button>
-            <span id="lessonCounter"></span>
-            <button id="nextLessonBtn" onclick="nextLesson()" disabled>
-                الدرس التالي <i class="fas fa-arrow-left"></i>
-            </button>
-        </div>
-
-        <!-- محتوى الدرس الحالي -->
-        <div class="lesson-content" id="lessonContent">
-            <div class="loading-spinner">اختر درساً للبدء</div>
-        </div>
-    </div>
-
-    <!-- مودال عرض الصورة -->
-    <div id="imageModal" class="image-modal" onclick="closeImageModal()">
-        <span class="close-modal" onclick="closeImageModal()">&times;</span>
-        <div class="image-modal-content">
-            <img id="modalImage" src="">
-            <div id="modalCaption" class="image-modal-caption"></div>
         </div>
     </div>
 
     <script>
         const API_URL = window.location.origin + '/api';
         let courseData = null;
-        let currentLessonIndex = 0;
-        let currentUser = null;
-        let assignmentAnswers = {};
+        let completedLessons = [];
 
         // الحصول على معرف الدورة من الرابط
         function getCourseId() {
@@ -161,14 +106,13 @@
                 setTimeout(() => window.location.href = '/', 2000);
                 return false;
             }
-            currentUser = user;
             return true;
         }
 
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
             alertDiv.textContent = message;
-            alertDiv.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;z-index:10000;background:${type==='success'?'#48bb78':'#e53e3e'};color:white;font-family:Cairo`;
+            alertDiv.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;z-index:10000;background:${type==='success'?'#48bb78':'#e53e3e'};color:white;font-family:Cairo;font-size:14px;`;
             document.body.appendChild(alertDiv);
             setTimeout(() => alertDiv.remove(), 3000);
         }
@@ -176,6 +120,22 @@
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+
+        // تحميل تقدم المستخدم
+        async function loadUserProgress(courseId) {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/progress/' + courseId, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    const progress = await res.json();
+                    completedLessons = progress.completedLessons?.map(l => l.lessonId.toString()) || [];
+                }
+            } catch (error) {
+                console.error('Error loading progress:', error);
+            }
         }
 
         // تحميل تفاصيل الدورة
@@ -196,6 +156,9 @@
                 
                 courseData = await res.json();
                 
+                // تحميل تقدم المستخدم
+                await loadUserProgress(courseData._id);
+                
                 // عرض معلومات الدورة
                 document.getElementById('courseTitle').innerText = courseData.title;
                 document.getElementById('courseDescription').innerText = courseData.description;
@@ -203,13 +166,11 @@
                     <span><i class="fas fa-book"></i> ${courseData.totalLessons || 0} درس</span>
                     <span><i class="fas fa-chart-line"></i> ${courseData.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
                     ${courseData.isPremium ? `<span><i class="fas fa-tag"></i> ${courseData.price} ريال</span>` : '<span><i class="fas fa-gift"></i> مجاني</span>'}
+                    <span><i class="fas fa-check-circle"></i> ${completedLessons.length} دروس مكتملة</span>
                 `;
                 
                 // عرض قائمة الدروس
                 renderLessonsList();
-                
-                // تحميل أول درس متاح
-                loadLesson(0);
                 
             } catch (error) {
                 console.error('Error loading course:', error);
@@ -217,246 +178,59 @@
             }
         }
 
-        // عرض قائمة الدروس
+        // التحقق مما إذا كان الدرس مكتملاً
+        function isLessonCompleted(lessonId) {
+            return completedLessons.includes(lessonId);
+        }
+
+        // عرض قائمة الدروس (أرقام وعناوين فقط)
         function renderLessonsList() {
             const container = document.getElementById('lessonsList');
             if (!courseData.lessons || courseData.lessons.length === 0) {
-                container.innerHTML = '<div class="empty-message">لا توجد دروس في هذه الدورة</div>';
+                container.innerHTML = '<div class="empty-message">📚 لا توجد دروس في هذه الدورة حالياً</div>';
                 return;
             }
 
-            container.innerHTML = courseData.lessons.map((lesson, index) => `
-                <div class="lesson-item ${currentLessonIndex === index ? 'active' : ''} ${lesson.isLocked ? 'locked' : ''}" 
-                     onclick="${!lesson.isLocked ? `loadLesson(${index})` : ''}">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span class="lesson-number">${lesson.lessonNumber}</span>
-                        <span class="lesson-title-small">${escapeHtml(lesson.title)}</span>
-                    </div>
-                    ${lesson.isLocked ? '<i class="fas fa-lock lock-icon"></i>' : '<i class="fas fa-play" style="color:#48bb78;"></i>'}
-                </div>
-            `).join('');
-        }
-
-        // تحميل درس معين
-        async function loadLesson(index) {
-            const lesson = courseData.lessons[index];
-            if (!lesson || lesson.isLocked) {
-                showAlert('⚠️ هذا الدرس مقفل. قم بشراء الدورة أو إكمال الدروس المجانية أولاً', 'error');
-                return;
-            }
-
-            currentLessonIndex = index;
-            
-            // تحديث القائمة
-            renderLessonsList();
-            
-            // تحديث أزرار التنقل
-            document.getElementById('prevLessonBtn').disabled = index === 0;
-            document.getElementById('nextLessonBtn').disabled = index === courseData.lessons.length - 1;
-            document.getElementById('lessonCounter').innerHTML = `الدرس ${lesson.lessonNumber} من ${courseData.lessons.length}`;
-            
-            // عرض محتوى الدرس
-            const container = document.getElementById('lessonContent');
-            
-            let imagesHtml = '';
-            if (lesson.images && lesson.images.length > 0) {
-                imagesHtml = `
-                    <div class="images-section">
-                        <h4><i class="fas fa-images"></i> صور توضيحية</h4>
-                        <div class="images-grid">
-                            ${lesson.images.map(img => `
-                                <div class="image-card" onclick="openImageModal('${img.url}', '${escapeHtml(img.caption)}', '${escapeHtml(img.description)}')">
-                                    <img src="${img.url}" onerror="this.src='https://placehold.co/400x200/667eea/white?text=صورة'">
-                                    <div class="image-info">
-                                        <div class="image-caption">📷 ${escapeHtml(img.caption || 'صورة توضيحية')}</div>
-                                        <div class="image-description">${escapeHtml(img.description || 'اضغط لمشاهدة الصورة بشكل أكبر')}</div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            let videoHtml = '';
-            if (lesson.videoUrl) {
-                const videoId = extractYouTubeId(lesson.videoUrl);
-                videoHtml = `
-                    <div class="video-container">
-                        <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                `;
-            }
-            
-            let audioHtml = '';
-            if (lesson.audioUrl) {
-                audioHtml = `
-                    <div class="audio-container">
-                        <i class="fas fa-headphones"></i>
-                        <audio controls src="${lesson.audioUrl}"></audio>
-                    </div>
-                `;
-            }
-            
-            let assignmentHtml = '';
-            if (lesson.assignment && lesson.assignment.questions && lesson.assignment.questions.length > 0) {
-                assignmentHtml = `
-                    <div class="assignment-section">
-                        <h3><i class="fas fa-tasks"></i> ${escapeHtml(lesson.assignment.title || 'واجب الدرس')}</h3>
-                        <p>${escapeHtml(lesson.assignment.description || '')}</p>
-                        <div id="assignmentQuestions">
-                            ${renderAssignmentQuestions(lesson.assignment.questions)}
-                        </div>
-                        <button class="btn-submit" onclick="submitAssignment('${lesson._id}')">✅ تقديم الواجب</button>
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = `
-                <h2 class="lesson-title">${escapeHtml(lesson.title)}</h2>
-                <div class="lesson-text">${lesson.content || ''}</div>
-                ${videoHtml}
-                ${audioHtml}
-                ${imagesHtml}
-                ${assignmentHtml}
-            `;
-        }
-
-        // عرض أسئلة الواجب
-        function renderAssignmentQuestions(questions) {
-            return questions.map((q, idx) => {
-                switch(q.type) {
-                    case 'multiple_choice':
-                        return `
-                            <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.question)} (${q.points} نقطة)</h4>
-                                <div class="assignment-options">
-                                    ${q.options.map((opt, optIdx) => `
-                                        <label class="assignment-option">
-                                            <input type="radio" name="q_${q.id}" value="${optIdx}" onchange="assignmentAnswers['${q.id}'] = ${optIdx}">
-                                            ${escapeHtml(opt)}
-                                        </label>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                    case 'true_false':
-                        return `
-                            <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.question)} (${q.points} نقطة)</h4>
-                                <div class="assignment-options">
-                                    <label class="assignment-option"><input type="radio" name="q_${q.id}" value="true" onchange="assignmentAnswers['${q.id}'] = true"> ✅ صح</label>
-                                    <label class="assignment-option"><input type="radio" name="q_${q.id}" value="false" onchange="assignmentAnswers['${q.id}'] = false"> ❌ خطأ</label>
-                                </div>
-                            </div>
-                        `;
-                    case 'fill_blank':
-                        return `
-                            <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.question)} (${q.points} نقطة)</h4>
-                                <input type="text" class="assignment-input" placeholder="أدخل إجابتك..." 
-                                    onchange="assignmentAnswers['${q.id}'] = this.value" style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                            </div>
-                        `;
-                    default:
-                        return '';
+            container.innerHTML = courseData.lessons.map((lesson, index) => {
+                const isCompleted = isLessonCompleted(lesson._id);
+                const isLocked = lesson.isLocked;
+                
+                let statusHtml = '';
+                let buttonHtml = '';
+                
+                if (isCompleted) {
+                    statusHtml = '<span class="status-completed"><i class="fas fa-check-circle"></i> مكتمل</span>';
+                    buttonHtml = `<button class="btn-start" onclick="startLesson('${lesson._id}', ${index})"><i class="fas fa-redo"></i> مراجعة الدرس</button>`;
+                } else if (isLocked) {
+                    statusHtml = '<span class="status-locked"><i class="fas fa-lock"></i> مقفل</span>';
+                    buttonHtml = '<button class="btn-locked" disabled><i class="fas fa-lock"></i> غير متاح</button>';
+                } else {
+                    statusHtml = '<span class="status-unlocked"><i class="fas fa-unlock-alt"></i> متاح</span>';
+                    buttonHtml = `<button class="btn-start" onclick="startLesson('${lesson._id}', ${index})"><i class="fas fa-play"></i> بدء الدرس</button>`;
                 }
+                
+                return `
+                    <div class="lesson-card ${isLocked ? 'locked' : ''}">
+                        <div class="lesson-info">
+                            <div class="lesson-number">${lesson.lessonNumber}</div>
+                            <div class="lesson-details">
+                                <div class="lesson-title">${escapeHtml(lesson.title)}</div>
+                                <div class="lesson-status">
+                                    ${statusHtml}
+                                </div>
+                            </div>
+                        </div>
+                        ${buttonHtml}
+                    </div>
+                `;
             }).join('');
         }
 
-        // تقديم الواجب
-        async function submitAssignment(lessonId) {
-            const token = localStorage.getItem('token');
-            
-            // حساب النتيجة
-            const lesson = courseData.lessons[currentLessonIndex];
-            let score = 0;
-            let totalPoints = 0;
-            
-            lesson.assignment.questions.forEach(q => {
-                totalPoints += q.points;
-                const userAnswer = assignmentAnswers[q.id];
-                let isCorrect = false;
-                
-                switch(q.type) {
-                    case 'multiple_choice':
-                        isCorrect = userAnswer === q.correctOption;
-                        break;
-                    case 'true_false':
-                        isCorrect = userAnswer === q.isTrue;
-                        break;
-                    case 'fill_blank':
-                        if (q.correctAnswer) {
-                            isCorrect = String(userAnswer).toLowerCase().trim() === String(q.correctAnswer).toLowerCase().trim();
-                        }
-                        break;
-                }
-                
-                if (isCorrect) score += q.points;
-            });
-            
-            const percentage = (score / totalPoints) * 100;
-            const passed = percentage >= lesson.assignment.passingScore;
-            
-            try {
-                const res = await fetch(API_URL + '/progress/' + courseData._id + '/lessons/' + lessonId + '/complete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ score: percentage })
-                });
-                
-                if (res.ok) {
-                    if (passed) {
-                        showAlert(`✅ أحسنت! حصلت على ${Math.round(percentage)}% في الواجب`, 'success');
-                        // تحديث حالة الدرس في القائمة
-                        if (currentLessonIndex + 1 < courseData.lessons.length && !courseData.lessons[currentLessonIndex + 1].isLocked) {
-                            showAlert('🎉 يمكنك الانتقال إلى الدرس التالي', 'success');
-                        }
-                    } else {
-                        showAlert(`📚 حصلت على ${Math.round(percentage)}%. حاول مرة أخرى`, 'error');
-                    }
-                }
-            } catch (error) {
-                showAlert('❌ حدث خطأ في تقديم الواجب', 'error');
-            }
-        }
-
-        // التنقل بين الدروس
-        function previousLesson() {
-            if (currentLessonIndex > 0) {
-                loadLesson(currentLessonIndex - 1);
-            }
-        }
-
-        function nextLesson() {
-            if (currentLessonIndex < courseData.lessons.length - 1) {
-                loadLesson(currentLessonIndex + 1);
-            }
-        }
-
-        // استخراج معرف الفيديو من رابط يوتيوب
-        function extractYouTubeId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : '';
-        }
-
-        // فتح مودال الصورة
-        function openImageModal(url, caption, description) {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            const modalCaption = document.getElementById('modalCaption');
-            
-            modalImg.src = url;
-            modalCaption.innerHTML = `<strong>${caption}</strong><br>${description}`;
-            modal.classList.add('active');
-        }
-
-        function closeImageModal() {
-            document.getElementById('imageModal').classList.remove('active');
+        // بدء الدرس - الانتقال إلى صفحة عرض الدرس
+        function startLesson(lessonId, lessonIndex) {
+            const courseId = getCourseId();
+            // الانتقال إلى صفحة عرض الدرس مع تمرير معرف الدورة ومعرف الدرس
+            window.location.href = `/lesson.html?courseId=${courseId}&lessonId=${lessonId}&lessonIndex=${lessonIndex}`;
         }
 
         // تهيئة الصفحة
