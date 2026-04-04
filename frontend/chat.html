@@ -14,7 +14,41 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Cairo', sans-serif; background: #0a0a0a; height: 100vh; overflow: hidden; }
         .app { display: flex; height: 100vh; background: #0a0a0a; position: relative; }
-        
+        /* إصلاح مشكلة تغطية الأزرار لمنطقة الكتابة */
+.input-area {
+    background: #1f1f1f;
+    padding: 0.8rem;
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    border-top: 1px solid #2a2a2a;
+    position: relative;
+    z-index: 10;
+}
+
+/* التأكد من أن منطقة الكتابة في الأسفل */
+.chat-area {
+    display: flex;
+    flex-direction: column;
+    background: #0e0e0e;
+    height: 100vh;
+    position: relative;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    padding-bottom: 80px; /* إضافة مساحة للكتابة */
+}
+
+/* تثبيت منطقة الإدخال في الأسفل */
+.input-area {
+    position: sticky;
+    bottom: 0;
+    background: #1f1f1f;
+    width: 100%;
+}
         /* قائمة المحادثات */
         .conversations-list { width: 100%; max-width: 400px; background: #111111; display: flex; flex-direction: column; height: 100vh; transition: transform 0.3s ease; z-index: 20; }
         @media (max-width: 768px) { .conversations-list { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform: translateX(0); z-index: 10; } .conversations-list.hide { transform: translateX(-100%); } .chat-area { width: 100%; position: absolute; left: 0; top: 0; height: 100%; z-index: 5; background: #0e0e0e; } .chat-area.show { z-index: 15; } }
