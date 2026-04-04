@@ -9,6 +9,7 @@ require('dotenv').config();
 // ==================== AI Chat Models ====================
 
 // نموذج محادثات AI
+// ==================== AI Chat Models ====================
 const aiConversationSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     messages: [{
@@ -21,7 +22,6 @@ const aiConversationSchema = new mongoose.Schema({
 });
 
 const AIConversation = mongoose.model('AIConversation', aiConversationSchema);
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -974,7 +974,8 @@ app.get('/api/progress/:courseId', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
-// ==================== AI Chatbot Routes ====================
+
+        // ==================== AI Chatbot Routes ====================
 
 // بدء محادثة جديدة مع AI
 app.post('/api/ai/chat/start', auth, async (req, res) => {
@@ -982,18 +983,9 @@ app.post('/api/ai/chat/start', auth, async (req, res) => {
         const conversation = new AIConversation({
             userId: req.user._id,
             messages: [{
-                role: 'system',
-                content: `أنت مساعد تعليمي ذكي لمنصة EnGo لتعلم اللغة الإنجليزية. 
-                         اسمك "EnGo AI". أنت تتحدث العربية الفصحى.
-                         تساعد الطلاب في:
-                         - شرح قواعد اللغة الإنجليزية
-                         - تصحيح الأخطاء اللغوية
-                         - تقديم أمثلة وتدريبات
-                         - شرح الكلمات والمفردات
-                         - مساعدة في حل الواجبات
-                         - التحضير للاختبارات
-                         
-                         كن ودوداً ومشجعاً. قدم إجابات مفيدة ومختصرة.`
+                role: 'assistant',
+                content: 'مرحباً! أنا EnGo AI، مساعدك الذكي لتعلم اللغة الإنجليزية. كيف يمكنني مساعدتك اليوم؟',
+                timestamp: new Date()
             }]
         });
         
@@ -1002,10 +994,11 @@ app.post('/api/ai/chat/start', auth, async (req, res) => {
         res.json({
             success: true,
             conversationId: conversation._id,
-            message: "✨ مرحباً! أنا EnGo AI، مساعدك الذكي لتعلم اللغة الإنجليزية. كيف يمكنني مساعدتك اليوم؟"
+            message: 'مرحباً! أنا EnGo AI، مساعدك الذكي لتعلم اللغة الإنجليزية. كيف يمكنني مساعدتك اليوم؟'
         });
         
     } catch (error) {
+        console.error('Error starting AI chat:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -1030,8 +1023,8 @@ app.post('/api/ai/chat/:conversationId/message', auth, async (req, res) => {
             timestamp: new Date()
         });
         
-        // ردود مبرمجة (بدون API خارجي - مجاني بالكامل)
-        let aiResponse = getAIResponse(message, req.user.name);
+        // توليد رد ذكي (بدون API خارجي)
+        const aiResponse = generateAIResponse(message, req.user.name);
         
         // إضافة رد AI
         conversation.messages.push({
@@ -1058,7 +1051,8 @@ app.post('/api/ai/chat/:conversationId/message', auth, async (req, res) => {
 app.get('/api/ai/conversations', auth, async (req, res) => {
     try {
         const conversations = await AIConversation.find({ userId: req.user._id })
-            .sort({ updatedAt: -1 });
+            .sort({ updatedAt: -1 })
+            .select('_id updatedAt messages');
         
         res.json(conversations);
     } catch (error) {
@@ -1084,8 +1078,8 @@ app.get('/api/ai/conversations/:conversationId', auth, async (req, res) => {
     }
 });
 
-// دالة الردود المبرمجة (مجانية ولا تحتاج API)
-function getAIResponse(message, userName) {
+// دالة توليد ردود ذكية
+function generateAIResponse(message, userName) {
     const msg = message.toLowerCase();
     
     // ردود الترحيب
@@ -1125,30 +1119,13 @@ function getAIResponse(message, userName) {
 أي قاعدة تريد أن أشرحها لك؟`;
     }
     
-    // شرح كلمة
+    // معنى كلمة
     if (msg.includes('معنى') || msg.includes('كلمة')) {
-        const wordMatch = message.match(/كلمة\s+([^\s]+)/i) || message.match(/معنى\s+([^\s]+)/i);
-        const word = wordMatch ? wordMatch[1] : 'the word';
-        
-        return `📖 **معنى كلمة "${word}":**
-        
-${getWordMeaning(word)}
+        return `📖 **شرح الكلمة:**
 
-📝 **أمثلة:**
-• ${getExampleSentence(word)}
+الكلمة التي تسأل عنها تعني حسب السياق. هل يمكنك كتابة الكلمة بشكل أوضح؟
 
-💡 **نصيحة:** حاول استخدام الكلمة في جملة بنفسك لتتذكرها بشكل أفضل!`;
-    }
-    
-    // تصحيح جملة
-    if (msg.includes('صحح') || msg.includes('correct')) {
-        return `✏️ **تصحيح الجملة:**
-
-سأقوم بتحليل جملتك وتصحيح الأخطاء إن وجدت.
-
-🔹 **القاعدة:** تأكد من تطابق الفعل مع الفاعل (He/She/It + s)
-
-📝 **جرب كتابة الجملة التي تريد تصحيحها، وسأقوم بمساعدتك!**`;
+💡 **نصيحة:** استخدم القاموس المدمج في المنصة للحصول على معاني دقيقة مع أمثلة!`;
     }
     
     // تحسين النطق
@@ -1158,11 +1135,9 @@ ${getWordMeaning(word)}
 1️⃣ **استمع ثم كرر** - استمع للمتحدثين الأصليين وكرر ما يقولونه
 2️⃣ **سجل صوتك** - سجل نفسك وقارن بالنطق الصحيح
 3️⃣ **تعلم الأصوات الصعبة** - ركز على الأصوات مثل 'th' و 'r'
-4️⃣ **استخدم تطبيقات النطق** - مثل YouGlish أو Forvo
+4️⃣ **استخدم تطبيقات النطق** - مثل YouGlish
 
-💡 **نصيحة ذهبية:** النطق يحتاج إلى ممارسة يومية لمدة 10-15 دقيقة فقط!
-
-هل تريد مساعدة في نطق كلمة معينة؟`;
+💡 **نصيحة ذهبية:** النطق يحتاج إلى ممارسة يومية لمدة 10-15 دقيقة فقط!`;
     }
     
     // اختبارات
@@ -1207,37 +1182,7 @@ ${getWordMeaning(word)}
 
 ما الذي تود أن تتعلمه اليوم؟ 🎓`;
 }
-
-// دوال مساعدة للمعاني
-function getWordMeaning(word) {
-    const dictionary = {
-        'beautiful': 'جميل/جميلة - يوصف به الشيء الجميل',
-        'challenge': 'تحدي - أمر صعب يتطلب جهداً',
-        'opportunity': 'فرصة - موقف مناسب لتحقيق شيء',
-        'important': 'مهم - له قيمة كبيرة',
-        'difficult': 'صعب - ليس سهلاً',
-        'amazing': 'مذهل - يثير الدهشة والإعجاب',
-        'excellent': 'ممتاز - عالي الجودة',
-        'wonderful': 'رائع - جميل جداً'
-    };
     
-    return dictionary[word.toLowerCase()] || `هذه كلمة إنجليزية جميلة! معناها يعتمد على السياق. هل تريد مني أن أشرحها بشكل أعمق؟`;
-}
-
-function getExampleSentence(word) {
-    const examples = {
-        'beautiful': 'The sunset is beautiful (الغروب جميل)',
-        'challenge': 'Learning English is a fun challenge (تعلم الإنجليزية تحدٍ ممتع)',
-        'opportunity': 'This is a great opportunity to learn (هذه فرصة رائعة للتعلم)',
-        'important': 'Education is very important (التعليم مهم جداً)',
-        'difficult': 'Some words are difficult to pronounce (بعض الكلمات صعبة النطق)',
-        'amazing': 'You are doing an amazing job! (أنت تقوم بعمل مذهل!)',
-        'excellent': 'You got an excellent score! (حصلت على درجة ممتازة!)',
-        'wonderful': "It's a wonderful day to learn English (إنه يوم رائع لتعلم الإنجليزية)"
-    };
-    
-    return examples[word.toLowerCase()] || `This is an example sentence with the word "${word}"`;
-}
 
 
 // ==================== Socket.IO ====================
