@@ -240,69 +240,6 @@
             transform: translateY(-1px);
         }
 
-        /* لوحة الإعدادات (مخفية للمستخدم العادي) */
-        .admin-panel {
-            background: #f1f5f9;
-            padding: 6px 16px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            border-top: 1px solid #e2e8f0;
-            font-size: 0.7rem;
-            flex-wrap: wrap;
-        }
-
-        .api-key-input {
-            flex: 1;
-            padding: 5px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 20px;
-            font-family: monospace;
-            font-size: 0.65rem;
-            min-width: 200px;
-        }
-
-        .save-key-btn {
-            background: #4f46e5;
-            border: none;
-            color: white;
-            padding: 5px 14px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-
-        .api-status {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: #e2e8f0;
-            padding: 3px 10px;
-            border-radius: 20px;
-        }
-
-        .api-status.online {
-            background: #10b981;
-            color: white;
-        }
-
-        .api-status.offline {
-            background: #ef4444;
-            color: white;
-        }
-
-        .toggle-admin {
-            background: none;
-            border: none;
-            color: #64748b;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-
-        .admin-panel.hidden {
-            display: none;
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
@@ -353,19 +290,6 @@
             <div class="suggestion-chip" onclick="askQuestion('صحح لي هذه الجملة: He go to school yesterday')">✅ تصحيح</div>
         </div>
         
-        <!-- لوحة الإعدادات (تظهر فقط للمطور/المدير) -->
-        <div class="admin-panel" id="adminPanel">
-            <i class="fas fa-key" style="color:#4f46e5;"></i>
-            <input type="password" id="apiKeyInput" class="api-key-input" placeholder="مفتاح API (للمطور)" value="">
-            <button class="save-key-btn" onclick="saveApiKey()">💾 تفعيل</button>
-            <div class="api-status offline" id="apiStatus">
-                <i class="fas fa-circle"></i> <span id="statusText">غير متصل</span>
-            </div>
-            <button class="toggle-admin" onclick="toggleAdminPanel()">
-                <i class="fas fa-cog"></i>
-            </button>
-        </div>
-        
         <div class="input-area">
             <input type="text" id="messageInput" placeholder="اسأل عن الإنجليزية، اطلب ترجمة، شرح قاعدة..." onkeypress="handleKeyPress(event)">
             <button class="send-btn" onclick="sendMessage()">
@@ -376,58 +300,40 @@
 
     <script>
         // ============================================
-        // EnGo AI - يعمل عبر API في الخلفية
-        // المستخدم يرى فقط EnGo AI بدون أي ذكر لـ Gemini
+        // ⚠️ أضف مفتاح API هنا 👇 (يبدأ بـ AIza...)
+        // ============================================
+        const ENGO_API_KEY = "AIzaSyBgKGk6uQbFsbpUa5OYVvDEXKUsm0_HPpU";  // <-- ضع مفتاحك بين الأقواس
+        
+        // ============================================
+        // باقي الكود يعمل تلقائياً - لا تغير شيء
         // ============================================
         
-        let API_KEY = localStorage.getItem('AIzaSyBgKGk6uQbFsbpUa5OYVvDEXKUsm0_HPpU') || '';
         let isAPIActive = false;
         let conversationHistory = [];
         
-        // قاموس الترجمة السريع (احتياطي في حال فشل API)
+        // قاموس احتياطي (في حال فشل API)
         const fallbackDictionary = {
             "hello": "مرحباً", "beautiful": "جميل", "amazing": "مذهل", "quickly": "بسرعة",
-            "big": "كبير", "small": "صغير", "happy": "سعيد", "sad": "حزين",
-            "apple": "تفاحة", "book": "كتاب", "car": "سيارة", "house": "منزل",
-            "good morning": "صباح الخير", "thanks": "شكراً", "please": "من فضلك"
+            "big": "كبير", "small": "صغير", "apple": "تفاحة", "book": "كتاب",
+            "good morning": "صباح الخير", "thanks": "شكراً", "please": "من فضلك",
+            "happy": "سعيد", "sad": "حزين", "car": "سيارة", "house": "منزل"
         };
         
-        // تحديث حالة الاتصال (للمطور فقط)
-        function updateApiStatus() {
-            const statusDiv = document.getElementById('apiStatus');
-            const statusText = document.getElementById('statusText');
-            if (API_KEY && API_KEY.startsWith('AIza')) {
-                statusDiv.className = 'api-status online';
-                statusText.innerText = 'API متصل';
+        // التحقق من المفتاح عند بدء التشغيل
+        function checkApiKey() {
+            if (ENGO_API_KEY && ENGO_API_KEY.startsWith('AIza')) {
                 isAPIActive = true;
+                console.log('✅ EnGo AI: API مفعل');
+                return true;
             } else {
-                statusDiv.className = 'api-status offline';
-                statusText.innerText = 'API غير متصل';
                 isAPIActive = false;
+                console.warn('⚠️ EnGo AI: لم يتم إضافة مفتاح API. الرجاء إضافة المفتاح في السطر const ENGO_API_KEY');
+                return false;
             }
         }
         
-        // حفظ مفتاح API (للمطور)
-        function saveApiKey() {
-            const input = document.getElementById('apiKeyInput');
-            const key = input.value.trim();
-            if (key && key.startsWith('AIza')) {
-                API_KEY = key;
-                localStorage.setItem('engo_api_key', key);
-                updateApiStatus();
-                appendMessage('✅ **تم تفعيل الذكاء الاصطناعي!** الآن يمكنك سؤالي عن أي شيء في اللغة الإنجليزية وسأرد بذكاء.', 'ai');
-            } else if (key) {
-                appendMessage('⚠️ المفتاح غير صالح. يرجى التأكد من المفتاح.', 'ai');
-            }
-            input.value = '';
-        }
-        
-        // استدعاء API الداخلي (Gemini في الخلفية)
+        // استدعاء API
         async function callAIAPI(userMessage) {
-            if (!API_KEY || !API_KEY.startsWith('AIza')) {
-                throw new Error('API_KEY_MISSING');
-            }
-            
             const systemPrompt = `أنت "EnGo AI"، مساعد ذكي متخصص في اللغة الإنجليزية فقط. مهمتك:
 1. الرد على أسئلة اللغة الإنجليزية (قواعد، مفردات، نطق، ترجمة، محادثات)
 2. تقديم ترجمة دقيقة لأي كلمة أو جملة من وإلى الإنجليزية
@@ -435,9 +341,9 @@
 4. شرح الفروقات اللغوية
 5. إذا سأل المستخدم عن شيء خارج اللغة الإنجليزية، قم بتوجيهه بلطف إلى أسئلة اللغة الإنجليزية فقط.
 
-أجب باللغة العربية مع تقديم أمثلة إنجليزية واضحة. كن ودوداً ومفيداً. لا تذكر أبداً أنك تستخدم أي تقنية محددة، فقط قل أنك "EnGo AI".`;
+أجب باللغة العربية مع تقديم أمثلة إنجليزية واضحة. كن ودوداً ومفيداً.`;
             
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${ENGO_API_KEY}`;
             
             const chatContext = conversationHistory.slice(-8).map(msg => ({
                 role: msg.role === 'user' ? 'user' : 'model',
@@ -472,11 +378,10 @@
             return aiResponse;
         }
         
-        // رد احتياطي (عند عدم وجود API)
+        // رد احتياطي (عند عدم وجود API أو فشله)
         function getFallbackResponse(userMessage) {
             const msg = userMessage.toLowerCase().trim();
             
-            // ترجمة
             if (msg.includes('ترجم') || msg.includes('معنى')) {
                 let match = msg.match(/(?:ترجم|معنى|meaning of)\s*:?\s*(.+)/i);
                 if (match) {
@@ -484,31 +389,21 @@
                     if (fallbackDictionary[word]) {
                         return `📖 **ترجمة "${word}":** ${fallbackDictionary[word]}\n\n📝 مثال: "The ${word} is wonderful!"`;
                     }
-                    return `🔍 الكلمة "${word}" - للترجمة الدقيقة، يرجى تفعيل API في لوحة الإعدادات.`;
+                    return `🔍 **تنبيه:** لم يتم تفعيل API. الرجاء إضافة مفتاح API في الكود (السطر const ENGO_API_KEY) للحصول على ترجمة دقيقة.`;
                 }
             }
             
-            // شرح القواعد
             if (msg.includes('present perfect')) {
-                return `📘 **Present Perfect Tense**\n\nيستخدم للتعبير عن:\n1️⃣ تجارب سابقة (I have visited London)\n2️⃣ أحداث بدأت بالماضي ومستمرة (She has worked here since 2015)\n3️⃣ تغييرات حدثت (The price has increased)\n\nالتكوين: have/has + past participle`;
-            }
-            
-            if (msg.includes('الفرق بين much') && msg.includes('many')) {
-                return `🔎 **Much vs Many**\n\n• Much → غير معدود (water, money)\n• Many → معدود جمع (books, cars)\n\nمثال: How much water? How many books?`;
+                return `📘 **Present Perfect Tense**\n\nيستخدم للتعبير عن:\n1️⃣ تجارب سابقة (I have visited London)\n2️⃣ أحداث بدأت بالماضي ومستمرة (She has worked here since 2015)\n\n⚠️ للردود الأكثر دقة، يرجى إضافة مفتاح API في الكود.`;
             }
             
             if (msg.includes('مرحب') || msg.includes('السلام')) {
-                return `👋 وعليكم السلام! أنا EnGo AI. كيف أساعدك في تعلم الإنجليزية اليوم؟`;
+                return `👋 وعليكم السلام! أنا EnGo AI.\n\n⚠️ **تنبيه:** لم يتم تفعيل API بعد. الرجاء إضافة مفتاح API في السطر const ENGO_API_KEY داخل الكود لتحصل على ردود ذكية كاملة.`;
             }
             
-            if (msg.includes('شكر')) {
-                return `🎉 العفو! أنا سعيد بمساعدتك. هل هناك سؤال آخر عن الإنجليزية؟`;
-            }
-            
-            return `🌟 **EnGo AI** 🌟\n\nيمكنني مساعدتك في:\n• ترجمة الكلمات والجمل\n• شرح القواعد النحوية\n• تحسين النطق والمحادثة\n• تصحيح الأخطاء\n\n⚠️ **ملاحظة:** للردود الأكثر دقة، يرجى تفعيل API من لوحة الإعدادات (رمز الترس).\n\nما الذي تود تعلمه اليوم؟`;
+            return `🌟 **مرحباً بك في EnGo AI** 🌟\n\nيمكنني مساعدتك في تعلم الإنجليزية، ولكن ⚠️ **لم يتم تفعيل API** ⚠️\n\n📌 **لتفعيل المساعد:**\n1. افتح ملف HTML في محرر نصوص\n2. ابحث عن السطر: \`const ENGO_API_KEY = "";\`\n3. ضع مفتاح API بين الأقواس\n4. احصل على مفتاح مجاني من: https://aistudio.google.com/apikey\n5. احفظ الملف وافتحه مجدداً\n\nبعد التفعيل، سأتمكن من ترجمة الكلمات وشرح القواعد والرد بذكاء! 🚀`;
         }
         
-        // عرض الرسائل
         function appendMessage(text, sender) {
             const area = document.getElementById('chatArea');
             const div = document.createElement('div');
@@ -547,7 +442,6 @@
             if (indicator) indicator.remove();
         }
         
-        // إرسال الرسالة
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
@@ -560,7 +454,7 @@
             
             try {
                 let aiResponse;
-                if (isAPIActive && API_KEY) {
+                if (isAPIActive && ENGO_API_KEY) {
                     aiResponse = await callAIAPI(message);
                 } else {
                     aiResponse = getFallbackResponse(message);
@@ -596,7 +490,7 @@
                 <div class="message ai">
                     <div class="message-bubble">
                         🧹 **تم مسح المحادثة** ✨<br><br>
-                        مرحباً بك مجدداً في EnGo AI! كيف يمكنني مساعدتك اليوم؟
+                        مرحباً بك مجدداً في EnGo AI!
                         <div class="message-time">الآن</div>
                     </div>
                 </div>
@@ -604,32 +498,13 @@
             conversationHistory = [];
         }
         
-        // إظهار/إخفاء لوحة الإعدادات (للمطور)
-        let adminVisible = false;
-        function toggleAdminPanel() {
-            const panel = document.getElementById('adminPanel');
-            adminVisible = !adminVisible;
-            if (adminVisible) {
-                panel.classList.remove('hidden');
-            } else {
-                panel.classList.add('hidden');
-            }
+        // تشغيل الفحص عند بدء التشغيل
+        checkApiKey();
+        if (!isAPIActive) {
+            setTimeout(() => {
+                appendMessage(getFallbackResponse("تنبيه"), 'ai');
+            }, 1000);
         }
-        
-        // التهيئة
-        function init() {
-            const savedKey = localStorage.getItem('engo_api_key');
-            if (savedKey) {
-                API_KEY = savedKey;
-                document.getElementById('apiKeyInput').value = '••••••••••';
-                updateApiStatus();
-            }
-            // إخفاء لوحة الإعدادات بدايةً
-            document.getElementById('adminPanel').classList.add('hidden');
-            adminVisible = false;
-        }
-        
-        init();
     </script>
 </body>
 </html>
