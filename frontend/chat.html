@@ -593,6 +593,8 @@
 }
         .chat-container {
     height: var(--app-height);
+    display: flex;
+    flex-direction: column;
         }
         .header-actions a,
 .header-actions button {
@@ -746,13 +748,23 @@
             }
         }
         function updateHeight() {
+
+    const height = window.visualViewport
+        ? window.visualViewport.height
+        : window.innerHeight;
+
     document.documentElement.style.setProperty(
         '--app-height',
-        `${window.innerHeight}px`
+        height + 'px'
     );
 }
 
 window.addEventListener('resize', updateHeight);
+
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateHeight);
+}
+
 updateHeight();
         
         function showAlert(message, type) {
