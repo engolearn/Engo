@@ -1,14 +1,12 @@
-// server.js - النسخة النهائية الكاملة
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
+const jwt = require('jsonwebtoken');        // ✅ أضف هذا
+const bcrypt = require('bcryptjs');         // ✅ أضف هذا
 require('dotenv').config();
-// ==================== AI Chat Models ====================
-
-// نموذج محادثات AI
 // ==================== AI Chat Models ====================
 const aiConversationSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -248,24 +246,39 @@ async function addNotification(userId, notifData) {
     }
 }
 
-// ==================== Auth Middleware ====================
+// Auth Middleware
 const auth = async (req, res, next) => {
     try {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) return res.status(401).json({ message: 'Unauthorized' });
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+        const authHeader = req.headers.authorization;
+        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized: No token provided' });
+        }
+        
+        const token = authHeader.split(' ')[1];
+        const secret = process.env.JWT_SECRET || 'secret123';
+        const decoded = jwt.verify(token, secret);
+        
         const user = await User.findById(decoded.userId);
-        if (!user) return res.status(401).json({ message: 'User not found' });
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        
         req.user = user;
         next();
     } catch (error) {
-        res.status(401).json({ message: 'Invalid token' });
+        console.error('❌ Auth error:', error.message);
+        res.status(401).json({ message: 'Invalid token: ' + error.message });
     }
 };
 
 const adminAuth = async (req, res, next) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin access required' });
+    if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+    }
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+    }
     next();
 };
 
@@ -346,11 +359,38 @@ app.get('/api/admin/courses', auth, adminAuth, async (req, res) => {
 
 app.post('/api/admin/courses', auth, adminAuth, async (req, res) => {
     try {
-        const course = new Course(req.body);
+        console.log('📝 Received course data:', req.body);
+        
+        const { title, description, level, price, isPremium, freeLessons } = req.body;
+        
+        if (!title || !description) {
+            return res.status(400).json({ 
+                message: '⚠️ العنوان والوصف مطلوبان'
+            });
+        }
+        
+        const course = new Course({
+            title: title.trim(),
+            description: description.trim(),
+            level: level || 'beginner',
+            price: price || 0,
+            isPremium: isPremium || false,
+            freeLessons: freeLessons || 5,
+            createdAt: new Date()
+        });
+        
         await course.save();
-        res.json({ message: '✅ تم إضافة الدورة', course });
+        console.log('✅ Course saved:', course._id);
+        
+        res.status(201).json({ 
+            message: '✅ تم إضافة الدورة بنجاح', 
+            course 
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('❌ Error:', error);
+        res.status(500).json({ 
+            message: 'خطأ: ' + error.message 
+        });
     }
 });
 
