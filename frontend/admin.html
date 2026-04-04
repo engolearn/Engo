@@ -328,7 +328,65 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-}.inline-buttons { display: flex; gap: 0.5rem; }
+}
+        
+        /* ========== أنماط الإشعارات ========== */
+.notification-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-right: 4px solid;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+}
+.notification-card:hover {
+    transform: translateX(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.notification-card.info { border-right-color: #667eea; }
+.notification-card.success { border-right-color: #48bb78; }
+.notification-card.warning { border-right-color: #ed8936; }
+.notification-card.course { border-right-color: #9f7aea; }
+.notification-card.quiz { border-right-color: #f687b3; }
+.notification-card.promotion { border-right-color: #f6ad55; }
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.notification-title {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #2d3748;
+}
+.notification-date {
+    font-size: 0.7rem;
+    color: #a0aec0;
+}
+.notification-message {
+    color: #4a5568;
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+.notification-target {
+    display: inline-block;
+    background: #edf2f7;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    color: #4a5568;
+}
+.notification-stats {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: #718096;
+}
+        .inline-buttons { display: flex; gap: 0.5rem; }
         .loading { text-align: center; padding: 2rem; color: #667eea; }
         .empty-message { text-align: center; padding: 2rem; color: #718096; }
         .question-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
@@ -372,6 +430,7 @@
             <button class="tab-btn" onclick="showTab('lessons')">📖 الدروس</button>
             <button class="tab-btn" onclick="showTab('levelTests')">📝 اختبارات المستوى</button>
             <button class="tab-btn" onclick="showTab('quizzes')">📝 الاختبارات</button>
+            <button class="tab-btn" onclick="showTab('notifications')">🔔 الإشعارات</button>
             <button class="tab-btn" onclick="showTab('users')">👥 المستخدمين</button>
             <button class="tab-btn" onclick="showTab('payments')">💰 طلبات الدفع</button>
         </div>
@@ -577,6 +636,85 @@
     </div>
 </div>
 
+        <!-- تبويب الإشعارات -->
+<div id="notificationsTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-bell"></i> إرسال إشعار للمستخدمين</h2>
+        <form id="sendNotificationForm">
+            <div class="form-group">
+                <label><i class="fas fa-users"></i> إرسال إلى</label>
+                <select id="notificationTarget" required>
+                    <option value="all">👥 جميع المستخدمين</option>
+                    <option value="specific">👤 مستخدم محدد</option>
+                    <option value="beginner">🟢 المستوى مبتدئ</option>
+                    <option value="advanced">🟠 المستوى متقدم</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="specificUserGroup" style="display: none;">
+                <label><i class="fas fa-user"></i> اختر المستخدم</label>
+                <select id="specificUser">
+                    <option value="">-- اختر مستخدم --</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> نوع الإشعار</label>
+                <select id="notificationType">
+                    <option value="info">ℹ️ معلومات عامة</option>
+                    <option value="success">✅ نجاح / إنجاز</option>
+                    <option value="warning">⚠️ تنبيه</option>
+                    <option value="course">📚 دورة جديدة</option>
+                    <option value="quiz">📝 اختبار جديد</option>
+                    <option value="promotion">🎉 عرض خاص</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-heading"></i> عنوان الإشعار *</label>
+                <input type="text" id="notificationTitle" required placeholder="مثال: دورة جديدة متاحة!">
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> نص الإشعار *</label>
+                <textarea id="notificationMessage" rows="4" required placeholder="أدخل نص الإشعار هنا..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-link"></i> رابط (اختياري)</label>
+                <input type="text" id="notificationLink" placeholder="مثال: /courses/123">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fas fa-calendar"></i> تاريخ الانتهاء (اختياري)</label>
+                    <input type="date" id="notificationExpiry">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-image"></i> صورة مصغرة (اختياري)</label>
+                    <input type="text" id="notificationImage" placeholder="رابط الصورة">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn-primary" style="background: #48bb78;">
+                    <i class="fas fa-paper-plane"></i> إرسال الإشعار
+                </button>
+                <button type="button" class="btn-danger" onclick="resetNotificationForm()">
+                    <i class="fas fa-eraser"></i> إلغاء
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-history"></i> سجل الإشعارات المرسلة</h2>
+        <div id="sentNotificationsList">
+            <div class="loading">جاري تحميل سجل الإشعارات...</div>
+        </div>
+    </div>
+</div>
+        
         <!-- تبويب المستخدمين -->
         <div id="usersTab" class="tab-content">
             <div class="admin-section"><h2><i class="fas fa-users"></i> قائمة المستخدمين</h2><div id="usersList"><div class="loading">جاري تحميل المستخدمين...</div></div></div>
@@ -938,6 +1076,195 @@ function renderLessonParagraphs() {
         `;
     }).join('');
 }
+      // ==================== إدارة الإشعارات ====================
+let notificationsHistory = [];
+
+// تحميل قائمة المستخدمين للقائمة المنسدلة
+async function loadUsersForNotification() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/users', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const users = await res.json();
+        
+        const select = document.getElementById('specificUser');
+        select.innerHTML = '<option value="">-- اختر مستخدم --</option>' + 
+            users.map(u => `<option value="${u._id}">${u.name || u.email} (${u.email})</option>`).join('');
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+// إظهار/إخفاء قائمة المستخدمين المحددين
+document.getElementById('notificationTarget')?.addEventListener('change', function() {
+    const specificUserGroup = document.getElementById('specificUserGroup');
+    if (this.value === 'specific') {
+        specificUserGroup.style.display = 'block';
+        loadUsersForNotification();
+    } else {
+        specificUserGroup.style.display = 'none';
+    }
+});
+
+// إرسال الإشعار
+document.getElementById('sendNotificationForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const token = localStorage.getItem('token');
+    const target = document.getElementById('notificationTarget').value;
+    const specificUserId = document.getElementById('specificUser').value;
+    const type = document.getElementById('notificationType').value;
+    const title = document.getElementById('notificationTitle').value;
+    const message = document.getElementById('notificationMessage').value;
+    const link = document.getElementById('notificationLink').value;
+    const expiry = document.getElementById('notificationExpiry').value;
+    const image = document.getElementById('notificationImage').value;
+    
+    if (!title || !message) {
+        showAlert('❌ الرجاء إدخال عنوان ونص الإشعار', 'error');
+        return;
+    }
+    
+    if (target === 'specific' && !specificUserId) {
+        showAlert('❌ الرجاء اختيار مستخدم', 'error');
+        return;
+    }
+    
+    const notificationData = {
+        target: target,
+        specificUserId: specificUserId || null,
+        type: type,
+        title: title,
+        message: message,
+        link: link || null,
+        expiry: expiry || null,
+        image: image || null,
+        sentBy: JSON.parse(localStorage.getItem('user'))?.name || 'Admin',
+        sentAt: new Date().toISOString()
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/notifications/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(notificationData)
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok) {
+            showAlert(`✅ تم إرسال الإشعار بنجاح إلى ${getTargetName(target)}`, 'success');
+            resetNotificationForm();
+            loadSentNotifications();
+        } else {
+            showAlert('❌ ' + (result.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        console.error('Error sending notification:', error);
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+});
+
+function getTargetName(target) {
+    const names = {
+        'all': 'جميع المستخدمين',
+        'specific': 'مستخدم محدد',
+        'beginner': 'المستوى مبتدئ',
+        'advanced': 'المستوى متقدم'
+    };
+    return names[target] || target;
+}
+
+function resetNotificationForm() {
+    document.getElementById('sendNotificationForm').reset();
+    document.getElementById('notificationTarget').value = 'all';
+    document.getElementById('specificUserGroup').style.display = 'none';
+    document.getElementById('notificationType').value = 'info';
+}
+
+// تحميل سجل الإشعارات المرسلة
+async function loadSentNotifications() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/notifications/history', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            notificationsHistory = await res.json();
+            renderSentNotifications();
+        } else {
+            // إذا لم يكن هناك API بعد، نستخدم localStorage مؤقتاً
+            const saved = localStorage.getItem('notificationsHistory');
+            if (saved) {
+                notificationsHistory = JSON.parse(saved);
+            } else {
+                notificationsHistory = [];
+            }
+            renderSentNotifications();
+        }
+    } catch (error) {
+        console.error('Error loading history:', error);
+        const saved = localStorage.getItem('notificationsHistory');
+        notificationsHistory = saved ? JSON.parse(saved) : [];
+        renderSentNotifications();
+    }
+}
+
+function renderSentNotifications() {
+    const container = document.getElementById('sentNotificationsList');
+    if (!container) return;
+    
+    if (notificationsHistory.length === 0) {
+        container.innerHTML = '<div class="empty-message">📭 لا توجد إشعارات مرسلة بعد</div>';
+        return;
+    }
+    
+    container.innerHTML = notificationsHistory.map(notif => `
+        <div class="notification-card ${notif.type}">
+            <div class="notification-header">
+                <div>
+                    <span class="notification-title">${escapeHtml(notif.title)}</span>
+                    <span class="notification-target">🎯 ${getTargetName(notif.target)}</span>
+                </div>
+                <div class="notification-date">
+                    <i class="fas fa-clock"></i> ${new Date(notif.sentAt).toLocaleString('ar')}
+                </div>
+            </div>
+            <div class="notification-message">${escapeHtml(notif.message)}</div>
+            <div class="notification-stats">
+                <i class="fas fa-user"></i> مرسل بواسطة: ${escapeHtml(notif.sentBy)} |
+                <i class="fas fa-bell"></i> النوع: ${getNotificationTypeName(notif.type)}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getNotificationTypeName(type) {
+    const names = {
+        'info': 'معلومات عامة',
+        'success': 'نجاح',
+        'warning': 'تنبيه',
+        'course': 'دورة جديدة',
+        'quiz': 'اختبار جديد',
+        'promotion': 'عرض خاص'
+    };
+    return names[type] || type;
+}
+
+// حفظ الإشعار في السجل (مؤقت)
+function saveNotificationToHistory(notification) {
+    notificationsHistory.unshift(notification);
+    if (notificationsHistory.length > 50) {
+        notificationsHistory = notificationsHistory.slice(0, 50);
+    }
+    localStorage.setItem('notificationsHistory', JSON.stringify(notificationsHistory));
+    renderSentNotifications();
+}
         
         // ==================== Helper Functions ====================
         function showAlert(message, type) {
@@ -949,17 +1276,21 @@ function renderLessonParagraphs() {
         }
 
         function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            if(tabName === 'courses') loadCourses();
-            if(tabName === 'users') loadUsers();
-            if(tabName === 'payments') loadPayments();
-            if(tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
-            if(tabName === 'levelTests') loadLevelTests();
-            if(tabName === 'quizzes') loadQuizzes();
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.getElementById(tabName + 'Tab').classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    if(tabName === 'courses') loadCourses();
+    if(tabName === 'users') loadUsers();
+    if(tabName === 'payments') loadPayments();
+    if(tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
+    if(tabName === 'levelTests') loadLevelTests();
+    if(tabName === 'quizzes') loadQuizzes();
+    if(tabName === 'notifications') { 
+        loadUsersForNotification(); 
+        loadSentNotifications();
+    }
         }
 
         async function checkAdmin() {
