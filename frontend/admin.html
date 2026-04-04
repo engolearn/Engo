@@ -36,7 +36,101 @@
         .alert-error { background: #fed7d7; color: #742a2a; }
         .course-card { background: #f7fafc; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; }
         .lesson-item { background: white; padding: 1rem; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        
+    /* ========== أنماط بناء الدروس (Lesson Builder) ========== */
+.lesson-builder {
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #ffffff;
+    overflow: hidden;
+}
+.lesson-paragraphs {
+    padding: 1rem;
+}
+.paragraph-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s;
+}
+.paragraph-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.paragraph-header {
+    background: #edf2f7;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+    cursor: move;
+}
+.paragraph-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.paragraph-type-text { background: #667eea; color: white; }
+.paragraph-type-video { background: #e53e3e; color: white; }
+.paragraph-type-audio { background: #38a169; color: white; }
+.paragraph-type-image { background: #d97706; color: white; }
+.paragraph-body {
+    padding: 1rem;
+}
+.paragraph-content {
+    margin-bottom: 1rem;
+}
+.paragraph-content textarea,
+.paragraph-content input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 12px;
+    font-family: 'Cairo', sans-serif;
+}
+.paragraph-media {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #ffffff;
+    border-radius: 12px;
+}
+.paragraph-media iframe {
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+}
+.paragraph-media audio {
+    width: 100%;
+}
+.paragraph-media img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 12px;
+}
+.btn-add-paragraph {
+    background: #667eea20;
+    border: 2px dashed #667eea;
+    color: #667eea;
+    padding: 12px;
+    border-radius: 16px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 1rem;
+    transition: 0.3s;
+}
+.btn-add-paragraph:hover {
+    background: #667eea;
+    color: white;
+}
+.paragraph-drag-handle {
+    cursor: move;
+    color: #a0aec0;
+}    
         /* ========== أنماط الأسئلة الاحترافية ========== */
 .prof-question-card {
     background: #ffffff;
@@ -303,24 +397,109 @@
         </div>
 
         <!-- تبويب الدروس -->
-        <div id="lessonsTab" class="tab-content">
-            <div class="admin-section">
-                <h2><i class="fas fa-plus-circle"></i> إضافة درس جديد</h2>
-                <form id="addLessonForm">
-                    <div class="form-group"><label>اختر الدورة *</label><select id="lessonCourse" required><option value="">-- اختر الدورة --</option></select></div>
-                    <div class="form-row"><div class="form-group"><label>رقم الدرس *</label><input type="number" id="lessonNumber" required></div><div class="form-group"><label>عنوان الدرس *</label><input type="text" id="lessonTitle" required></div></div>
-                    <div class="form-group"><label>محتوى الدرس</label><textarea id="lessonContent" rows="5" placeholder="أدخل محتوى الدرس هنا..."></textarea></div>
-                    <div class="form-row"><div class="form-group"><label>رابط فيديو (YouTube)</label><input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=..."></div><div class="form-group"><label>رابط صوتي</label><input type="text" id="lessonAudio" placeholder="رابط ملف صوتي"></div></div>
-                    
-                    <div class="images-section-card"><h3><i class="fas fa-images"></i> 📸 صور تفاعلية للدرس</h3><p style="color: #92400e; margin-bottom: 1rem;">أضف صوراً مع شرح ممتع لكل صورة</p><div id="imagesList" style="margin-bottom: 1rem;"></div><button type="button" class="btn-primary" onclick="addImageField()" style="background: #d97706;"><i class="fas fa-plus-circle"></i> إضافة صورة جديدة</button><div id="imagePreview" style="display: none; margin-top: 1rem; padding: 1rem; background: white; border-radius: 10px;"><h4>📷 معاينة الصورة:</h4><img id="previewImg" src="" style="max-width: 100%; max-height: 200px; border-radius: 10px;"><p id="previewCaption" style="margin-top: 10px; color: #666;"></p></div></div>
-                    
-                    <div style="background: #f7fafc; border-radius: 15px; padding: 1.5rem; margin-top: 1.5rem;"><h3><i class="fas fa-tasks"></i> إعدادات الواجب</h3><div class="form-row"><div class="form-group"><label>عنوان الواجب</label><input type="text" id="assignmentTitle" value="واجب الدرس"></div><div class="form-group"><label>نسبة النجاح (%)</label><input type="number" id="passingScore" value="70"></div></div><div class="form-group"><label>وصف الواجب</label><textarea id="assignmentDescription" rows="2"></textarea></div><hr style="margin: 1rem 0;"><h4><i class="fas fa-question-circle"></i> أسئلة الواجب</h4><div id="questionsList" style="margin-bottom: 1rem;"></div><div class="form-group"><select id="questionTypeSelect" style="width: auto; display: inline-block;"><option value="sentence_arrangement">📝 ترتيب جمل</option><option value="word_match">🔤 كلمة ومعناها</option><option value="fill_blank">✏️ اكمل الفراغات</option><option value="multiple_choice">✅ اختيار من متعدد</option><option value="true_false">⚖️ صح أو خطأ</option></select><button type="button" class="btn-primary" onclick="addNewQuestion()">➕ إضافة سؤال</button></div></div>
-                    <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">➕ إضافة الدرس</button>
-                </form>
+<div id="lessonsTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-plus-circle"></i> إضافة درس جديد</h2>
+        <form id="addLessonForm">
+            <div class="form-group">
+                <label>اختر الدورة *</label>
+                <select id="lessonCourse" required>
+                    <option value="">-- اختر الدورة --</option>
+                </select>
             </div>
-            <div class="admin-section"><h2><i class="fas fa-list"></i> دروس الدورة</h2><select id="courseForLessons" onchange="loadLessonsForCourse()"><option value="">اختر دورة لعرض دروسها</option></select><div id="lessonsList" style="margin-top: 1rem;"></div></div>
-        </div>
-
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>رقم الدرس *</label>
+                    <input type="number" id="lessonNumber" required>
+                </div>
+                <div class="form-group">
+                    <label>عنوان الدرس *</label>
+                    <input type="text" id="lessonTitle" required>
+                </div>
+            </div>
+            
+            <!-- ========== بناء الدروس (فقرات متسلسلة) ========== -->
+            <div class="lesson-builder" style="margin-top: 1rem;">
+                <div style="background: #667eea; color: white; padding: 0.75rem 1rem; border-radius: 15px 15px 0 0;">
+                    <i class="fas fa-layer-group"></i> 📚 بناء محتوى الدرس (أضف فقرات متسلسلة)
+                    <small style="display: block; font-size: 0.75rem; opacity: 0.8;">يمكنك إضافة فقرات نصية، فيديو، صوت، أو صور</small>
+                </div>
+                
+                <div class="lesson-paragraphs" id="lessonParagraphs" style="background: #f7fafc; min-height: 150px; padding: 1rem;">
+                    <div class="empty-message" style="text-align:center; padding:2rem;">
+                        📝 لا توجد فقرات. أضف فقرة جديدة باستخدام الأزرار أدناه
+                    </div>
+                </div>
+                
+                <div style="padding: 1rem; background: #f7fafc; border-radius: 0 0 15px 15px;">
+                    <div class="form-row" style="margin-bottom: 0.5rem;">
+                        <div class="form-group">
+                            <label><i class="fas fa-plus-circle"></i> نوع الفقرة الجديدة</label>
+                            <select id="paragraphType" style="width: 100%;">
+                                <option value="text">📝 نص</option>
+                                <option value="video">🎥 فيديو يوتيوب</option>
+                                <option value="audio">🎧 مقطع صوتي</option>
+                                <option value="image">🖼️ صورة</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="button" class="btn-primary" onclick="addParagraph()" style="width: 100%; background: #48bb78;">
+                                <i class="fas fa-plus-circle"></i> إضافة فقرة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== إعدادات الواجب ========== -->
+            <div style="background: #f7fafc; border-radius: 15px; padding: 1.5rem; margin-top: 1.5rem;">
+                <h3><i class="fas fa-tasks"></i> 📝 إعدادات الواجب</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>عنوان الواجب</label>
+                        <input type="text" id="assignmentTitle" value="واجب الدرس">
+                    </div>
+                    <div class="form-group">
+                        <label>نسبة النجاح (%)</label>
+                        <input type="number" id="passingScore" value="70">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>وصف الواجب</label>
+                    <textarea id="assignmentDescription" rows="2"></textarea>
+                </div>
+                <hr style="margin: 1rem 0;">
+                <h4><i class="fas fa-question-circle"></i> أسئلة الواجب</h4>
+                <div id="questionsList" style="margin-bottom: 1rem;"></div>
+                <div class="form-group">
+                    <select id="questionTypeSelect" style="width: auto; display: inline-block;">
+                        <option value="multiple_choice">✅ اختيار من متعدد</option>
+                        <option value="true_false">⚖️ صح أو خطأ</option>
+                        <option value="fill_blank">✏️ اكمل الفراغ</option>
+                        <option value="sentence_arrangement">📝 ترتيب جمل</option>
+                        <option value="word_match">🔤 كلمة ومعناها</option>
+                    </select>
+                    <button type="button" class="btn-primary" onclick="addNewQuestion()">
+                        <i class="fas fa-plus-circle"></i> إضافة سؤال
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="margin-top: 1.5rem; width: 100%; padding: 12px;">
+                <i class="fas fa-save"></i> 💾 حفظ الدرس
+            </button>
+        </form>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-list"></i> 📖 دروس الدورة</h2>
+        <select id="courseForLessons" onchange="loadLessonsForCourse()">
+            <option value="">اختر دورة لعرض دروسها</option>
+        </select>
+        <div id="lessonsList" style="margin-top: 1rem;"></div>
+    </div>
+</div>
         <!-- تبويب اختبارات المستوى -->
         <div id="levelTestsTab" class="tab-content">
             <div class="admin-section">
@@ -601,6 +780,165 @@
         
         document.getElementById('addLevelTestForm')?.addEventListener('submit', async (e) => { e.preventDefault(); await createNewLevelTest(); });
 
+
+        // ==================== Lesson Builder (فقرات الدرس المتسلسلة) ====================
+let lessonParagraphs = [];
+let paragraphCounter = 0;
+
+function addParagraph() {
+    const type = document.getElementById('paragraphType').value;
+    const newId = 'para_' + Date.now() + '_' + (++paragraphCounter);
+    
+    let newParagraph = {
+        id: newId,
+        type: type,
+        order: lessonParagraphs.length,
+        content: '',
+        mediaUrl: ''
+    };
+    
+    lessonParagraphs.push(newParagraph);
+    renderLessonParagraphs();
+}
+
+function removeParagraph(id) {
+    if (confirm('هل أنت متأكد من حذف هذه الفقرة؟')) {
+        lessonParagraphs = lessonParagraphs.filter(p => p.id !== id);
+        lessonParagraphs.forEach((p, idx) => p.order = idx);
+        renderLessonParagraphs();
+    }
+}
+
+function updateParagraph(paragraphId, field, value) {
+    const para = lessonParagraphs.find(p => p.id === paragraphId);
+    if (para) {
+        para[field] = value;
+        if (field === 'mediaUrl') {
+            renderLessonParagraphs(); // إعادة العرض لعرض المعاينة
+        }
+    }
+}
+
+function moveParagraphUp(index) {
+    if (index > 0) {
+        [lessonParagraphs[index - 1], lessonParagraphs[index]] = [lessonParagraphs[index], lessonParagraphs[index - 1]];
+        lessonParagraphs.forEach((p, idx) => p.order = idx);
+        renderLessonParagraphs();
+    }
+}
+
+function moveParagraphDown(index) {
+    if (index < lessonParagraphs.length - 1) {
+        [lessonParagraphs[index + 1], lessonParagraphs[index]] = [lessonParagraphs[index], lessonParagraphs[index + 1]];
+        lessonParagraphs.forEach((p, idx) => p.order = idx);
+        renderLessonParagraphs();
+    }
+}
+
+function getParagraphTypeName(type) {
+    const names = {
+        'text': '📝 نص',
+        'video': '🎥 فيديو يوتيوب',
+        'audio': '🎧 مقطع صوتي',
+        'image': '🖼️ صورة'
+    };
+    return names[type] || type;
+}
+
+function extractYouTubeId(url) {
+    if (!url) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : '';
+}
+
+function renderLessonParagraphs() {
+    const container = document.getElementById('lessonParagraphs');
+    if (!container) return;
+    
+    if (lessonParagraphs.length === 0) {
+        container.innerHTML = '<div class="empty-message" style="text-align:center; padding:2rem;">📝 لا توجد فقرات. أضف فقرة جديدة باستخدام القائمة أعلاه</div>';
+        return;
+    }
+    
+    container.innerHTML = lessonParagraphs.map((para, idx) => {
+        let typeClass = '';
+        let typeIcon = '';
+        let mediaHtml = '';
+        
+        switch(para.type) {
+            case 'text':
+                typeClass = 'paragraph-type-text';
+                typeIcon = 'fa-file-alt';
+                break;
+            case 'video':
+                typeClass = 'paragraph-type-video';
+                typeIcon = 'fa-video';
+                if (para.mediaUrl) {
+                    const videoId = extractYouTubeId(para.mediaUrl);
+                    if (videoId) {
+                        mediaHtml = `<div class="paragraph-media"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                    }
+                }
+                break;
+            case 'audio':
+                typeClass = 'paragraph-type-audio';
+                typeIcon = 'fa-headphones';
+                if (para.mediaUrl) {
+                    mediaHtml = `<div class="paragraph-media"><audio controls src="${escapeHtml(para.mediaUrl)}"></audio></div>`;
+                }
+                break;
+            case 'image':
+                typeClass = 'paragraph-type-image';
+                typeIcon = 'fa-image';
+                if (para.mediaUrl) {
+                    mediaHtml = `<div class="paragraph-media"><img src="${escapeHtml(para.mediaUrl)}" onerror="this.src='https://placehold.co/600x400/667eea/white?text=صورة'"></div>`;
+                }
+                break;
+        }
+        
+        return `
+            <div class="paragraph-card" data-id="${para.id}">
+                <div class="paragraph-header">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <i class="fas fa-grip-vertical paragraph-drag-handle"></i>
+                        <span class="paragraph-type-badge ${typeClass}">
+                            <i class="fas ${typeIcon}"></i> ${getParagraphTypeName(para.type)}
+                        </span>
+                        <span style="color:#718096; font-size:0.7rem;">الفقرة ${idx + 1}</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn-sm btn-warning" onclick="moveParagraphUp(${idx})" ${idx === 0 ? 'disabled' : ''} title="تحريك لأعلى">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button type="button" class="btn-sm btn-warning" onclick="moveParagraphDown(${idx})" ${idx === lessonParagraphs.length - 1 ? 'disabled' : ''} title="تحريك لأسفل">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button type="button" class="btn-sm btn-danger" onclick="removeParagraph('${para.id}')" title="حذف الفقرة">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="paragraph-body">
+                    <div class="paragraph-content">
+                        <label><i class="fas fa-align-right"></i> المحتوى النصي</label>
+                        <textarea rows="3" placeholder="أدخل النص هنا..." 
+                            onchange="updateParagraph('${para.id}', 'content', this.value)">${escapeHtml(para.content)}</textarea>
+                    </div>
+                    ${para.type !== 'text' ? `
+                        <div class="paragraph-content">
+                            <label><i class="fas fa-link"></i> ${para.type === 'video' ? 'رابط يوتيوب' : (para.type === 'audio' ? 'رابط الملف الصوتي' : 'رابط الصورة')}</label>
+                            <input type="text" placeholder="أدخل الرابط..." value="${escapeHtml(para.mediaUrl)}"
+                                onchange="updateParagraph('${para.id}', 'mediaUrl', this.value)">
+                        </div>
+                        ${mediaHtml}
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+        
         // ==================== Helper Functions ====================
         function showAlert(message, type) {
             const alertDiv = document.getElementById('alert');
@@ -1608,6 +1946,70 @@ document.getElementById('addQuizForm')?.addEventListener('submit', async (e) => 
         await createNewQuiz();
     }
 });
+        // ==================== إضافة درس جديد (مع نظام الفقرات المتسلسلة) ====================
+document.getElementById('addLessonForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    const courseId = document.getElementById('lessonCourse').value;
+    
+    if (!courseId) {
+        showAlert('❌ اختر الدورة أولاً', 'error');
+        return;
+    }
+    
+    // تحويل الفقرات إلى الشكل المطلوب للتخزين
+    const lessonContent = lessonParagraphs.map((para, idx) => ({
+        order: idx,
+        type: para.type,
+        content: para.content,
+        mediaUrl: para.mediaUrl || null
+    }));
+    
+    const lessonData = {
+        title: document.getElementById('lessonTitle').value,
+        content: lessonContent,  // ✅ الفقرات المتسلسلة
+        lessonNumber: parseInt(document.getElementById('lessonNumber').value),
+        courseId: courseId,
+        assignment: questions.length ? {
+            title: document.getElementById('assignmentTitle').value,
+            description: document.getElementById('assignmentDescription').value,
+            passingScore: parseInt(document.getElementById('passingScore').value),
+            questions: questions
+        } : null
+    };
+    
+    console.log('📤 Sending lesson data:', lessonData);
+    
+    try {
+        const res = await fetch(API_URL + '/admin/lessons', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(lessonData)
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok) {
+            showAlert('✅ تم إضافة الدرس بنجاح', 'success');
+            // إعادة تعيين النموذج
+            document.getElementById('addLessonForm').reset();
+            questions = [];
+            lessonParagraphs = [];
+            paragraphCounter = 0;
+            renderQuestions();
+            renderLessonParagraphs();
+            loadLessonsForCourse();
+        } else {
+            showAlert('❌ خطأ: ' + (result.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showAlert('❌ خطأ في الاتصال: ' + error.message, 'error');
+    }
+};
 
 // تحديث اختبار موجود
 // تحديث اختبار موجود
