@@ -584,173 +584,365 @@
         
         function closeUsersListModal() { document.getElementById('usersListModal').style.display = 'none'; }
         
-        // ==================== AI Chat Functions ====================
-        async function openAIChat() {
-            if (!socket || !socket.connected) {
-                showAlert('❌ غير متصل بالخادم', 'error');
-                return;
-            }
-            
-            currentChat = 'ai';
-            currentChatType = 'ai';
-            
-            document.getElementById('chatName').innerHTML = '<i class="fas fa-robot"></i> EnGo AI Assistant';
-            document.getElementById('chatStatus').innerHTML = '🤖 ذكي • متعلم • متاح 24/7';
-            document.getElementById('inviteBtn').style.display = 'none';
-            document.getElementById('messageInput').disabled = false;
-            document.querySelector('.send-btn').disabled = false;
-            document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المحادثة...</div>';
-            
-            await loadOrCreateAIConversation();
-            openChatArea();
-        }
         
-        async function loadOrCreateAIConversation() {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/ai/conversations', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const conversations = await res.json();
-                
-                if (conversations && conversations.length > 0) {
-                    currentAIConversationId = conversations[0]._id;
-                    await loadAIConversation(currentAIConversationId);
-                } else {
-                    await startNewAIConversation();
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                await startNewAIConversation();
-            }
-        }
-        
-        async function startNewAIConversation() {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/ai/chat/start', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ context: 'general' })
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    currentAIConversationId = data.conversationId;
-                    document.getElementById('chatMessages').innerHTML = `
-                        <div class="message other">
-                            <div class="message-bubble">
-                                🤖 ${data.message}
-                                <div class="message-time">الآن</div>
-                            </div>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error starting AI chat:', error);
-                document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:2rem;color:red;">⚠️ حدث خطأ في بدء المحادثة</div>';
-            }
-        }
-        
-        async function loadAIConversation(conversationId) {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/ai/conversations/' + conversationId, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const conversation = await res.json();
-                
-                const container = document.getElementById('chatMessages');
-                container.innerHTML = '';
-                
-                conversation.messages.forEach(msg => {
-                    if (msg.role === 'user') {
-                        appendAIMessage(msg.content, 'own');
-                    } else if (msg.role === 'assistant') {
-                        appendAIMessage(msg.content, 'other');
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading AI conversation:', error);
-                await startNewAIConversation();
-            }
-        }
-        
-        async function sendAIMessage(message) {
-            if (!message || !currentAIConversationId) return;
-            
-            appendAIMessage(message, 'own');
-            showAITypingIndicator();
-            
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/ai/chat/' + currentAIConversationId + '/message', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ message })
-                });
-                const data = await res.json();
-                
-                hideAITypingIndicator();
-                
-                if (data.success) {
-                    appendAIMessage(data.message, 'other');
-                } else {
-                    appendAIMessage('عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.', 'other');
-                }
-            } catch (error) {
-                hideAITypingIndicator();
-                appendAIMessage('عذراً، حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت.', 'other');
-            }
-        }
-        
-        function appendAIMessage(text, sender) {
-            const container = document.getElementById('chatMessages');
-            const div = document.createElement('div');
-            div.className = `message ${sender === 'own' ? 'own' : 'other'}`;
-            div.innerHTML = `<div class="message-bubble">${text}<div class="message-time">${new Date().toLocaleTimeString()}</div></div>`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-        
-        function showAITypingIndicator() {
-            const container = document.getElementById('chatMessages');
-            const typingDiv = document.createElement('div');
-            typingDiv.id = 'aiTypingIndicator';
-            typingDiv.className = 'message other';
-            typingDiv.innerHTML = `<div class="typing-indicator"><span>🤖 EnGo AI يكتب</span><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-            container.appendChild(typingDiv);
-            container.scrollTop = container.scrollHeight;
-        }
-        
-        function hideAITypingIndicator() {
-            const indicator = document.getElementById('aiTypingIndicator');
-            if (indicator) indicator.remove();
-        }
+        // ==================== AI Chat Functions (نسخة محلية - لا تحتاج خادم) ====================
+let currentAIConversationId = null;
 
-        function ensureAIInList() {
-    const container = document.getElementById('privateList');
-    const existingAI = document.getElementById('aiChatItem');
+// فتح محادثة AI
+async function openAIChat() {
+    currentChat = 'ai';
+    currentChatType = 'ai';
     
-    if (!existingAI) {
-        const aiElement = document.createElement('div');
-        aiElement.className = 'conversation-item';
-        aiElement.id = 'aiChatItem';
-        aiElement.onclick = () => openAIChat();
-        aiElement.innerHTML = `
-            <div class="avatar" style="background: linear-gradient(135deg, #25D366, #075E54);">
-                <i class="fas fa-robot"></i>
+    document.getElementById('chatName').innerHTML = '<i class="fas fa-robot"></i> EnGo AI Assistant';
+    document.getElementById('chatStatus').innerHTML = '🤖 ذكي • متعلم • متاح 24/7';
+    document.getElementById('inviteBtn').style.display = 'none';
+    document.getElementById('messageInput').disabled = false;
+    document.querySelector('.send-btn').disabled = false;
+    
+    // عرض رسالة ترحيب
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = `
+        <div class="message other">
+            <div class="message-bubble">
+                🤖 مرحباً! أنا EnGo AI، مساعدك الذكي لتعلم اللغة الإنجليزية.<br>
+                كيف يمكنني مساعدتك اليوم؟
+                <div class="message-time">الآن</div>
             </div>
-            <div class="conversation-info">
-                <div class="conversation-name">
-                    <span><span class="online-status online"></span> 🤖 EnGo AI Assistant</span>
-                </div>
-                <div class="conversation-preview">اسألني أي شيء عن اللغة الإنجليزية...</div>
-            </div>
-        `;
-        container.insertBefore(aiElement, container.firstChild);
+        </div>
+    `;
+    
+    currentAIConversationId = 'local_' + Date.now();
+    openChatArea();
+}
+
+// إرسال رسالة إلى AI (محلياً)
+async function sendAIMessage(message) {
+    if (!message || !currentAIConversationId) return;
+    
+    // عرض رسالة المستخدم
+    appendAIMessage(message, 'own');
+    
+    // إظهار مؤشر الكتابة
+    showAITypingIndicator();
+    
+    // محاكاة وقت التفكير
+    setTimeout(() => {
+        hideAITypingIndicator();
+        const response = getAIResponse(message);
+        appendAIMessage(response, 'other');
+    }, 500);
+}
+
+// الحصول على رد مناسب
+function getAIResponse(message) {
+    const msg = message.toLowerCase();
+    
+    // ردود الترحيب
+    if (msg.includes('مرحب') || msg.includes('السلام') || msg.includes('hi') || msg.includes('hello')) {
+        return `👋 وعليكم السلام! كيف يمكنني مساعدتك في تعلم اللغة الإنجليزية اليوم؟ 📚`;
     }
+    
+    // كيف أتعلم
+    if (msg.includes('كيف أتعلم') || msg.includes('كيف اتعلم') || msg.includes('best way')) {
+        return `📚 **نصائح لتعلم اللغة الإنجليزية:**
+
+1️⃣ **استمع يومياً** - استمع للبودكاست أو الأغاني الإنجليزية
+2️⃣ **اقرأ بانتظام** - ابدأ بقصص قصيرة ثم تدرج
+3️⃣ **تحدث بجرأة** - لا تخاف من الأخطاء
+4️⃣ **اكتب يومياً** - اكتب جمل بسيطة عن يومك
+5️⃣ **حدد أهدافاً** - مثلاً: حفظ 10 كلمات جديدة يومياً
+
+هل تريد مساعدة في أي من هذه النقاط؟ 🎯`;
+    }
+    
+    // قواعد اللغة
+    if (msg.includes('قاعدة') || msg.includes('grammar')) {
+        if (msg.includes('present simple') || msg.includes('مضارع بسيط')) {
+            return `📖 **Present Simple (المضارع البسيط)**
+
+✅ **نستخدمه لـ:**
+• حقائق عامة: The sun rises in the east
+• عادات روتينية: I wake up at 7 AM
+
+🔹 **التكوين:**
+• I/You/We/They + الفعل الأساسي
+• He/She/It + الفعل + s/es
+
+📝 **أمثلة:**
+• I play football every Friday
+• She plays tennis on weekends
+
+هل تريد تدريبات على هذه القاعدة؟`;
         }
+        
+        if (msg.includes('past simple') || msg.includes('ماضي بسيط')) {
+            return `📖 **Past Simple (الماضي البسيط)**
+
+✅ **نستخدمه للأفعال التي حدثت وانتهت في الماضي**
+
+🔹 **التكوين:**
+• الفعل المنتظم: الفعل + ed
+• الفعل الشاذ: التصريف الثاني
+
+📝 **أمثلة:**
+• I watched a movie yesterday
+• She went to London last year
+
+هل تريد أمثلة أكثر؟`;
+        }
+        
+        if (msg.includes('future') || msg.includes('مستقبل')) {
+            return `📖 **Future Tense (المستقبل)**
+
+✅ **طريقتان للتعبير عن المستقبل:**
+
+🔹 **Will**: للأحداث المتوقعة أو القرارات اللحظية
+• I will call you later
+
+🔹 **Going to**: للخطط المستقبلية
+• I am going to study English tomorrow
+
+📝 **أمثلة:**
+• It will rain tomorrow
+• She is going to travel next week
+
+هل تريد تدريبات؟`;
+        }
+        
+        return `📚 **القواعد الأساسية في الإنجليزية:**
+
+يمكنني مساعدتك في شرح:
+• 📖 Present Simple (المضارع البسيط)
+• 📖 Past Simple (الماضي البسيط)
+• 📖 Future Tense (المستقبل)
+• 📖 Comparative & Superlative (المقارنة)
+
+أي قاعدة تريد أن أشرحها بالتفصيل؟`;
+    }
+    
+    // معنى كلمة
+    if (msg.includes('معنى') || msg.includes('ما معنى') || msg.includes('meaning of')) {
+        // استخراج الكلمة
+        let word = message.replace('معنى', '').replace('ما معنى', '').replace('meaning of', '').trim();
+        if (word) {
+            return `📖 **معنى كلمة "${word}":**
+
+${getWordMeaning(word)}
+
+📝 **أمثلة:**
+• ${getExampleSentence(word)}
+
+💡 **نصيحة:** حاول استخدام الكلمة في جملة بنفسك لتتذكرها بشكل أفضل!`;
+        }
+        return `📖 أرسل لي الكلمة التي تريد معرفة معناها، وسأشرحها لك مع أمثلة.`;
+    }
+    
+    // تصحيح جملة
+    if (msg.includes('صحح') || msg.includes('correct')) {
+        const sentence = message.replace('صحح', '').replace('correct', '').trim();
+        if (sentence && sentence.length > 3) {
+            return `✏️ **تصحيح الجملة:**
+
+الجملة الأصلية: "${sentence}"
+
+${getCorrection(sentence)}
+
+💡 **الشرح:** ${getExplanation(sentence)}
+
+هل تريد تصحيح جملة أخرى؟`;
+        }
+        return `✏️ أرسل لي الجملة التي تريد تصحيحها، وسأقوم بتحليلها وتصحيح الأخطاء.`;
+    }
+    
+    // نطق
+    if (msg.includes('نطق') || msg.includes('pronunciation')) {
+        return `🗣️ **نصائح لتحسين النطق:**
+
+1️⃣ **استمع ثم كرر** - استمع للمتحدثين الأصليين وكرر ما يقولونه
+2️⃣ **سجل صوتك** - سجل نفسك وقارن بالنطق الصحيح
+3️⃣ **تعلم الأصوات الصعبة** - ركز على الأصوات مثل 'th' و 'r'
+4️⃣ **استخدم تطبيقات النطق** - مثل YouGlish أو ELSA Speak
+
+💡 **نصيحة ذهبية:** النطق يحتاج إلى ممارسة يومية لمدة 10-15 دقيقة فقط!
+
+هل تريد مساعدة في نطق كلمة معينة؟`;
+    }
+    
+    // اختبارات
+    if (msg.includes('اختبار') || msg.includes('exam') || msg.includes('test')) {
+        return `📝 **الاستعداد للاختبارات:**
+
+🎯 **نصائح للنجاح:**
+1. راجع الدروس أولاً
+2. حل الواجبات والتمارين
+3. ركز على النقاط التي تجدها صعبة
+4. خذ قسطاً كافياً من الراحة قبل الاختبار
+5. اقرأ التعليمات بعناية
+
+📚 **الاختبارات المتوفرة في EnGo:**
+• اختبار تحديد المستوى
+• اختبارات نصفية
+• اختبارات نهائية
+
+هل تريد مساعدة في التحضير لاختبار معين؟`;
+    }
+    
+    // شهادة
+    if (msg.includes('شهادة') || msg.includes('certificate')) {
+        return `🏆 **شهادات EnGo:**
+
+✅ تحصل على شهادة عند إكمال دورة بنجاح (نسبة 70% فأكثر)
+✅ يمكنك مشاركة شهادتك على LinkedIn
+✅ الشهادة قابلة للتحقق عبر رابط فريد
+✅ يمكنك تحميل الشهادة بصيغة PDF
+
+استمر في التعلم لتحصل على شهاداتك! 🚀`;
+    }
+    
+    // نقاط ومستويات
+    if (msg.includes('نقطة') || msg.includes('xp') || msg.includes('level') || msg.includes('مستوى')) {
+        return `⭐ **نظام النقاط والمستويات في EnGo:**
+
+📊 **كسب النقاط:**
+• إكمال درس: 10 XP
+• حل واجب: 20-50 XP
+• الحصول على شارة: 50-200 XP
+• دخول يومي متتالي: 5-25 XP
+
+🏆 **المستويات:**
+• المستوى 1: 0 XP
+• المستوى 2: 100 XP
+• المستوى 3: 300 XP
+• المستوى 4: 600 XP
+• المستوى 5: 1000 XP
+
+استمر في التعلم لترفع مستواك! 🚀`;
+    }
+    
+    // شكر
+    if (msg.includes('شكر') || msg.includes('thank')) {
+        return `🎉 العفو! أنا سعيد بمساعدتك. هل هناك شيء آخر يمكنني مساعدتك فيه؟
+        
+يمكنني مساعدتك في:
+• شرح قواعد اللغة
+• تصحيح الجمل
+• شرح معاني الكلمات
+• نصائح للتعلم
+• التحضير للاختبارات`;
+    }
+    
+    // رد عام
+    return `📚 **كيف يمكنني مساعدتك؟**
+
+أنا هنا لمساعدتك في تعلم اللغة الإنجليزية. يمكنني:
+
+✅ **شرح قواعد اللغة** (اسألني عن أي قاعدة)
+✅ **تصحيح جملتك** (أرسل لي الجملة وأصححها)
+✅ **شرح معاني الكلمات** (قل لي الكلمة)
+✅ **تقديم نصائح للتعلم** (كيف تحسن مستواك)
+✅ **مساعدتك للاستعداد للاختبارات**
+
+📝 **مثال:** "اشرح لي قاعدة present simple"
+📝 **مثال:** "صحح لي: I go to school yesterday"
+📝 **مثال:** "ما معنى كلمة beautiful"
+
+ما الذي تود أن تتعلمه اليوم؟ 🎓`;
+}
+
+// دوال مساعدة
+function getWordMeaning(word) {
+    const dictionary = {
+        'beautiful': 'جميل/جميلة - يوصف به الشيء الجميل',
+        'challenge': 'تحدي - أمر صعب يتطلب جهداً',
+        'opportunity': 'فرصة - موقف مناسب لتحقيق شيء',
+        'important': 'مهم - له قيمة كبيرة',
+        'difficult': 'صعب - ليس سهلاً',
+        'amazing': 'مذهل - يثير الدهشة والإعجاب',
+        'excellent': 'ممتاز - عالي الجودة',
+        'wonderful': 'رائع - جميل جداً',
+        'hello': 'مرحباً - تحية للترحيب',
+        'goodbye': 'وداعاً - تحية للمغادرة',
+        'please': 'من فضلك - كلمة مهذبة للطلب',
+        'sorry': 'آسف - اعتذار',
+        'yes': 'نعم - للإيجاب',
+        'no': 'لا - للنفي',
+        'big': 'كبير - عكس صغير',
+        'small': 'صغير - عكس كبير',
+        'happy': 'سعيد - فرحان',
+        'sad': 'حزين - غير سعيد'
+    };
+    return dictionary[word.toLowerCase()] || `${word} هي كلمة إنجليزية. هل تريد مني أن أشرحها بشكل أعمق مع أمثلة؟`;
+}
+
+function getExampleSentence(word) {
+    const examples = {
+        'beautiful': 'The sunset is beautiful (الغروب جميل)',
+        'challenge': 'Learning English is a fun challenge (تعلم الإنجليزية تحدٍ ممتع)',
+        'opportunity': 'This is a great opportunity to learn (هذه فرصة رائعة للتعلم)',
+        'important': 'Education is very important (التعليم مهم جداً)',
+        'difficult': 'Some words are difficult to pronounce (بعض الكلمات صعبة النطق)',
+        'amazing': 'You are doing an amazing job! (أنت تقوم بعمل مذهل!)',
+        'excellent': 'You got an excellent score! (حصلت على درجة ممتازة!)',
+        'wonderful': "It's a wonderful day to learn English (إنه يوم رائع لتعلم الإنجليزية)",
+        'hello': 'Hello! How are you? (مرحباً! كيف حالك؟)',
+        'please': 'Please help me (من فضلك ساعدني)',
+        'sorry': 'I am sorry for being late (أنا آسف للتأخير)',
+        'happy': 'I am happy to learn English (أنا سعيد لتعلم الإنجليزية)'
+    };
+    return examples[word.toLowerCase()] || `This is an example sentence with the word "${word}"`;
+}
+
+function getCorrection(sentence) {
+    // تصحيحات بسيطة
+    if (sentence.toLowerCase().includes('i am go')) {
+        return '❌ "I am go" → ✅ "I go" أو "I am going"';
+    }
+    if (sentence.toLowerCase().includes('she go')) {
+        return '❌ "She go" → ✅ "She goes"';
+    }
+    if (sentence.toLowerCase().includes('he dont')) {
+        return '❌ "He dont" → ✅ "He doesn\'t"';
+    }
+    if (sentence.toLowerCase().includes('yesterday')) {
+        return '✅ الجملة تحتاج إلى استخدام الماضي البسيط. أرسل لي الجملة كاملة لتصحيحها.';
+    }
+    return '✅ جملتك تبدو جيدة! هل تريد تدقيقاً أكثر تفصيلاً؟';
+}
+
+function getExplanation(sentence) {
+    if (sentence.toLowerCase().includes('go')) {
+        return 'الفعل "go" في المضارع البسيط مع I/You/We/They يأتي بدون تغيير، ومع He/She/It يضاف له "es" ليصبح "goes"';
+    }
+    return 'سأقوم بتحليل جملتك وتقديم شرح مفصل للأخطاء إن وجدت.';
+}
+
+// دوال العرض
+function appendAIMessage(text, sender) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `message ${sender === 'own' ? 'own' : 'other'}`;
+    div.innerHTML = `<div class="message-bubble">${text.replace(/\n/g, '<br>')}<div class="message-time">${new Date().toLocaleTimeString()}</div></div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function showAITypingIndicator() {
+    const container = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'aiTypingIndicator';
+    typingDiv.className = 'message other';
+    typingDiv.innerHTML = `<div class="typing-indicator"><span>🤖 EnGo AI يكتب</span><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+    container.appendChild(typingDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+function hideAITypingIndicator() {
+    const indicator = document.getElementById('aiTypingIndicator');
+    if (indicator) indicator.remove();
+        }
+        
+
+                
         // ==================== Send Messages ====================
         function sendMessage() {
             const input = document.getElementById('messageInput');
