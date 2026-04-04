@@ -280,6 +280,7 @@
                 document.getElementById('roomsList').style.display = 'none';
                 document.getElementById('privateList').style.display = 'block';
                 loadPrivateChats();
+                ensureAIInList();
             }
         }
         
@@ -420,24 +421,60 @@
         }
         
         function renderPrivateList() {
-            const container = document.getElementById('privateList');
-            if(!privateChats?.length) {
-                const aiElement = document.getElementById('aiChatItem');
-                if(aiElement) aiElement.style.display = 'flex';
-                return;
-            }
-            container.innerHTML = privateChats.map(chat => `
-                <div class="conversation-item" onclick="openPrivateChat('${chat.participant.id}','${escapeHtml(chat.participant.name)}','${chat.id}')">
-                    <div class="avatar"><i class="fas fa-user"></i></div>
-                    <div class="conversation-info">
-                        <div class="conversation-name">
-                            <span><span class="online-status ${chat.isOnline ? 'online':'offline'}"></span> ${escapeHtml(chat.participant.name)}</span>
-                            ${chat.unreadCount ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
-                        </div>
-                        <div class="conversation-preview">${chat.lastMessage?.text ? escapeHtml(chat.lastMessage.text.substring(0,40)) : 'لا توجد رسائل'}</div>
-                    </div>
+    const container = document.getElementById('privateList');
+    
+    // تنظيف المحتوى مع الحفاظ على عنصر AI
+    const aiElement = document.getElementById('aiChatItem');
+    container.innerHTML = '';
+    
+    // إعادة إضافة عنصر AI
+    if (aiElement) {
+        container.appendChild(aiElement);
+    } else {
+        // إذا لم يكن موجوداً، أضفه
+        const newAiElement = document.createElement('div');
+        newAiElement.className = 'conversation-item';
+        newAiElement.id = 'aiChatItem';
+        newAiElement.onclick = () => openAIChat();
+        newAiElement.innerHTML = `
+            <div class="avatar" style="background: linear-gradient(135deg, #25D366, #075E54);">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="conversation-info">
+                <div class="conversation-name">
+                    <span><span class="online-status online"></span> 🤖 EnGo AI Assistant</span>
                 </div>
-            `).join('');
+                <div class="conversation-preview">اسألني أي شيء عن اللغة الإنجليزية...</div>
+            </div>
+        `;
+        container.appendChild(newAiElement);
+    }
+    
+    // إضافة باقي المحادثات الخاصة
+    if (!privateChats || privateChats.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'empty-state';
+        emptyDiv.innerHTML = '<i class="fas fa-user-friends"></i>لا توجد محادثات خاصة<br>ابدأ محادثة جديدة';
+        container.appendChild(emptyDiv);
+        return;
+    }
+    
+    privateChats.forEach(chat => {
+        const chatDiv = document.createElement('div');
+        chatDiv.className = 'conversation-item';
+        chatDiv.onclick = () => openPrivateChat(chat.participant.id, chat.participant.name, chat.id);
+        chatDiv.innerHTML = `
+            <div class="avatar"><i class="fas fa-user"></i></div>
+            <div class="conversation-info">
+                <div class="conversation-name">
+                    <span><span class="online-status ${chat.isOnline ? 'online' : 'offline'}"></span> ${escapeHtml(chat.participant.name)}</span>
+                    ${chat.unreadCount ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
+                </div>
+                <div class="conversation-preview">${chat.lastMessage?.text ? escapeHtml(chat.lastMessage.text.substring(0, 40)) : 'لا توجد رسائل'}</div>
+            </div>
+        `;
+        container.appendChild(chatDiv);
+    });
         }
         
         function openPrivateChat(userId, userName, conversationId) {
@@ -656,7 +693,30 @@
             const indicator = document.getElementById('aiTypingIndicator');
             if (indicator) indicator.remove();
         }
-        
+
+        function ensureAIInList() {
+    const container = document.getElementById('privateList');
+    const existingAI = document.getElementById('aiChatItem');
+    
+    if (!existingAI) {
+        const aiElement = document.createElement('div');
+        aiElement.className = 'conversation-item';
+        aiElement.id = 'aiChatItem';
+        aiElement.onclick = () => openAIChat();
+        aiElement.innerHTML = `
+            <div class="avatar" style="background: linear-gradient(135deg, #25D366, #075E54);">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="conversation-info">
+                <div class="conversation-name">
+                    <span><span class="online-status online"></span> 🤖 EnGo AI Assistant</span>
+                </div>
+                <div class="conversation-preview">اسألني أي شيء عن اللغة الإنجليزية...</div>
+            </div>
+        `;
+        container.insertBefore(aiElement, container.firstChild);
+    }
+        }
         // ==================== Send Messages ====================
         function sendMessage() {
             const input = document.getElementById('messageInput');
