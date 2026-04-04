@@ -36,7 +36,178 @@
         .alert-error { background: #fed7d7; color: #742a2a; }
         .course-card { background: #f7fafc; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; }
         .lesson-item { background: white; padding: 1rem; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        .inline-buttons { display: flex; gap: 0.5rem; }
+        
+        /* ========== أنماط الأسئلة الاحترافية ========== */
+.prof-question-card {
+    background: #ffffff;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: all 0.3s;
+    border: 1px solid #e2e8f0;
+}
+.prof-question-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.prof-question-header {
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+.prof-question-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #667eea;
+    color: white;
+    padding: 4px 16px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.prof-question-points {
+    background: #edf2f7;
+    padding: 4px 12px;
+    border-radius: 20px;
+    color: #4a5568;
+    font-size: 0.8rem;
+}
+.prof-question-body {
+    padding: 1.5rem;
+}
+.prof-question-field {
+    margin-bottom: 1.25rem;
+}
+.prof-question-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+.prof-question-field input,
+.prof-question-field textarea,
+.prof-question-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 12px;
+    font-family: 'Cairo', sans-serif;
+    transition: 0.2s;
+}
+.prof-question-field input:focus,
+.prof-question-field textarea:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+}
+.prof-options-list {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1rem;
+}
+.prof-option-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.prof-option-letter {
+    width: 32px;
+    height: 32px;
+    background: #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #4a5568;
+}
+.prof-option-item input {
+    flex: 1;
+}
+.prof-add-btn {
+    background: transparent;
+    border: 1px dashed #667eea;
+    color: #667eea;
+    padding: 6px 12px;
+    border-radius: 30px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+}
+.prof-add-btn:hover {
+    background: #667eea10;
+}
+.prof-sentence-list {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1rem;
+}
+.prof-sentence-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.prof-sentence-order {
+    width: 40px;
+    height: 40px;
+    background: #667eea;
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.prof-sentence-item input {
+    flex: 1;
+}
+.prof-pair-list {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1rem;
+}
+.prof-pair-item {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+}
+.prof-pair-item input {
+    flex: 1;
+}
+.prof-remove-btn {
+    background: #fed7d7;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #e53e3e;
+    transition: 0.2s;
+}
+.prof-remove-btn:hover {
+    background: #e53e3e;
+    color: white;
+}
+.prof-correct-badge {
+    background: #c6f6d5;
+    color: #22543d;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}.inline-buttons { display: flex; gap: 0.5rem; }
         .loading { text-align: center; padding: 2rem; color: #667eea; }
         .empty-message { text-align: center; padding: 2rem; color: #718096; }
         .question-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
@@ -486,29 +657,298 @@
             container.innerHTML = lessonImages.map(img => `<div class="image-card-item"><div style="display:flex;gap:1rem;">${img.url?`<img src="${img.url}" class="image-preview-small">`:'<div style="width:80px;height:80px;background:#fef3c7;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image"></i></div>'}<div style="flex:1;"><input type="text" value="${escapeHtml(img.url)}" placeholder="رابط الصورة" onchange="updateImage('${img.id}','url',this.value)"><input type="text" value="${escapeHtml(img.caption)}" placeholder="العنوان" onchange="updateImage('${img.id}','caption',this.value)"><textarea placeholder="الشرح" onchange="updateImage('${img.id}','description',this.value)">${escapeHtml(img.description)}</textarea></div><button class="btn-danger" onclick="removeImage('${img.id}')">✖</button></div></div>`).join('');
         }
 
-        // Assignment Questions
-        function addNewQuestion() {
-            const type = document.getElementById('questionTypeSelect').value;
-            questions.push({ id: 'q_'+Date.now()+'_'+(++questionCounter), type, title: '', points: 10, sentences: type==='sentence_arrangement'?['','','']:undefined, correctOrder: type==='sentence_arrangement'?[0,1,2]:undefined, pairs: type==='word_match'?[{word:'',meaning:''}]:undefined, text: type==='fill_blank'?'':undefined, correctAnswer: type==='fill_blank'?'':undefined, question: type==='multiple_choice'?'':undefined, options: type==='multiple_choice'?['','','']:undefined, correctOption: type==='multiple_choice'?0:undefined, statement: type==='true_false'?'':undefined, isTrue: type==='true_false'?true:undefined });
-            renderQuestions();
+
+// ==================== Assignment Questions Professional ====================
+
+function addNewQuestion() {
+    const type = document.getElementById('questionTypeSelect').value;
+    const newId = 'q_' + Date.now() + '_' + (++questionCounter);
+    
+    let newQuestion = {
+        id: newId,
+        type: type,
+        points: 10,
+        questionText: '',
+    };
+    
+    // تهيئة الحسب نوع السؤال
+    switch(type) {
+        case 'multiple_choice':
+            newQuestion.options = ['', '', ''];
+            newQuestion.correctOption = 0;
+            break;
+        case 'true_false':
+            newQuestion.correctAnswer = true;
+            break;
+        case 'fill_blank':
+            newQuestion.correctAnswer = '';
+            break;
+        case 'sentence_arrangement':
+            newQuestion.sentences = ['', '', ''];
+            newQuestion.correctOrder = [0, 1, 2];
+            break;
+        case 'word_match':
+            newQuestion.pairs = [{ word: '', meaning: '' }];
+            break;
+    }
+    
+    questions.push(newQuestion);
+    renderQuestions();
+}
+
+function removeQuestion(id) {
+    if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+        questions = questions.filter(q => q.id !== id);
+        renderQuestions();
+    }
+}
+
+function updateQuestionField(questionId, field, value, index = null, subIndex = null) {
+    const q = questions.find(q => q.id === questionId);
+    if (!q) return;
+    
+    if (field === 'points') {
+        q.points = parseInt(value) || 0;
+    } else if (field === 'questionText') {
+        q.questionText = value;
+    } else if (field === 'correctOption') {
+        q.correctOption = parseInt(value);
+    } else if (field === 'correctAnswer') {
+        q.correctAnswer = value;
+    } else if (field === 'options' && index !== null) {
+        q.options[index] = value;
+    } else if (field === 'sentences' && index !== null) {
+        q.sentences[index] = value;
+    } else if (field === 'correctOrder' && index !== null) {
+        q.correctOrder[index] = parseInt(value);
+    } else if (field === 'pairs_word' && index !== null) {
+        q.pairs[index].word = value;
+    } else if (field === 'pairs_meaning' && index !== null) {
+        q.pairs[index].meaning = value;
+    }
+    
+    renderQuestions();
+}
+
+function addOption(questionId) {
+    const q = questions.find(q => q.id === questionId);
+    if (q && q.options) {
+        q.options.push('');
+        renderQuestions();
+    }
+}
+
+function removeOption(questionId, index) {
+    const q = questions.find(q => q.id === questionId);
+    if (q && q.options && q.options.length > 2) {
+        q.options.splice(index, 1);
+        if (q.correctOption >= q.options.length) {
+            q.correctOption = q.options.length - 1;
         }
-        function removeQuestion(id) { questions = questions.filter(q => q.id !== id); renderQuestions(); }
-        function renderQuestions() {
-            const container = document.getElementById('questionsList');
-            if(!container) return;
-            if(!questions.length) { container.innerHTML = '<div class="empty-message">لا توجد أسئلة</div>'; return; }
-            container.innerHTML = questions.map(q => `<div class="question-card"><div class="question-header"><span>${q.type}</span><button onclick="removeQuestion('${q.id}')">✖</button></div><input type="text" placeholder="السؤال" value="${escapeHtml(q.question||'')}"><input type="number" value="${q.points}"><div>${q.type==='multiple_choice'?q.options.map((o,i)=>`<input type="text" value="${escapeHtml(o)}">`).join(''):''}</div></div>`).join('');
+        renderQuestions();
+    } else {
+        showAlert('يجب أن يكون هناك خياران على الأقل', 'error');
+    }
+}
+
+function addSentence(questionId) {
+    const q = questions.find(q => q.id === questionId);
+    if (q && q.sentences) {
+        q.sentences.push('');
+        q.correctOrder.push(q.sentences.length - 1);
+        renderQuestions();
+    }
+}
+
+function removeSentence(questionId, index) {
+    const q = questions.find(q => q.id === questionId);
+    if (q && q.sentences && q.sentences.length > 2) {
+        q.sentences.splice(index, 1);
+        const removedOrder = q.correctOrder[index];
+        q.correctOrder = q.correctOrder.filter(o => o !== removedOrder).map(o => o > removedOrder ? o - 1 : o);
+        renderQuestions();
+    }
+}
+
+function addPair(questionId) {
+    const q = questions.find(q => q.id === questionId);
+    if (q && q.pairs) {
+        q.pairs.push({ word: '', meaning: '' });
+        renderQuestions();
+    }
+}
+
+function removePair(questionId, index) {
+    const q = questions.find(q => q.id === questionId);
+    if (q && q.pairs && q.pairs.length > 1) {
+        q.pairs.splice(index, 1);
+        renderQuestions();
+    }
+}
+
+function renderQuestions() {
+    const container = document.getElementById('questionsList');
+    if (!container) return;
+    
+    if (questions.length === 0) {
+        container.innerHTML = '<div class="empty-message" style="text-align:center; padding:2rem;">📋 لا توجد أسئلة. أضف سؤالاً جديداً</div>';
+        return;
+    }
+    
+    container.innerHTML = questions.map((q, idx) => {
+        const typeName = getQuestionTypeName(q.type);
+        let bodyHtml = '';
+        
+        // نص السؤال المشترك
+        bodyHtml += `
+            <div class="prof-question-field">
+                <label><i class="fas fa-question-circle"></i> نص السؤال</label>
+                <textarea rows="2" placeholder="أدخل نص السؤال هنا..." 
+                    onchange="updateQuestionField('${q.id}', 'questionText', this.value)">${escapeHtml(q.questionText || '')}</textarea>
+            </div>
+            <div class="prof-question-field">
+                <label><i class="fas fa-star"></i> عدد النقاط</label>
+                <input type="number" value="${q.points}" min="1" step="1"
+                    onchange="updateQuestionField('${q.id}', 'points', this.value)">
+            </div>
+        `;
+        
+        // أنواع الأسئلة المختلفة
+        if (q.type === 'multiple_choice') {
+            bodyHtml += `
+                <div class="prof-question-field">
+                    <label><i class="fas fa-list-ul"></i> الخيارات</label>
+                    <div class="prof-options-list">
+                        ${(q.options || []).map((opt, i) => `
+                            <div class="prof-option-item">
+                                <span class="prof-option-letter">${String.fromCharCode(65+i)}</span>
+                                <input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${i+1}"
+                                    onchange="updateQuestionField('${q.id}', 'options', this.value, ${i})">
+                                <button type="button" class="prof-remove-btn" onclick="removeOption('${q.id}', ${i})" ${q.options.length <= 2 ? 'disabled' : ''}>
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                        <button type="button" class="prof-add-btn" onclick="addOption('${q.id}')">
+                            <i class="fas fa-plus-circle"></i> إضافة خيار
+                        </button>
+                    </div>
+                </div>
+                <div class="prof-question-field">
+                    <label><i class="fas fa-check-circle"></i> الإجابة الصحيحة</label>
+                    <select onchange="updateQuestionField('${q.id}', 'correctOption', this.value)">
+                        ${(q.options || []).map((opt, i) => `
+                            <option value="${i}" ${q.correctOption === i ? 'selected' : ''}>${String.fromCharCode(65+i)}. ${escapeHtml(opt)}</option>
+                        `).join('')}
+                    </select>
+                </div>
+            `;
+        }
+        else if (q.type === 'true_false') {
+            bodyHtml += `
+                <div class="prof-question-field">
+                    <label><i class="fas fa-balance-scale"></i> الإجابة الصحيحة</label>
+                    <select onchange="updateQuestionField('${q.id}', 'correctAnswer', this.value === 'true')">
+                        <option value="true" ${q.correctAnswer === true ? 'selected' : ''}>✅ صح (True)</option>
+                        <option value="false" ${q.correctAnswer === false ? 'selected' : ''}>❌ خطأ (False)</option>
+                    </select>
+                </div>
+            `;
+        }
+        else if (q.type === 'fill_blank') {
+            bodyHtml += `
+                <div class="prof-question-field">
+                    <label><i class="fas fa-pen-fill"></i> الإجابة الصحيحة</label>
+                    <input type="text" value="${escapeHtml(q.correctAnswer || '')}" placeholder="أدخل الكلمة أو العبارة الصحيحة"
+                        onchange="updateQuestionField('${q.id}', 'correctAnswer', this.value)">
+                    <small style="color:#718096;">يمكن إضافة أكثر من إجابة مفصولة بفاصلة (مثال: كتاب, دفتر)</small>
+                </div>
+            `;
+        }
+        else if (q.type === 'sentence_arrangement') {
+            bodyHtml += `
+                <div class="prof-question-field">
+                    <label><i class="fas fa-sort-amount-down"></i> ترتيب الجمل</label>
+                    <div class="prof-sentence-list">
+                        ${(q.sentences || []).map((sent, i) => `
+                            <div class="prof-sentence-item">
+                                <div class="prof-sentence-order">${i+1}</div>
+                                <input type="text" value="${escapeHtml(sent)}" placeholder="جملة ${i+1}"
+                                    onchange="updateQuestionField('${q.id}', 'sentences', this.value, ${i})">
+                                <button type="button" class="prof-remove-btn" onclick="removeSentence('${q.id}', ${i})" ${q.sentences.length <= 2 ? 'disabled' : ''}>
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                        <button type="button" class="prof-add-btn" onclick="addSentence('${q.id}')">
+                            <i class="fas fa-plus-circle"></i> إضافة جملة
+                        </button>
+                    </div>
+                </div>
+                <div class="prof-question-field">
+                    <label><i class="fas fa-sort-numeric-down"></i> الترتيب الصحيح (أدخل أرقام الجمل بالترتيب المطلوب)</label>
+                    <div class="prof-sentence-list">
+                        ${(q.correctOrder || []).map((orderVal, pos) => `
+                            <div class="prof-sentence-item">
+                                <span class="prof-option-letter">${pos+1}</span>
+                                <select onchange="updateQuestionField('${q.id}', 'correctOrder', this.value, ${pos})">
+                                    ${(q.sentences || []).map((_, optIdx) => `
+                                        <option value="${optIdx}" ${orderVal === optIdx ? 'selected' : ''}>جملة ${optIdx+1}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        else if (q.type === 'word_match') {
+            bodyHtml += `
+                <div class="prof-question-field">
+                    <label><i class="fas fa-link"></i> أزواج الكلمة والمعنى</label>
+                    <div class="prof-pair-list">
+                        ${(q.pairs || []).map((pair, i) => `
+                            <div class="prof-pair-item">
+                                <input type="text" value="${escapeHtml(pair.word)}" placeholder="كلمة ${i+1}"
+                                    onchange="updateQuestionField('${q.id}', 'pairs_word', this.value, ${i})">
+                                <i class="fas fa-arrow-left"></i>
+                                <input type="text" value="${escapeHtml(pair.meaning)}" placeholder="المعنى ${i+1}"
+                                    onchange="updateQuestionField('${q.id}', 'pairs_meaning', this.value, ${i})">
+                                <button type="button" class="prof-remove-btn" onclick="removePair('${q.id}', ${i})" ${q.pairs.length <= 1 ? 'disabled' : ''}>
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                        <button type="button" class="prof-add-btn" onclick="addPair('${q.id}')">
+                            <i class="fas fa-plus-circle"></i> إضافة زوج
+                        </button>
+                    </div>
+                    <small class="prof-correct-badge" style="margin-top:10px; display:inline-block;">
+                        <i class="fas fa-info-circle"></i> سيتم مطابقة الكلمة مع المعنى الصحيح تلقائياً
+                    </small>
+                </div>
+            `;
         }
         
-        document.getElementById('addLessonForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const token = localStorage.getItem('token');
-            const courseId = document.getElementById('lessonCourse').value;
-            if(!courseId) { showAlert('اختر الدورة أولاً','error'); return; }
-            const lessonData = { title: document.getElementById('lessonTitle').value, content: document.getElementById('lessonContent').value, videoUrl: document.getElementById('lessonVideo').value||null, audioUrl: document.getElementById('lessonAudio').value||null, images: lessonImages.filter(i=>i.url).map((i,idx)=>({url:i.url,caption:i.caption,description:i.description,order:idx})), lessonNumber: parseInt(document.getElementById('lessonNumber').value), courseId: courseId, assignment: questions.length?{ title: document.getElementById('assignmentTitle').value, description: document.getElementById('assignmentDescription').value, passingScore: parseInt(document.getElementById('passingScore').value), questions: questions }:null };
-            const res = await fetch(API_URL + '/admin/lessons', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(lessonData) });
-            if(res.ok) { showAlert('✅ تم إضافة الدرس','success'); document.getElementById('addLessonForm').reset(); questions=[]; lessonImages=[]; renderQuestions(); renderImagesList(); loadLessonsForCourse(); } else showAlert('❌ خطأ','error');
-        };
+        return `
+            <div class="prof-question-card">
+                <div class="prof-question-header">
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <span class="prof-question-type">${typeName}</span>
+                        <span class="prof-question-points"><i class="fas fa-star"></i> ${q.points} نقطة</span>
+                    </div>
+                    <button class="btn-danger btn-sm" onclick="removeQuestion('${q.id}')" style="border-radius: 30px;">
+                        <i class="fas fa-trash"></i> حذف السؤال
+                    </button>
+                </div>
+                <div class="prof-question-body">
+                    ${bodyHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+        
 
         async function loadUsers() {
             const token = localStorage.getItem('token');
@@ -559,15 +999,14 @@ function updateQuestion(id, field, value, index) {
 
 function getQuestionTypeName(type) {
     const names = {
-        'sentence_arrangement': '📝 ترتيب جمل',
-        'word_match': '🔤 كلمة ومعناها',
-        'fill_blank': '✏️ اكمل الفراغ',
         'multiple_choice': '✅ اختيار من متعدد',
-        'true_false': '⚖️ صح أو خطأ'
+        'true_false': '⚖️ صح أو خطأ',
+        'fill_blank': '✏️ اكمل الفراغ',
+        'sentence_arrangement': '📝 ترتيب جمل',
+        'word_match': '🔤 كلمة ومعناها'
     };
     return names[type] || type;
 }
-
 function addItem(questionId, type) {
     const question = questions.find(q => q.id === questionId);
     if (question) {
