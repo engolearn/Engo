@@ -1327,7 +1327,12 @@ function hideAITypingIndicator() {
     const indicator = document.getElementById('aiTypingIndicator');
     if (indicator) indicator.remove();
 }
-        
+        function openChat() {
+    document.getElementById('chatArea').style.display = 'flex';
+    if (window.innerWidth <= 768) {
+        document.getElementById('conversationsList').classList.add('hide');
+    }
+        }
         // ==================== Init ====================
         async function init() {
             if(await checkAuth()) {
