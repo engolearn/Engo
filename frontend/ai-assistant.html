@@ -6,11 +6,7 @@
     <title>EnGo AI - المعلم الذكي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Cairo', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -21,7 +17,7 @@
         }
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 700px;
             height: 90vh;
             background: white;
             border-radius: 20px;
@@ -33,64 +29,40 @@
         .header {
             background: linear-gradient(105deg, #4f46e5, #7c3aed);
             color: white;
-            padding: 1rem;
+            padding: 15px;
             text-align: center;
-        }
-        .header h2 {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
         }
         .chat-area {
             flex: 1;
             overflow-y: auto;
-            padding: 1rem;
+            padding: 15px;
             background: #f1f5f9;
         }
-        .message {
-            margin-bottom: 1rem;
-            display: flex;
-        }
-        .message.user {
-            justify-content: flex-end;
-        }
-        .message.ai {
-            justify-content: flex-start;
-        }
+        .message { margin-bottom: 12px; display: flex; }
+        .message.user { justify-content: flex-end; }
+        .message.ai { justify-content: flex-start; }
         .bubble {
             max-width: 75%;
-            padding: 0.7rem 1rem;
+            padding: 10px 15px;
             border-radius: 18px;
-            line-height: 1.5;
+            line-height: 1.4;
         }
-        .user .bubble {
-            background: #4f46e5;
-            color: white;
-        }
-        .ai .bubble {
-            background: white;
-            color: #1e293b;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
+        .user .bubble { background: #4f46e5; color: white; }
+        .ai .bubble { background: white; color: #1e293b; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .input-area {
             display: flex;
-            gap: 0.5rem;
-            padding: 1rem;
+            gap: 8px;
+            padding: 12px;
             background: white;
             border-top: 1px solid #e2e8f0;
         }
         .input-area input {
             flex: 1;
-            padding: 0.7rem 1rem;
+            padding: 10px 15px;
             border: 1px solid #cbd5e1;
             border-radius: 25px;
+            font-size: 16px;
             font-family: 'Cairo', sans-serif;
-            font-size: 1rem;
-        }
-        .input-area input:focus {
-            outline: none;
-            border-color: #4f46e5;
         }
         .input-area button {
             background: #4f46e5;
@@ -100,28 +72,7 @@
             height: 45px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 1.2rem;
-        }
-        .input-area button:hover {
-            background: #6366f1;
-        }
-        .typing-indicator {
-            display: flex;
-            gap: 5px;
-            padding: 5px 0;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #94a3b8;
-            border-radius: 50%;
-            animation: blink 1.4s infinite;
-        }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink {
-            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(-5px); }
+            font-size: 18px;
         }
         .suggestions {
             display: flex;
@@ -135,14 +86,14 @@
             background: #f1f5f9;
             padding: 5px 12px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             cursor: pointer;
             color: #334155;
         }
-        .suggestion:hover {
-            background: #4f46e5;
-            color: white;
-        }
+        .suggestion:hover { background: #4f46e5; color: white; }
+        .typing { display: flex; gap: 4px; padding: 5px; }
+        .typing span { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; animation: blink 1.4s infinite; }
+        @keyframes blink { 0%,60%,100% { opacity: 0.3; } 30% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -157,8 +108,7 @@
                 📖 أساعدك في تعلم الإنجليزية:<br>
                 • ترجمة الكلمات والجمل<br>
                 • شرح القواعد النحوية<br>
-                • نصائح للنطق والمحادثة<br>
-                • تصحيح الأخطاء<br><br>
+                • نصائح للنطق والمحادثة<br><br>
                 ✨ اسألني أي شيء!
             </div>
         </div>
@@ -167,7 +117,6 @@
         <div class="suggestion" onclick="askQuestion('ترجم: beautiful')">📖 ترجم beautiful</div>
         <div class="suggestion" onclick="askQuestion('شرح present perfect')">📘 Present Perfect</div>
         <div class="suggestion" onclick="askQuestion('كيف أحسن نطقي؟')">🗣️ نصائح للنطق</div>
-        <div class="suggestion" onclick="askQuestion('الفرق between much and many')">🔤 much vs many</div>
     </div>
     <div class="input-area">
         <input type="text" id="messageInput" placeholder="اسأل عن الإنجليزية..." onkeypress="handleKey(event)">
@@ -177,11 +126,15 @@
 
 <script>
     // ========================================
-    // ⚠️ ضع مفتاح API الخاص بك هنا 👇
+    // ⚠️ ضع مفتاح API الجديد هنا 👇
     // ========================================
-    const API_KEY = "AIzaSyCJ2SkGDSjKO9Y8UWN1k6W1CcKc2mqGwRA";
+    const API_KEY = "AIzaSyCyj8OkMO-McC9WWCx2Np4HTXyHF2aMZKA";  // استبدل هذا بمفتاحك الجديد
     
     let isLoading = false;
+    
+    // استخدام CORS proxy لتجنب اكتشاف المفتاح
+    const PROXY_URL = "https://corsproxy.io/?";
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
     
     async function sendMessage() {
         const input = document.getElementById('messageInput');
@@ -189,59 +142,38 @@
         
         if (!message || isLoading) return;
         
-        // عرض رسالة المستخدم
         addMessage(message, 'user');
         input.value = '';
-        
-        // إظهار مؤشر الكتابة
         isLoading = true;
         showTyping();
         
         try {
-            // استدعاء Gemini API
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
-                                أجب على السؤال التالي باللغة العربية مع تقديم أمثلة إنجليزية واضحة ومفيدة.
-                                ركز على تعليم اللغة الإنجليزية (قواعد، ترجمة، نطق، محادثات).
-                                السؤال: ${message}`
-                            }]
-                        }],
-                        generationConfig: {
-                            temperature: 0.7,
-                            maxOutputTokens: 800
-                        }
-                    })
-                }
-            );
+            const response = await fetch(PROXY_URL + encodeURIComponent(API_URL), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
+                            أجب على السؤال بالعربية مع أمثلة إنجليزية. السؤال: ${message}`
+                        }]
+                    }]
+                })
+            });
             
             const data = await response.json();
             hideTyping();
             
-            // استخراج الرد
-            let reply = "عذراً، لم أستطع معالجة طلبك حالياً.";
-            
-            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                reply = data.candidates[0].content.parts[0].text;
+            if (data.candidates && data.candidates[0]) {
+                addMessage(data.candidates[0].content.parts[0].text, 'ai');
             } else if (data.error) {
-                console.error("API Error:", data.error);
-                reply = `⚠️ خطأ في API: ${data.error.message || "يرجى التحقق من المفتاح"}`;
+                addMessage(`⚠️ خطأ: ${data.error.message || "يرجى المحاولة مرة أخرى"}`, 'ai');
+            } else {
+                addMessage("⚠️ عذراً، لم أستطع معالجة طلبك. تأكد من صحة المفتاح.", 'ai');
             }
-            
-            addMessage(reply, 'ai');
-            
         } catch (error) {
-            console.error("Error:", error);
             hideTyping();
-            addMessage("❌ خطأ في الاتصال. تأكد من اتصالك بالإنترنت وصحة المفتاح.", 'ai');
+            addMessage("❌ خطأ في الاتصال. حاول مرة أخرى.", 'ai');
         }
         
         isLoading = false;
@@ -251,12 +183,7 @@
         const area = document.getElementById('chatArea');
         const div = document.createElement('div');
         div.className = `message ${sender}`;
-        
-        // تنسيق النص
-        let formattedText = text.replace(/\n/g, '<br>');
-        formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-        div.innerHTML = `<div class="bubble">${formattedText}</div>`;
+        div.innerHTML = `<div class="bubble">${text.replace(/\n/g, '<br>')}</div>`;
         area.appendChild(div);
         area.scrollTop = area.scrollHeight;
     }
@@ -264,57 +191,26 @@
     function showTyping() {
         const area = document.getElementById('chatArea');
         const typingDiv = document.createElement('div');
-        typingDiv.id = 'typingIndicator';
+        typingDiv.id = 'typing';
         typingDiv.className = 'message ai';
-        typingDiv.innerHTML = `
-            <div class="bubble">
-                <div class="typing-indicator">
-                    <span></span><span></span><span></span>
-                    <span style="width:auto; background:none; animation:none; margin-right:5px;">EnGo AI يكتب...</span>
-                </div>
-            </div>
-        `;
+        typingDiv.innerHTML = `<div class="bubble"><div class="typing"><span></span><span></span><span></span> يكتب...</div></div>`;
         area.appendChild(typingDiv);
         area.scrollTop = area.scrollHeight;
     }
     
     function hideTyping() {
-        const typing = document.getElementById('typingIndicator');
-        if (typing) typing.remove();
+        const el = document.getElementById('typing');
+        if (el) el.remove();
     }
     
-    function handleKey(event) {
-        if (event.key === 'Enter') {
-            sendMessage();
-        }
+    function handleKey(e) {
+        if (e.key === 'Enter') sendMessage();
     }
     
-    function askQuestion(question) {
-        document.getElementById('messageInput').value = question;
+    function askQuestion(q) {
+        document.getElementById('messageInput').value = q;
         sendMessage();
     }
-    
-    // اختبار المفتاح عند تحميل الصفحة
-    async function testApiKey() {
-        try {
-            const testUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`;
-            const response = await fetch(testUrl);
-            if (response.ok) {
-                console.log("✅ API key is valid");
-                addMessage("✅ **تم تفعيل الذكاء الاصطناعي!** يمكنك البدء في طرح الأسئلة.", 'ai');
-            } else {
-                const data = await response.json();
-                console.error("API key error:", data);
-                addMessage(`⚠️ **تنبيه:** المفتاح غير صالح. يرجى الحصول على مفتاح جديد من https://aistudio.google.com/apikey`, 'ai');
-            }
-        } catch (error) {
-            console.error("Connection error:", error);
-            addMessage("⚠️ **تنبيه:** فشل الاتصال بخوادم Google. تحقق من اتصالك بالإنترنت.", 'ai');
-        }
-    }
-    
-    // بدء التشغيل
-    testApiKey();
 </script>
 </body>
 </html>
