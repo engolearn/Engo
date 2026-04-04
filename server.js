@@ -105,13 +105,10 @@ const roomSchema = new mongoose.Schema({
 });
 const Room = mongoose.model('Room', roomSchema);
 
-// Lesson Model
+// Lesson Model (محدث لدعم الفقرات المتسلسلة)
 const lessonSchema = new mongoose.Schema({
     title: { type: String, required: true },
-    content: { type: String, required: true },
-    videoUrl: { type: String, default: null },
-    audioUrl: { type: String, default: null },
-    images: [{ url: String, caption: String, description: String, order: Number }],
+    content: { type: mongoose.Schema.Types.Mixed, default: [] },  // ✅ يدعم الفقرات المتسلسلة (array)
     lessonNumber: { type: Number, required: true },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
     assignment: {
@@ -122,8 +119,8 @@ const lessonSchema = new mongoose.Schema({
     },
     createdAt: { type: Date, default: Date.now }
 });
-const Lesson = mongoose.model('Lesson', lessonSchema);
 
+const Lesson = mongoose.model('Lesson', lessonSchema);
 // Quiz Models
 const quizQuestionSchema = new mongoose.Schema({
     id: { type: String, required: true },
