@@ -571,7 +571,7 @@
         function completeLesson() {
             showAlert('🎉 تهانينا! لقد أكملت هذا الدرس بنجاح', 'success');
             setTimeout(() => {
-                window.location.href = '/course.html?id=' + getUrlParams().courseId;
+                window.location.href = '/course-details.html?id=' + getUrlParams().courseId;
             }, 2000);
         }
 
