@@ -215,31 +215,48 @@ const userProgressSchema = new mongoose.Schema({
 const UserProgress = mongoose.model('UserProgress', userProgressSchema);
 
 // ==================== Helper Functions ====================
+// دالة إضافة إشعار للمستخدم
 async function addNotification(userId, notifData) {
     try {
         const user = await User.findById(userId);
-        if (!user) return;
+        if (!user) return false;
         
-        if (!user.notifications) user.notifications = [];
-        
-        user.notifications.push({
-            id: Date.now().toString(),
+        // إنشاء كائن الإشعار
+        const notification = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
             title: notifData.title,
             message: notifData.message,
-            type: notifData.type,
+            type: notifData.type || 'info',
             link: notifData.link || '/',
+            image: notifData.image || null,
+            expiry: notifData.expiry || null,
             read: false,
             createdAt: new Date()
-        });
+        };
         
+        // إضافة الإشعار إلى بداية المصفوفة
+        if (!user.notifications) user.notifications = [];
+        user.notifications.unshift(notification);
+        
+        // الاحتفاظ بآخر 50 إشعار فقط
         if (user.notifications.length > 50) {
-            user.notifications = user.notifications.slice(-50);
+            user.notifications = user.notifications.slice(0, 50);
         }
         
         await user.save();
+        
+        // إرسال إشعار فوري عبر Socket.IO إذا كان المستخدم متصلاً
+        const onlineUsers = global.onlineUsers || new Map();
+        const socketId = onlineUsers.get(userId.toString());
+        if (socketId && global.io) {
+            global.io.to(socketId).emit('new_notification', notification);
+        }
+        
         console.log(`📢 Notification sent to ${user.name}: ${notifData.title}`);
+        return true;
     } catch (error) {
         console.error('Error adding notification:', error);
+        return false;
     }
 }
 
@@ -343,6 +360,77 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+// ==================== Notifications ====================
+// جلب إشعارات المستخدم
+app.get('/api/notifications', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+        
+        // ترتيب الإشعارات من الأحدث إلى الأقدم
+        const notifications = (user.notifications || []).sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        
+        res.json(notifications);
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تحديث حالة قراءة الإشعار
+app.put('/api/notifications/:notifId/read', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+        
+        const notification = user.notifications.find(n => n.id === req.params.notifId);
+        if (notification) {
+            notification.read = true;
+            await user.save();
+        }
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error marking notification read:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// حذف إشعار (اختياري)
+app.delete('/api/notifications/:notifId', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+        
+        user.notifications = user.notifications.filter(n => n.id !== req.params.notifId);
+        await user.save();
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting notification:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تحديث جميع الإشعارات كمقروءة
+app.put('/api/notifications/read-all', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+        
+        user.notifications.forEach(n => n.read = true);
+        await user.save();
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error marking all notifications read:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // ==================== إدارة الإشعارات (Admin) ====================
 
 // إرسال إشعار
