@@ -1126,6 +1126,34 @@
             }
         }
         init();
-    </script>
+    
+    // حل مشكلة تغطية لوحة المفاتيح لحقل الكتابة
+const inputField = document.getElementById('messageInput');
+const inputArea = document.querySelector('.input-area');
+
+if (inputField) {
+    inputField.addEventListener('focus', function() {
+        setTimeout(() => {
+            inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 300);
+    });
+}
+
+// كشف ظهور لوحة المفاتيح في الأندرويد
+let originalHeight = window.innerHeight;
+window.addEventListener('resize', function() {
+    let newHeight = window.innerHeight;
+    if (originalHeight - newHeight > 150) {
+        // لوحة المفاتيح ظهرت
+        document.body.classList.add('keyboard-open');
+        inputArea.style.paddingBottom = '10px';
+    } else {
+        // لوحة المفاتيح اختفت
+        document.body.classList.remove('keyboard-open');
+        inputArea.style.paddingBottom = 'calc(0.8rem + env(safe-area-inset-bottom, 10px))';
+    }
+    originalHeight = newHeight;
+});
+        </script>
 </body>
 </html>
