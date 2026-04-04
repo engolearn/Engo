@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 
 // ==================== Models ====================
 
-// User Model
+// User Model (مع دعم الإشعارات)
 const userSchema = new mongoose.Schema({
     name: String,
     email: { type: String, unique: true },
@@ -41,17 +41,18 @@ const userSchema = new mongoose.Schema({
     levelScore: { type: Number, default: 0 },
     purchasedCourses: { type: Array, default: [] },
     notifications: [{
-        id: String,
-        title: String,
-        message: String,
-        type: String,
-        link: String,
+        id: { type: String, required: true },
+        title: { type: String, required: true },
+        message: { type: String, required: true },
+        type: { type: String, default: 'info' },
+        link: { type: String, default: '/' },
+        image: { type: String, default: null },
+        expiry: { type: Date, default: null },
         read: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now }
     }],
     createdAt: { type: Date, default: Date.now }
 });
-const User = mongoose.model('User', userSchema);
 
 // Course Model
 const courseSchema = new mongoose.Schema({
