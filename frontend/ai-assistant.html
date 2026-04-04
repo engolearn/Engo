@@ -94,9 +94,21 @@
         .typing { display: flex; gap: 4px; padding: 5px; }
         .typing span { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; animation: blink 1.4s infinite; }
         @keyframes blink { 0%,60%,100% { opacity: 0.3; } 30% { opacity: 1; } }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+<button class="back-btn" onclick="window.location.href='/'">← العودة</button>
 <div class="container">
     <div class="header">
         <h2>🤖 EnGo AI | المعلم الذكي</h2>
@@ -125,16 +137,8 @@
 </div>
 
 <script>
-    // ========================================
-    // ⚠️ ضع مفتاح API الجديد هنا 👇
-    // ========================================
-    const API_KEY = "AIzaSyCyj8OkMO-McC9WWCx2Np4HTXyHF2aMZKA";  // استبدل هذا بمفتاحك الجديد
-    
+    const API_URL = window.location.origin + '/api';
     let isLoading = false;
-    
-    // استخدام CORS proxy لتجنب اكتشاف المفتاح
-    const PROXY_URL = "https://corsproxy.io/?";
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
     
     async function sendMessage() {
         const input = document.getElementById('messageInput');
@@ -148,32 +152,27 @@
         showTyping();
         
         try {
-            const response = await fetch(PROXY_URL + encodeURIComponent(API_URL), {
+            const token = localStorage.getItem('token');
+            const response = await fetch(API_URL + '/ai/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
-                            أجب على السؤال بالعربية مع أمثلة إنجليزية. السؤال: ${message}`
-                        }]
-                    }]
-                })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ message: message })
             });
             
             const data = await response.json();
             hideTyping();
             
-            if (data.candidates && data.candidates[0]) {
-                addMessage(data.candidates[0].content.parts[0].text, 'ai');
-            } else if (data.error) {
-                addMessage(`⚠️ خطأ: ${data.error.message || "يرجى المحاولة مرة أخرى"}`, 'ai');
+            if (data.success) {
+                addMessage(data.reply, 'ai');
             } else {
-                addMessage("⚠️ عذراً، لم أستطع معالجة طلبك. تأكد من صحة المفتاح.", 'ai');
+                addMessage(`⚠️ خطأ: ${data.message || "يرجى المحاولة مرة أخرى"}`, 'ai');
             }
         } catch (error) {
             hideTyping();
-            addMessage("❌ خطأ في الاتصال. حاول مرة أخرى.", 'ai');
+            addMessage("❌ خطأ في الاتصال بالخادم. حاول مرة أخرى.", 'ai');
         }
         
         isLoading = false;
