@@ -403,6 +403,9 @@ app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
     }
 });
 
+app.get('/ai-assistant.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'ai-assistant.html'));
+});
 // ==================== Quiz Routes (متكاملة) ====================
 
 // جلب اختبارات الدورة (نصفي ونهائي)
