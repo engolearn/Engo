@@ -695,13 +695,13 @@
                 <div class="chat-tab" onclick="switchTab('private')">الخاص</div>
             </div>
             
-            <<div class="conversations-scroll">
+            <div class="conversations-scroll">
     <div id="roomsList">
         <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل الغرف...</div>
     </div>
     <div id="privateList" style="display: none;">
-        <!-- 🤖 AI Assistant - أضف هذا أولاً داخل privateList -->
-        <div class="private-item" id="aiChatItem" onclick="openAIChat()">
+        <!-- 🤖 AI Assistant -->
+        <div class="conversation-item" id="aiChatItem" onclick="openAIChat()">
             <div class="avatar" style="background: linear-gradient(135deg, #25D366, #075E54);">
                 <i class="fas fa-robot"></i>
             </div>
@@ -713,7 +713,7 @@
             </div>
         </div>
         
-        <!-- باقي المحادثات الخاصة ستظهر هنا -->
+        <!-- باقي المحادثات الخاصة -->
         <div id="privateChatsList"></div>
     </div>
             </div>
