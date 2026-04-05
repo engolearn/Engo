@@ -2431,8 +2431,14 @@ function renderQuestions() {
         
         
           function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/'; }
-        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
-
+        function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]))
+        .replace(/\n/g, '<br>')  // ✅ تحويل الأسطر الجديدة إلى <br>
+        .replace(/\s/g, ' ')      // ✅ الحفاظ على المسافات
+        .replace(/  /g, ' &nbsp;'); // ✅ تحويل مسافتين إلى &nbsp;
+        }
         // ==================== Assignment Questions Functions ====================
 
 function updateQuestion(id, field, value, index) {
