@@ -704,16 +704,19 @@
     </div>
 
     <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <h3>إنشاء حساب جديد</h3>
-            <form id="registerForm">
-                <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
-<input type="text" id="regName" placeholder="الاسم (اختياري)">
-                <input type="password" id="regPassword" placeholder="كلمة المرور" required>
-                <button type="submit" class="btn-primary">تسجيل</button>
-                <button type="button" onclick="closeRegisterModal()" style="background: #e2e8f0;">إلغاء</button>
-            </form>
-        </div>
+    <div class="modal-content">
+        <h3>إنشاء حساب جديد</h3>
+        <form id="registerForm">
+            <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
+            <input type="text" id="regFullName" placeholder="الاسم الكامل (كما سيظهر في الشهادة)" required>
+            <input type="password" id="regPassword" placeholder="كلمة المرور" required>
+            <button type="submit" class="btn-primary">تسجيل</button>
+            <button type="button" onclick="closeRegisterModal()" style="background: #e2e8f0;">إلغاء</button>
+        </form>
+        <p style="font-size: 0.75rem; color: #718096; margin-top: 10px; text-align: center;">
+            ⚠️ الاسم الكامل سيظهر على الشهادة ولا يمكن تغييره لاحقاً
+        </p>
+    </div>
     </div>
 
     <footer class="footer">
@@ -827,11 +830,16 @@
     location.reload();
 }
 
-async function register(username, name, password) {
+async function register(username, fullName, password) {
+    if (!fullName || fullName.trim().length < 3) {
+        showAlert('❌ الرجاء إدخال الاسم الكامل (3 أحرف على الأقل)', 'error');
+        return;
+    }
+    
     const res = await fetch(API_URL + '/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, name, password })
+        body: JSON.stringify({ username, fullName, password })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
@@ -839,7 +847,7 @@ async function register(username, name, password) {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     currentUser = data.user;
-    showAlert(`✅ مرحباً ${data.user.username}!`, 'success');
+    showAlert(`✅ مرحباً ${data.user.fullName}!`, 'success');
     location.reload();
 }
         
@@ -1012,27 +1020,28 @@ function showNotification(title, body, link) {
         
         // ==================== Profile ====================
         async function loadProfile() {
-            const container = document.getElementById('profileContent');
-            if (!container) return;
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (!userStats) await loadUserStats();
-            
-            container.innerHTML = `
-                <div style="background: white; border-radius: 15px; padding: 2rem; text-align: center;">
-                    <div style="width: 100px; height: 100px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                        <i class="fas fa-user fa-3x" style="color: white;"></i>
-                    </div>
-                    <h2>${user.name || 'مستخدم'}</h2>
-                    <p style="color: #718096;">@${user.username}</p>
-                    <hr style="margin: 1rem 0;">
-                    <div style="text-align: right;">
-                        <p><strong>📅 تاريخ التسجيل:</strong> ${new Date(user.createdAt || Date.now()).toLocaleDateString('ar')}</p>
-                        <p><strong>🎓 المستوى:</strong> ${user.level === 'beginner' ? 'مبتدئ' : (user.level === 'advanced' ? 'متقدم' : 'غير محدد')}</p>
-                        <p><strong>⭐ نقاط الخبرة:</strong> ${userStats?.points?.totalXP || 0} XP</p>
-                        <p><strong>🏅 الشارات:</strong> ${userStats?.badges?.length || 0}</p>
-                    </div>
-                </div>
-            `;
+    const container = document.getElementById('profileContent');
+    if (!container) return;
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!userStats) await loadUserStats();
+    
+    container.innerHTML = `
+        <div style="background: white; border-radius: 15px; padding: 2rem; text-align: center;">
+            <div style="width: 100px; height: 100px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                <i class="fas fa-user fa-3x" style="color: white;"></i>
+            </div>
+            <h2>${user.fullName || user.username}</h2>
+            <p style="color: #718096;">@${user.username}</p>
+            <hr style="margin: 1rem 0;">
+            <div style="text-align: right;">
+                <p><strong>📝 الاسم الكامل:</strong> ${user.fullName || 'غير محدد'}</p>
+                <p><strong>📅 تاريخ التسجيل:</strong> ${new Date(user.createdAt || Date.now()).toLocaleDateString('ar')}</p>
+                <p><strong>🎓 المستوى:</strong> ${user.level === 'beginner' ? 'مبتدئ' : (user.level === 'advanced' ? 'متقدم' : 'غير محدد')}</p>
+                <p><strong>⭐ نقاط الخبرة:</strong> ${userStats?.points?.totalXP || 0} XP</p>
+                <p><strong>🏅 الشارات:</strong> ${userStats?.badges?.length || 0}</p>
+            </div>
+        </div>
+    `;
         }
         
 // ==================== Courses ====================
@@ -1226,7 +1235,7 @@ async function loadCourses() {
             if (token && user.id) {
                 if (authButtons) authButtons.style.display = 'none';
                 if (userMenu) userMenu.style.display = 'flex';
-                if (userName) userName.innerText = user.name || user.username;
+                if (userName) userName.innerText = user.fullName || user.username;
                 if (notificationsIcon) notificationsIcon.style.display = 'block';
                 currentUser = user;
                 
@@ -1274,7 +1283,7 @@ if (registerForm) {
         e.preventDefault();
         register(
             document.getElementById('regUsername').value,
-            document.getElementById('regName').value,
+            document.getElementById('regFullName').value,
             document.getElementById('regPassword').value
         );
     };
