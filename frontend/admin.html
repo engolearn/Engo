@@ -754,9 +754,15 @@
         <form id="createBotForm">
             <div class="form-row">
                 <div class="form-group">
-                    <label>اسم البوت *</label>
-                    <input type="text" id="botName" required placeholder="مثال: أحمد">
+                    <label>اسم المستخدم (للظهور في الدردشة) *</label>
+                    <input type="text" id="botUsername" required placeholder="مثال: Ahmad_Bot">
                 </div>
+                <div class="form-group">
+                    <label>الاسم الكامل (للشهادة) *</label>
+                    <input type="text" id="botFullName" required placeholder="مثال: أحمد محمد">
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group">
                     <label>الرمز التعبيري (Avatar)</label>
                     <select id="botAvatar">
@@ -770,8 +776,6 @@
                         <option value="💪">💪 قوة</option>
                     </select>
                 </div>
-            </div>
-            <div class="form-row">
                 <div class="form-group">
                     <label>المستوى</label>
                     <select id="botLevel">
@@ -780,10 +784,10 @@
                         <option value="advanced">متقدم</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>المدة بين الرسائل (ثواني)</label>
-                    <input type="number" id="botInterval" value="60" min="10" max="300">
-                </div>
+            </div>
+            <div class="form-group">
+                <label>المدة بين الرسائل (ثواني)</label>
+                <input type="number" id="botInterval" value="60" min="10" max="300">
             </div>
             <div class="form-group">
                 <label>الرسائل (سطر لكل رسالة) *</label>
@@ -1189,7 +1193,8 @@ document.getElementById('createBotForm')?.addEventListener('submit', async (e) =
     }
     
     const data = {
-        name: document.getElementById('botName').value,
+        username: document.getElementById('botUsername').value,
+        fullName: document.getElementById('botFullName').value,
         avatar: document.getElementById('botAvatar').value,
         level: document.getElementById('botLevel').value,
         messages: messages,
