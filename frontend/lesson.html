@@ -347,38 +347,7 @@
             setTimeout(() => alertDiv.remove(), 3000);
         }
 
-        function escapeHtml(str) {
-    if (!str) return '';
-    
-    // ✅ إزالة المسافات الزائدة من بداية ونهاية النص
-    let cleaned = str.trim();
-    
-    // ترميز الأحرف الخاصة
-    let encoded = cleaned.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-    
-    // ✅ تحويل الأسطر الجديدة إلى <br> مع إزالة الأسطر الفارغة المتكررة
-    encoded = encoded.replace(/\n\s*\n/g, '<br><br>');  // سطرين فارغين
-    encoded = encoded.replace(/\n/g, '<br>');           // سطر واحد
-    
-    return encoded;
-        }
-        function cleanText(text) {
-    if (!text) return '';
-    
-    // ✅ إزالة المسافات الزائدة من بداية كل سطر
-    let lines = text.split('\n');
-    lines = lines.map(line => line.trimStart());  // إزالة المسافات من بداية كل سطر
-    let cleaned = lines.join('\n');
-    
-    // ✅ إزالة الأسطر الفارغة المتكررة
-    cleaned = cleaned.replace(/\n\s*\n/g, '\n\n');
-    
-    return cleaned.trim();
-}
-
-// استخدمها في العرض:
-const displayContent = escapeHtml(cleanText(para.content || ''));
-
+        
         function extractYouTubeId(url) {
             if (!url) return '';
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -433,6 +402,38 @@ const displayContent = escapeHtml(cleanText(para.content || ''));
             if (!lessonData.content || !lessonData.content[currentParagraphIndex]) return;
             
             const para = lessonData.content[currentParagraphIndex];
+            function escapeHtml(str) {
+    if (!str) return '';
+    
+    // ✅ إزالة المسافات الزائدة من بداية ونهاية النص
+    let cleaned = str.trim();
+    
+    // ترميز الأحرف الخاصة
+    let encoded = cleaned.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    
+    // ✅ تحويل الأسطر الجديدة إلى <br> مع إزالة الأسطر الفارغة المتكررة
+    encoded = encoded.replace(/\n\s*\n/g, '<br><br>');  // سطرين فارغين
+    encoded = encoded.replace(/\n/g, '<br>');           // سطر واحد
+    
+    return encoded;
+        }
+        function cleanText(text) {
+    if (!text) return '';
+    
+    // ✅ إزالة المسافات الزائدة من بداية كل سطر
+    let lines = text.split('\n');
+    lines = lines.map(line => line.trimStart());  // إزالة المسافات من بداية كل سطر
+    let cleaned = lines.join('\n');
+    
+    // ✅ إزالة الأسطر الفارغة المتكررة
+    cleaned = cleaned.replace(/\n\s*\n/g, '\n\n');
+    
+    return cleaned.trim();
+}
+
+// استخدمها في العرض:
+const displayContent = escapeHtml(cleanText(para.content || ''));
+
             
             document.getElementById('currentParaNum').innerText = currentParagraphIndex + 1;
             const progressPercent = ((currentParagraphIndex + 1) / totalParagraphs) * 100;
