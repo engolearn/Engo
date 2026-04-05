@@ -433,6 +433,431 @@ app.put('/api/notifications/read-all', auth, async (req, res) => {
     }
 });
 
+// ==================== Certificate Generation ====================
+const QRCode = require('qrcode');
+
+// إنشاء شهادة لإكمال الدورة
+app.get('/api/certificate/:courseId', auth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const userId = req.user._id;
+        
+        // جلب بيانات الدورة
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        
+        // جلب تقدم المستخدم
+        const progress = await UserProgress.findOne({ userId, courseId });
+        const completedLessons = progress?.completedLessons?.length || 0;
+        const totalLessons = course.totalLessons;
+        
+        // التحقق من إكمال الدورة
+        if (completedLessons < totalLessons) {
+            return res.status(403).json({ 
+                message: 'يجب إكمال جميع الدروس أولاً للحصول على الشهادة',
+                progress: `${completedLessons}/${totalLessons}`
+            });
+        }
+        
+        // التحقق من اجتياز الاختبار النهائي
+        const finalQuiz = await Quiz.findOne({ courseId, quizType: 'final' });
+        let finalScore = null;
+        if (finalQuiz) {
+            const quizResult = await QuizResult.findOne({ userId, quizId: finalQuiz._id });
+            finalScore = quizResult?.percentage || 0;
+            if (finalScore < 60) {
+                return res.status(403).json({ 
+                    message: 'يجب اجتياز الاختبار النهائي بنسبة 60% على الأقل للحصول على الشهادة',
+                    score: finalScore
+                });
+            }
+        }
+        
+        // بيانات الشهادة
+        const certificateData = {
+            userName: req.user.name,
+            courseTitle: course.title,
+            courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+            completionDate: new Date().toLocaleDateString('ar-EG'),
+            certificateId: `ENGO-${Date.now()}-${userId.toString().slice(-6)}`,
+            totalLessons: totalLessons,
+            finalScore: finalScore || 'اجتاز',
+            verifyUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/verify-certificate/${Date.now()}`
+        };
+        
+        // إنشاء رمز QR
+        const qrCode = await QRCode.toDataURL(certificateData.verifyUrl);
+        
+        // إنشاء HTML الشهادة
+        const certificateHtml = generateCertificateHTML(certificateData, qrCode);
+        
+        res.setHeader('Content-Type', 'text/html');
+        res.send(certificateHtml);
+        
+    } catch (error) {
+        console.error('Certificate Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// دالة إنشاء قالب الشهادة
+function generateCertificateHTML(data, qrCode) {
+    return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شهادة إتمام - ${data.courseTitle}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .certificate-container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .certificate {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        
+        /* خلفية الشهادة */
+        .certificate::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%);
+            pointer-events: none;
+        }
+        
+        /* الإطار الذهبي */
+        .certificate-border {
+            border: 8px double #fbbf24;
+            border-radius: 12px;
+            padding: 30px;
+            position: relative;
+        }
+        
+        /* الزوايا المزخرفة */
+        .corner {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 3px solid #fbbf24;
+        }
+        .corner-tl { top: 15px; left: 15px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 15px; right: 15px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 15px; left: 15px; border-right: none; border-top: none; }
+        .corner-br { bottom: 15px; right: 15px; border-left: none; border-top: none; }
+        
+        /* الشعار */
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo h1 {
+            font-size: 2rem;
+            color: #667eea;
+            letter-spacing: 2px;
+        }
+        .logo p {
+            color: #718096;
+            font-size: 0.8rem;
+        }
+        
+        /* عنوان الشهادة */
+        .certificate-title {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .certificate-title h2 {
+            font-size: 1.8rem;
+            color: #fbbf24;
+            font-weight: 800;
+        }
+        .certificate-title h3 {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-top: 5px;
+        }
+        
+        /* نص الشهادة */
+        .certificate-body {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .certificate-body p {
+            font-size: 1.2rem;
+            color: #2d3748;
+            line-height: 2;
+        }
+        .student-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #667eea;
+            margin: 10px 0;
+            border-bottom: 2px solid #e2e8f0;
+            display: inline-block;
+            padding: 0 20px;
+        }
+        .course-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #764ba2;
+            margin: 10px 0;
+        }
+        
+        /* تفاصيل إضافية */
+        .certificate-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .detail-box {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 12px;
+        }
+        .detail-box .label {
+            font-size: 0.8rem;
+            color: #718096;
+        }
+        .detail-box .value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        /* التوقيع ورمز QR */
+        .certificate-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .signature {
+            text-align: center;
+        }
+        .signature-line {
+            width: 200px;
+            height: 2px;
+            background: #2d3748;
+            margin-top: 30px;
+        }
+        .signature-name {
+            font-size: 0.8rem;
+            color: #4a5568;
+            margin-top: 5px;
+        }
+        .qr-code {
+            text-align: center;
+        }
+        .qr-code img {
+            width: 100px;
+            height: 100px;
+        }
+        .qr-code p {
+            font-size: 0.7rem;
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        /* أزرار */
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 40px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .actions {
+                display: none;
+            }
+            .certificate {
+                box-shadow: none;
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .certificate { padding: 20px; }
+            .certificate-border { padding: 15px; }
+            .student-name { font-size: 1.3rem; }
+            .course-name { font-size: 1.1rem; }
+            .certificate-footer { flex-direction: column; align-items: center; }
+            .signature-line { width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="certificate">
+            <div class="certificate-border">
+                <div class="corner corner-tl"></div>
+                <div class="corner corner-tr"></div>
+                <div class="corner corner-bl"></div>
+                <div class="corner corner-br"></div>
+                
+                <div class="logo">
+                    <h1><i class="fas fa-language"></i> EnGo</h1>
+                    <p>منصة تعلم اللغة الإنجليزية</p>
+                </div>
+                
+                <div class="certificate-title">
+                    <h2>شهادة إتمام</h2>
+                    <h3>Certificate of Completion</h3>
+                </div>
+                
+                <div class="certificate-body">
+                    <p>تشهد منصة <strong>EnGo</strong> بأن</p>
+                    <div class="student-name">${data.userName}</div>
+                    <p>قد أتم بنجاح دورة</p>
+                    <div class="course-name">${data.courseTitle}</div>
+                    <p>في ${data.courseLevel}</p>
+                </div>
+                
+                <div class="certificate-details">
+                    <div class="detail-box">
+                        <div class="label">📅 تاريخ الإكمال</div>
+                        <div class="value">${data.completionDate}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">📚 عدد الدروس</div>
+                        <div class="value">${data.totalLessons} درس</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">🎯 نتيجة الاختبار</div>
+                        <div class="value">${typeof data.finalScore === 'number' ? data.finalScore + '%' : data.finalScore}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">🆔 رقم الشهادة</div>
+                        <div class="value">${data.certificateId}</div>
+                    </div>
+                </div>
+                
+                <div class="certificate-footer">
+                    <div class="signature">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">مدير الأكاديمية</div>
+                        <div class="signature-name">EnGo Team</div>
+                    </div>
+                    <div class="qr-code">
+                        <img src="${qrCode}" alt="QR Code">
+                        <p>مسح للتحقق من صحة الشهادة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> طباعة الشهادة
+            </button>
+            <button class="btn btn-success" onclick="downloadCertificate()">
+                <i class="fas fa-download"></i> تحميل PDF
+            </button>
+            <button class="btn btn-outline" onclick="shareCertificate()">
+                <i class="fab fa-whatsapp"></i> مشاركة
+            </button>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadCertificate() {
+            const element = document.querySelector('.certificate');
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: 'EnGo_Certificate_${data.certificateId}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+        
+        function shareCertificate() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'شهادة إتمام دورة',
+                    text: 'لقد أكملت دورة ${data.courseTitle} على منصة EnGo',
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('✅ تم نسخ رابط الشهادة! يمكنك مشاركته مع أصدقائك.');
+            }
+        }
+    </script>
+</body>
+</html>`;
+}
+
 // ==================== إدارة الإشعارات (Admin) ====================
 
 // إرسال إشعار
