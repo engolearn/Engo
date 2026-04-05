@@ -1101,6 +1101,12 @@ const certificateHtml = generateCertificateHTML(certificateData, qrCode);
 
 res.setHeader('Content-Type', 'text/html');
 res.send(certificateHtml);
+                
+    } catch (error) {
+        console.error('Certificate Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});  // ✅ إغلاق مسار الشهادة
 // دالة إنشاء قالب الشهادة
 function generateCertificateHTML(data, qrCode) {
     return `<!DOCTYPE html>
