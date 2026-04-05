@@ -175,7 +175,6 @@ async function getCertificate() {
     const token = localStorage.getItem('token');
     const courseId = getCourseId();
     
-    // ✅ التحقق من وجود التوكن
     if (!token) {
         showAlert('❌ يرجى تسجيل الدخول أولاً', 'error');
         return;
@@ -186,46 +185,8 @@ async function getCertificate() {
         return;
     }
     
-    // ✅ إظهار مؤشر التحميل
-    const btn = document.getElementById('certificateButton');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ جاري تجهيز الشهادة...';
-    btn.disabled = true;
-    
-    try {
-        // ✅ إرسال طلب للحصول على الشهادة (بدون فتح نافذة جديدة)
-        const response = await fetch(API_URL + '/certificate/' + courseId, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        });
-        
-        if (response.ok) {
-            const html = await response.text();
-            // ✅ فتح نافذة جديدة وعرض الشهادة
-            const newWindow = window.open();
-            newWindow.document.write(html);
-            newWindow.document.close();
-        } else if (response.status === 401) {
-            showAlert('❌ انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى', 'error');
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            setTimeout(() => window.location.href = '/', 2000);
-        } else {
-            const error = await response.json();
-            showAlert('❌ ' + (error.message || 'حدث خطأ في الحصول على الشهادة'), 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showAlert('❌ حدث خطأ في الاتصال', 'error');
-    } finally {
-        // ✅ إعادة الزر إلى حالته الأصلية
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }, 1000);
-    }
+    // ✅ الانتقال إلى صفحة الشهادة المنفصلة مع معرف الدورة
+    window.location.href = `/certificate-viewer.html?courseId=${courseId}`;
 }
         // تحميل تفاصيل الدورة
         async function loadCourseDetails() {
