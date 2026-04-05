@@ -18,20 +18,32 @@
         .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
         .btn-back { background: #e2e8f0; color: #4a5568; padding: 8px 20px; border: none; border-radius: 25px; cursor: pointer; }
         
-        .lesson-container { max-width: 1000px; margin: 2rem auto; padding: 0 20px; }
         
         /* رأس الدرس */
         .lesson-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 20px; margin-bottom: 1.5rem; text-align: center; }
         .lesson-header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
         .lesson-header .lesson-number { opacity: 0.9; font-size: 0.9rem; }
-        .paragraph-content {
-    font-size: 1.05rem;
-    line-height: 1.8;
-    color: #2d3748;
-    margin-bottom: 1rem;
-    white-space: pre-wrap;     /* ✅ يحافظ على الأسطر والمسافات */
-    word-wrap: break-word;     /* ✅ يكسر الكلمات الطويلة */
-        }
+        /* توسيط كل المحتوى */
+.lesson-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* توسيط أزرار التنقل */
+.navigation-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.nav-btn {
+    min-width: 150px;
+    text-align: center;
+    justify-content: center;
+}
         /* مؤشر التقدم */
         .progress-indicator {
             background: white;
@@ -66,14 +78,7 @@
             gap: 1.5rem;
         }
         
-        .paragraph-card {
-            background: white;
-            border-radius: 20px;
-            padding: 1.8rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: all 0.3s;
-            border: 1px solid #e2e8f0;
-        }
+        
         .paragraph-card:hover {
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
@@ -114,7 +119,48 @@
         .type-audio { background: #38a169; color: white; }
         .type-image { background: #d97706; color: white; }
         
-        
+        /* تنسيق الحاوية الرئيسية */
+.lesson-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 20px;
+}
+
+/* تنسيق بطاقة الفقرة */
+.paragraph-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+    margin: 0 auto;  /* ✅ توسيط البطاقة */
+    width: 100%;
+}
+
+/* تنسيق المحتوى النصي - إزالة الفراغات الكبيرة */
+.paragraph-content {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    white-space: normal;      /* ✅ منع المسافات الزائدة */
+    word-wrap: break-word;
+    text-align: right;        /* ✅ محاذاة النص لليمين */
+}
+
+/* إزالة المسافات البادئة من أول سطر */
+.paragraph-content p {
+    margin: 0;
+    padding: 0;
+    text-indent: 0;           /* ✅ إزالة أي مسافة بادئة */
+}
+
+/* تنسيق النص في الواجب */
+.assignment-question h4,
+.assignment-option {
+    white-space: normal;
+    text-align: right;
+}
         
         .paragraph-media {
             margin-top: 1rem;
@@ -303,12 +349,35 @@
 
         function escapeHtml(str) {
     if (!str) return '';
-    return str
-        .replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]))
-        .replace(/\n/g, '<br>')  // ✅ تحويل الأسطر الجديدة إلى <br>
-        .replace(/\s/g, ' ')      // ✅ الحفاظ على المسافات
-        .replace(/  /g, ' &nbsp;'); // ✅ تحويل مسافتين إلى &nbsp;
+    
+    // ✅ إزالة المسافات الزائدة من بداية ونهاية النص
+    let cleaned = str.trim();
+    
+    // ترميز الأحرف الخاصة
+    let encoded = cleaned.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    
+    // ✅ تحويل الأسطر الجديدة إلى <br> مع إزالة الأسطر الفارغة المتكررة
+    encoded = encoded.replace(/\n\s*\n/g, '<br><br>');  // سطرين فارغين
+    encoded = encoded.replace(/\n/g, '<br>');           // سطر واحد
+    
+    return encoded;
         }
+        function cleanText(text) {
+    if (!text) return '';
+    
+    // ✅ إزالة المسافات الزائدة من بداية كل سطر
+    let lines = text.split('\n');
+    lines = lines.map(line => line.trimStart());  // إزالة المسافات من بداية كل سطر
+    let cleaned = lines.join('\n');
+    
+    // ✅ إزالة الأسطر الفارغة المتكررة
+    cleaned = cleaned.replace(/\n\s*\n/g, '\n\n');
+    
+    return cleaned.trim();
+}
+
+// استخدمها في العرض:
+const displayContent = escapeHtml(cleanText(para.content || ''));
 
         function extractYouTubeId(url) {
             if (!url) return '';
