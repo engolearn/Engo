@@ -1039,38 +1039,75 @@ app.put('/api/notifications/read-all', auth, async (req, res) => {
 // ==================== Certificate Generation ====================
 const QRCode = require('qrcode');
 
-
-// API لجلب بيانات الشهادة
-app.get('/api/certificate-data/:certId', async (req, res) => {
+// إنشاء شهادة وإعادة توجيه إلى صفحة العرض
+app.get('/api/certificate/:courseId', auth, async (req, res) => {
     try {
-        const { certId } = req.params;
+        const { courseId } = req.params;
+        const userId = req.user._id;
         
-        const certificate = await Certificate.findOne({ certificateId: certId });
-        
-        if (!certificate) {
-            return res.json({ valid: false, message: 'لم يتم العثور على الشهادة' });
+        // جلب بيانات الدورة
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
         }
         
-        const qrCode = await QRCode.toDataURL(`https://engo.koyeb.app/certificate-viewer.html?id=${certificate.certificateId}`);
+        // جلب تقدم المستخدم
+        const progress = await UserProgress.findOne({ userId, courseId });
+        const completedLessons = progress?.completedLessons?.length || 0;
+        const totalLessons = course.totalLessons;
         
-        res.json({
-            valid: true,
-            userName: certificate.userName,
-            courseTitle: certificate.courseTitle,
-            courseLevel: certificate.courseLevel,
-            completionDate: certificate.issueDate.toLocaleDateString('ar-EG'),
-            totalLessons: certificate.totalLessons || 'جميع الدروس',
-            finalScore: certificate.finalScore + '%',
-            certificateId: certificate.certificateId,
-            qrCode: qrCode
-        });
+        // التحقق من إكمال الدورة
+        if (completedLessons < totalLessons) {
+            return res.status(403).json({ 
+                message: 'يجب إكمال جميع الدروس أولاً للحصول على الشهادة',
+                progress: `${completedLessons}/${totalLessons}`
+            });
+        }
+        
+        // التحقق من اجتياز الاختبار النهائي
+        const finalQuiz = await Quiz.findOne({ courseId, quizType: 'final' });
+        let finalScore = null;
+        if (finalQuiz) {
+            const quizResult = await QuizResult.findOne({ userId, quizId: finalQuiz._id });
+            finalScore = quizResult?.percentage || 0;
+            if (finalScore < 60) {
+                return res.status(403).json({ 
+                    message: 'يجب اجتياز الاختبار النهائي بنسبة 60% على الأقل',
+                    score: finalScore
+                });
+            }
+        }
+        
+        // التحقق من وجود شهادة سابقة
+        let certificate = await Certificate.findOne({ userId, courseId });
+        let certificateId;
+        
+        if (certificate) {
+            certificateId = certificate.certificateId;
+        } else {
+            certificateId = `ENGO-${Date.now()}-${userId.toString().slice(-6)}`;
+            
+            certificate = new Certificate({
+                certificateId: certificateId,
+                userId: userId,
+                courseId: courseId,
+                userName: req.user.fullName,
+                courseTitle: course.title,
+                courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+                issueDate: new Date(),
+                finalScore: finalScore || 0
+            });
+            await certificate.save();
+        }
+        
+        // إعادة التوجيه إلى صفحة عرض الشهادة
+        res.redirect(`/certificate-viewer.html?id=${certificateId}`);
         
     } catch (error) {
-        console.error('Error:', error);
-        res.json({ valid: false, message: error.message });
+        console.error('Certificate Error:', error);
+        res.status(500).json({ message: error.message });
     }
 });
-
 // API لجلب بيانات الشهادة
 app.get('/api/certificate-data/:certId', async (req, res) => {
     try {
@@ -1114,18 +1151,20 @@ app.post('/api/admin/notifications/send', auth, adminAuth, async (req, res) => {
         
         // تحديد المستخدمين المستهدفين
         switch(target) {
-            case 'all':
-                targetUsers = await User.find({ role: 'user' }).select('_id');
-                break;
-            case 'specific':
-                if (specificUserId) {
-                    targetUsers = [{ _id: specificUserId }];
-                }
-                   targetUsers = await User.find({ role: 'user' }).select('_id');
-                break;
-            case 'advanced':
-                targetUsers = await User.find({ level: 'advanced', role: 'user' }).select('_id');
-                break;
+    case 'all':
+        targetUsers = await User.find({ role: 'user' }).select('_id');
+        break;
+    case 'specific':
+        if (specificUserId) {
+            targetUsers = [{ _id: specificUserId }];
+        }
+        break;
+    case 'beginner':
+        targetUsers = await User.find({ level: 'beginner', role: 'user' }).select('_id');
+        break;
+    case 'advanced':
+        targetUsers = await User.find({ level: 'advanced', role: 'user' }).select('_id');
+        break;
         }
         
         // إنشاء الإشعار
