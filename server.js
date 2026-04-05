@@ -1479,14 +1479,50 @@ function generateCertificateHTML(data, qrCode) {
             }
         }
         
-        @media (max-width: 768px) {
-            .certificate { padding: 20px; }
-            .certificate-border { padding: 15px; }
-            .student-name { font-size: 1.3rem; }
-            .course-name { font-size: 1.1rem; }
-            .certificate-footer { flex-direction: column; align-items: center; }
-            .signature-line { width: 150px; }
-        }
+        /* جعل الشهادة متوافقة مع الهواتف فقط */
+@media (max-width: 768px) {
+    .certificate {
+        padding: 10px !important;
+    }
+    
+    .certificate-border {
+        padding: 10px !important;
+    }
+    
+    .student-name {
+        font-size: 1.2rem !important;
+    }
+    
+    .course-name {
+        font-size: 1rem !important;
+    }
+    
+    .certificate-body p {
+        font-size: 0.85rem !important;
+    }
+    
+    .detail-box {
+        padding: 5px !important;
+    }
+    
+    .detail-box .value {
+        font-size: 0.7rem !important;
+    }
+    
+    .qr-code img {
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    .signature-line {
+        width: 80px !important;
+    }
+    
+    .btn {
+        padding: 8px 15px !important;
+        font-size: 0.75rem !important;
+    }
+}
 /* ========== إعدادات الطباعة ========== */
 @media print {
     /* إخفاء الأزرار */
