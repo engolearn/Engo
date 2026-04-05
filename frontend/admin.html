@@ -786,8 +786,20 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>المدة بين الرسائل (ثواني)</label>
-                <input type="number" id="botInterval" value="60" min="10" max="300">
+    <label>المدة بين الرسائل</label>
+    <div class="form-row">
+        <div class="form-group">
+            <input type="number" id="botIntervalValue" value="1" min="1" style="width: 100%;">
+        </div>
+        <div class="form-group">
+            <select id="botIntervalUnit" style="width: 100%;">
+                <option value="seconds">ثواني</option>
+                <option value="minutes">دقائق</option>
+                <option value="hours" selected>ساعات</option>
+            </select>
+        </div>
+    </div>
+    <small>⏱️ يمكنك تحديد المدة من 1 ثانية إلى 10 ساعات</small>
             </div>
             <div class="form-group">
                 <label>الرسائل (سطر لكل رسالة) *</label>
@@ -831,6 +843,63 @@
     <div class="admin-section">
         <h2><i class="fas fa-history"></i> سجل رسائل البوتات</h2>
         <div id="botsLogs"><div class="loading">جاري تحميل السجل...</div></div>
+    </div>
+</div>
+        <!-- مودال تعديل البوت -->
+<div id="editBotModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <h3>✏️ تعديل البوت</h3>
+        <input type="hidden" id="editBotId">
+        
+        <div class="form-group">
+            <label>اسم المستخدم</label>
+            <input type="text" id="editBotUsername" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>الاسم الكامل</label>
+            <input type="text" id="editBotFullName" class="form-control">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>الرمز التعبيري</label>
+                <select id="editBotAvatar" class="form-control">
+                    <option value="🤖">🤖 روبوت</option>
+                    <option value="👨‍💻">👨‍💻 مبرمج</option>
+                    <option value="👩‍🎓">👩‍🎓 طالبة</option>
+                    <option value="👨‍🏫">👨‍🏫 معلم</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>المستوى</label>
+                <select id="editBotLevel" class="form-control">
+                    <option value="beginner">مبتدئ</option>
+                    <option value="intermediate">متوسط</option>
+                    <option value="advanced">متقدم</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>المدة</label>
+                <input type="number" id="editIntervalValue" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>الوحدة</label>
+                <select id="editIntervalUnit">
+                    <option value="seconds">ثواني</option>
+                    <option value="minutes">دقائق</option>
+                    <option value="hours">ساعات</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>الرسائل (سطر لكل رسالة)</label>
+            <textarea id="editBotMessages" rows="5" class="form-control"></textarea>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button class="btn-primary" onclick="saveBotEdit()">💾 حفظ التعديلات</button>
+            <button class="btn-danger" onclick="document.getElementById('editBotModal').style.display = 'none'">إلغاء</button>
+        </div>
     </div>
 </div>
         
@@ -1069,7 +1138,24 @@ window.deleteCourse = async (id) => {
     } 
 };
 // ==================== إدارة البوتات ====================
+// في دالة loadBots - تنسيق عرض المدة
+function formatInterval(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours >= 1) {
+        return `${hours} ساعة${hours !== 1 ? '' : ''}`;
+    } else if (minutes >= 1) {
+        return `${minutes} دقيقة${minutes !== 1 ? '' : ''}`;
+    } else {
+        return `${seconds} ثانية${seconds !== 1 ? '' : ''}`;
+    }
+}
 
+// في عرض الجدول
+<td>${formatInterval(bot.messageInterval)}</td>
+        
 // تحميل قائمة البوتات
 async function loadBots() {
     const token = localStorage.getItem('token');
@@ -1192,13 +1278,28 @@ document.getElementById('createBotForm')?.addEventListener('submit', async (e) =
         return;
     }
     
+    // ✅ حساب المدة بالمللي ثانية
+    const intervalValue = parseInt(document.getElementById('botIntervalValue').value) || 1;
+    const intervalUnit = document.getElementById('botIntervalUnit').value;
+    
+    let intervalMs = intervalValue * 1000; // ثواني
+    if (intervalUnit === 'minutes') intervalMs = intervalValue * 60 * 1000;
+    if (intervalUnit === 'hours') intervalMs = intervalValue * 60 * 60 * 1000;
+    
+    // ✅ الحد الأقصى 10 ساعات
+    const maxInterval = 10 * 60 * 60 * 1000; // 10 ساعات
+    if (intervalMs > maxInterval) {
+        showAlert('❌ المدة القصوى هي 10 ساعات', 'error');
+        return;
+    }
+    
     const data = {
         username: document.getElementById('botUsername').value,
         fullName: document.getElementById('botFullName').value,
         avatar: document.getElementById('botAvatar').value,
         level: document.getElementById('botLevel').value,
         messages: messages,
-        messageInterval: parseInt(document.getElementById('botInterval').value) * 1000
+        messageInterval: intervalMs
     };
     
     try {
@@ -1214,6 +1315,8 @@ document.getElementById('createBotForm')?.addEventListener('submit', async (e) =
         if (res.ok) {
             showAlert('✅ تم إنشاء البوت بنجاح', 'success');
             document.getElementById('createBotForm').reset();
+            document.getElementById('botIntervalValue').value = '1';
+            document.getElementById('botIntervalUnit').value = 'hours';
             loadBots();
         } else {
             const err = await res.json();
@@ -1223,6 +1326,103 @@ document.getElementById('createBotForm')?.addEventListener('submit', async (e) =
         showAlert('❌ خطأ في الاتصال', 'error');
     }
 });
+
+// إغلاق مودال تعديل البوت
+function closeEditBotModal() {
+    document.getElementById('editBotModal').style.display = 'none';
+}
+
+// فتح نافذة تعديل البوت
+async function editBot(botId) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/bots/' + botId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const bot = await res.json();
+        
+        const modal = document.getElementById('editBotModal');
+        document.getElementById('editBotId').value = bot._id;
+        document.getElementById('editBotUsername').value = bot.username;
+        document.getElementById('editBotFullName').value = bot.fullName;
+        document.getElementById('editBotAvatar').value = bot.avatar;
+        document.getElementById('editBotLevel').value = bot.level;
+        
+        // تحويل المدة من مللي ثانية إلى وحدة مناسبة
+        const intervalMs = bot.messageInterval;
+        const hours = Math.floor(intervalMs / (60 * 60 * 1000));
+        const minutes = Math.floor((intervalMs % (60 * 60 * 1000)) / (60 * 1000));
+        const seconds = Math.floor((intervalMs % (60 * 1000)) / 1000);
+        
+        if (hours > 0) {
+            document.getElementById('editIntervalValue').value = hours;
+            document.getElementById('editIntervalUnit').value = 'hours';
+        } else if (minutes > 0) {
+            document.getElementById('editIntervalValue').value = minutes;
+            document.getElementById('editIntervalUnit').value = 'minutes';
+        } else {
+            document.getElementById('editIntervalValue').value = seconds;
+            document.getElementById('editIntervalUnit').value = 'seconds';
+        }
+        
+        document.getElementById('editBotMessages').value = bot.messages.join('\n');
+        modal.style.display = 'flex';
+        
+    } catch (error) {
+        showAlert('❌ خطأ في تحميل بيانات البوت', 'error');
+    }
+}
+
+// حفظ تعديلات البوت
+async function saveBotEdit() {
+    const token = localStorage.getItem('token');
+    const botId = document.getElementById('editBotId').value;
+    
+    const intervalValue = parseInt(document.getElementById('editIntervalValue').value) || 1;
+    const intervalUnit = document.getElementById('editIntervalUnit').value;
+    
+    let intervalMs = intervalValue * 1000;
+    if (intervalUnit === 'minutes') intervalMs = intervalValue * 60 * 1000;
+    if (intervalUnit === 'hours') intervalMs = intervalValue * 60 * 60 * 1000;
+    
+    const maxInterval = 10 * 60 * 60 * 1000;
+    if (intervalMs > maxInterval) {
+        showAlert('❌ المدة القصوى هي 10 ساعات', 'error');
+        return;
+    }
+    
+    const data = {
+        username: document.getElementById('editBotUsername').value,
+        fullName: document.getElementById('editBotFullName').value,
+        avatar: document.getElementById('editBotAvatar').value,
+        level: document.getElementById('editBotLevel').value,
+        messages: document.getElementById('editBotMessages').value.split('\n').filter(m => m.trim()),
+        messageInterval: intervalMs,
+        isActive: true
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/bots/' + botId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم تحديث البوت بنجاح', 'success');
+            closeEditBotModal();
+            loadBots();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
 
 // تشغيل بوت في غرفة
 async function startSelectedBot() {
