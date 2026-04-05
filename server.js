@@ -303,15 +303,15 @@ const adminAuth = async (req, res, next) => {
 
 // ==================== Fake Users Bot System - كامل ====================
 
-// نموذج البوتات
+// نموذج البوتات (معدل)
 const botSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true },
+    fullName: { type: String, required: true },
     avatar: { type: String, default: '🤖' },
     level: { type: String, enum: ['beginner', 'intermediate', 'advanced'], default: 'beginner' },
     isActive: { type: Boolean, default: true },
     messages: [{ type: String }],
-    messageInterval: { type: Number, default: 60000 }, // بالمللي ثانية
+    messageInterval: { type: Number, default: 60000 },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -331,26 +331,27 @@ const BotMessageLog = mongoose.model('BotMessageLog', botMessageLogSchema);
 // متغير لتخزين المؤقتات النشطة
 let activeBotIntervals = new Map();
 
-// دالة إنشاء بوت جديد
+// دالة إنشاء بوت جديد (معدلة)
 async function createBot(botData) {
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash('botpassword123', 10);
     
+    // ✅ استخدام username و fullName
     const user = new User({
-        name: botData.name,
-        email: botData.email,
+        username: botData.username,
+        fullName: botData.fullName,
         password: hashedPassword,
         role: 'user',
         level: botData.level,
-        avatar: botData.avatar,
+        avatar: botData.avatar || '🤖',
         createdAt: new Date()
     });
     await user.save();
     
     const bot = new Bot({
-        name: botData.name,
-        email: botData.email,
-        avatar: botData.avatar,
+        username: botData.username,
+        fullName: botData.fullName,
+        avatar: botData.avatar || '🤖',
         level: botData.level,
         messages: botData.messages || [],
         messageInterval: botData.messageInterval || 60000,
@@ -361,7 +362,7 @@ async function createBot(botData) {
     return { bot, user };
 }
 
-// دالة إرسال رسالة من بوت
+// دالة إرسال رسالة من بوت (معدلة)
 async function sendBotMessage(bot, user, roomId, io) {
     if (!bot.isActive) return;
     if (!bot.messages || bot.messages.length === 0) return;
@@ -373,7 +374,8 @@ async function sendBotMessage(bot, user, roomId, io) {
     
     const message = {
         userId: user._id,
-        userName: bot.name,
+        userName: bot.username,  // ✅ استخدام username بدلاً من name
+        userFullName: bot.fullName,
         text: randomMessage,
         timestamp: new Date(),
         readBy: []
@@ -383,10 +385,9 @@ async function sendBotMessage(bot, user, roomId, io) {
     room.lastActivity = new Date();
     await room.save();
     
-    // تسجيل الرسالة
     const log = new BotMessageLog({
         botId: bot._id,
-        botName: bot.name,
+        botName: bot.username,
         roomId: roomId,
         roomName: room.name,
         message: randomMessage
@@ -394,33 +395,31 @@ async function sendBotMessage(bot, user, roomId, io) {
     await log.save();
     
     io.to(roomId).emit('new_message', message);
-    console.log(`🤖 Bot ${bot.name} sent: "${randomMessage}" in room ${room.name}`);
+    console.log(`🤖 Bot ${bot.username} sent: "${randomMessage}" in room ${room.name}`);
 }
 
-// دالة تشغيل بوت في غرفة
+// دالة تشغيل بوت في غرفة (معدلة)
 async function startBotInRoom(botId, roomId, io) {
     const bot = await Bot.findById(botId);
     if (!bot || !bot.isActive) return false;
     
-    const user = await User.findOne({ email: bot.email });
+    // ✅ البحث باستخدام username
+    const user = await User.findOne({ username: bot.username });
     if (!user) return false;
     
     const room = await Room.findOne({ roomId });
     if (!room) return false;
     
-    // إضافة المستخدم إلى الغرفة إذا لم يكن موجوداً
     if (!room.members.includes(user._id)) {
         room.members.push(user._id);
         await room.save();
     }
     
-    // إيقاف أي مؤقت موجود مسبقاً
     const existingInterval = activeBotIntervals.get(`${botId}_${roomId}`);
     if (existingInterval) {
         clearInterval(existingInterval);
     }
     
-    // إنشاء مؤقت جديد
     const interval = setInterval(async () => {
         await sendBotMessage(bot, user, roomId, io);
     }, bot.messageInterval);
@@ -484,13 +483,26 @@ app.get('/api/admin/rooms-with-bots', auth, adminAuth, async (req, res) => {
 // إنشاء بوت جديد
 app.post('/api/admin/bots', auth, adminAuth, async (req, res) => {
     try {
-        const { name, avatar, level, messages, messageInterval } = req.body;
+        const { username, fullName, avatar, level, messages, messageInterval } = req.body;
         
-        const email = `bot_${Date.now()}_${name.replace(/\s/g, '')}@engo.com`;
+        // ✅ التحقق من البيانات
+        if (!username) {
+            return res.status(400).json({ message: 'اسم المستخدم مطلوب' });
+        }
+        
+        if (!fullName || fullName.length < 3) {
+            return res.status(400).json({ message: 'الاسم الكامل مطلوب (3 أحرف على الأقل)' });
+        }
+        
+        // ✅ التأكد من عدم وجود اسم مستخدم مكرر
+        const existingUser = await User.findOne({ username: username.toLowerCase() });
+        if (existingUser) {
+            return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
+        }
         
         const bot = await createBot({
-            name,
-            email,
+            username: username.toLowerCase(),
+            fullName: fullName,
             avatar: avatar || '🤖',
             level: level || 'beginner',
             messages: messages || [],
@@ -499,6 +511,7 @@ app.post('/api/admin/bots', auth, adminAuth, async (req, res) => {
         
         res.json({ success: true, bot: bot.bot, user: bot.user });
     } catch (error) {
+        console.error('Error creating bot:', error);
         res.status(500).json({ message: error.message });
     }
 });
