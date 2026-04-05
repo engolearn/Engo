@@ -262,6 +262,25 @@
             // الانتقال إلى صفحة عرض الدرس مع تمرير معرف الدورة ومعرف الدرس
             window.location.href = `/lesson.html?courseId=${courseId}&lessonId=${lessonId}&lessonIndex=${lessonIndex}`;
         }
+    // التحقق من إكمال الدورة وعرض زر الشهادة
+async function checkCertificateEligibility() {
+    const token = localStorage.getItem('token');
+    const courseId = getCourseId();
+    
+    const res = await fetch(API_URL + '/progress/' + courseId, {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const progress = await res.json();
+    const totalLessons = courseData.totalLessons;
+    
+    if (progress.completedLessons?.length >= totalLessons) {
+        const certLink = document.getElementById('certificateLink');
+        if (certLink) {
+            certLink.href = API_URL + '/certificate/' + courseId;
+            document.getElementById('certificateBtn').style.display = 'block';
+        }
+    }
+}
 
         // تهيئة الصفحة
         async function init() {
