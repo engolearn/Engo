@@ -436,24 +436,56 @@
         </div>
 
         <!-- تبويب الدورات -->
-        <div id="coursesTab" class="tab-content active">
-            <div class="admin-section">
-                <h2><i class="fas fa-plus-circle"></i> إضافة دورة جديدة</h2>
-                <form id="addCourseForm">
-                    <div class="form-group"><label>عنوان الدورة</label><input type="text" id="courseTitle" required></div>
-                    <div class="form-group"><label>وصف الدورة</label><textarea id="courseDescription" rows="3" required></textarea></div>
-                    <div class="form-group"><label>المستوى</label><select id="courseLevel"><option value="beginner">مبتدئ</option><option value="advanced">متقدم</option></select></div>
-                    <div class="form-group"><label>السعر (ريال)</label><input type="number" id="coursePrice" value="0"></div>
-                    <div class="form-group"><label><input type="checkbox" id="coursePremium"> دورة مدفوعة</label></div>
-                    <div class="form-group"><label>عدد الدروس المجانية</label><input type="number" id="freeLessons" value="5"></div>
-                    <button type="submit" class="btn-primary">➕ إضافة الدورة</button>
-                </form>
+<div id="coursesTab" class="tab-content active">
+    <div class="admin-section">
+        <h2><i class="fas fa-plus-circle"></i> إضافة دورة جديدة</h2>
+        <form id="addCourseForm">
+            <div class="form-group">
+                <label>عنوان الدورة</label>
+                <input type="text" id="courseTitle" required>
             </div>
-            <div class="admin-section">
-                <h2><i class="fas fa-list"></i> قائمة الدورات</h2>
-                <div id="coursesList"><div class="loading">جاري تحميل الدورات...</div></div>
+            <div class="form-group">
+                <label>وصف الدورة</label>
+                <textarea id="courseDescription" rows="3" required></textarea>
             </div>
-        </div>
+            
+            <!-- ✅ أضف هذا القسم لرفع الصورة -->
+            <div class="form-group">
+                <label><i class="fas fa-image"></i> صورة الدورة</label>
+                <input type="file" id="courseImage" accept="image/*" onchange="previewCourseImage(event)">
+                <input type="hidden" id="courseImageUrl">
+                <div id="imagePreviewContainer" style="margin-top: 10px; display: none;">
+                    <img id="imagePreview" style="max-width: 150px; max-height: 150px; border-radius: 10px;">
+                    <button type="button" onclick="clearImagePreview()" style="background: #e53e3e; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-top: 5px;">✖ إزالة</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>المستوى</label>
+                <select id="courseLevel">
+                    <option value="beginner">مبتدئ</option>
+                    <option value="advanced">متقدم</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>السعر (ريال)</label>
+                <input type="number" id="coursePrice" value="0">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="coursePremium"> دورة مدفوعة</label>
+            </div>
+            <div class="form-group">
+                <label>عدد الدروس المجانية</label>
+                <input type="number" id="freeLessons" value="5">
+            </div>
+            <button type="submit" class="btn-primary">➕ إضافة الدورة</button>
+        </form>
+    </div>
+    <div class="admin-section">
+        <h2><i class="fas fa-list"></i> قائمة الدورات</h2>
+        <div id="coursesList"><div class="loading">جاري تحميل الدورات...</div></div>
+    </div>
+</div>
 
         <!-- تبويب الدروس -->
 <div id="lessonsTab" class="tab-content">
@@ -851,6 +883,114 @@
         showAlert('❌ خطأ في الاتصال: ' + error.message, 'error');
     }
         }
+        // ==================== معالجة صورة الدورة ====================
+function previewCourseImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const previewImg = document.getElementById('imagePreview');
+            previewImg.src = e.target.result;
+            previewContainer.style.display = 'block';
+            
+            // تحويل الصورة إلى Base64 وتخزينها
+            document.getElementById('courseImageUrl').value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function clearImagePreview() {
+    document.getElementById('imagePreviewContainer').style.display = 'none';
+    document.getElementById('courseImage').value = '';
+    document.getElementById('courseImageUrl').value = '';
+    document.getElementById('imagePreview').src = '';
+}
+
+// تحديث دالة إضافة الدورة
+document.getElementById('addCourseForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    
+    const data = { 
+        title: document.getElementById('courseTitle').value,
+        description: document.getElementById('courseDescription').value,
+        level: document.getElementById('courseLevel').value,
+        price: parseInt(document.getElementById('coursePrice').value) || 0,
+        isPremium: document.getElementById('coursePremium').checked,
+        freeLessons: parseInt(document.getElementById('freeLessons').value) || 5,
+        image: document.getElementById('courseImageUrl').value || ''  // ✅ أضف الصورة
+    };
+    
+    console.log('📤 Sending course data:', data);
+    
+    try {
+        const res = await fetch(API_URL + '/admin/courses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم إضافة الدورة', 'success');
+            e.target.reset();
+            clearImagePreview();
+            loadCourses();
+            loadCoursesForSelect();
+            loadCoursesForSelect2();
+        } else {
+            const err = await res.json();
+            showAlert('❌ خطأ: ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+};
+
+// تحديث دالة عرض قائمة الدورات في لوحة الأدمن
+async function loadCourses() {
+    const token = localStorage.getItem('token');
+    const res = await fetch(API_URL + '/admin/courses', { 
+        headers: { 'Authorization': 'Bearer ' + token } 
+    });
+    const courses = await res.json();
+    const container = document.getElementById('coursesList');
+    
+    if(!courses.length) { 
+        container.innerHTML = '<div class="empty-message">لا توجد دورات</div>'; 
+        return; 
+    }
+    
+    container.innerHTML = `
+        <table class="table">
+            <thead>
+                <tr><th>الصورة</th><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الإجراءات</th></tr>
+            </thead>
+            <tbody>
+                ${courses.map(c => `
+                    <tr>
+                        <td>
+                            ${c.image ? 
+                                `<img src="${c.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">` : 
+                                `<div style="width: 50px; height: 50px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-book"></i></div>`
+                            }
+                        </td>
+                        <td><strong>${escapeHtml(c.title)}</strong><br><small>${escapeHtml(c.description.substring(0, 50))}...</small></td>
+                        <td>${c.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</td>
+                        <td>${c.isPremium ? c.price + ' ريال' : 'مجاني'}</td>
+                        <td>${c.totalLessons || 0}</td>
+                        <td><button class="btn-danger" onclick="deleteCourse('${c._id}')">حذف</button></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
         
         async function loadLevelTests() {
     try {
@@ -1300,25 +1440,9 @@ function saveNotificationToHistory(notification) {
             return true;
         }
 
-        async function loadCourses() {
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_URL + '/admin/courses', { headers: { 'Authorization': 'Bearer ' + token } });
-            const courses = await res.json();
-            const container = document.getElementById('coursesList');
-            if(!courses.length) { container.innerHTML = '<div class="empty-message">لا توجد دورات</div>'; return; }
-            container.innerHTML = `<table class="table"><thead><tr><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الإجراءات</th></tr></thead><tbody>${courses.map(c => `<tr><td><strong>${c.title}</strong><br><small>${c.description.substring(0,50)}...</small></td><td>${c.level==='beginner'?'مبتدئ':'متقدم'}</td><td>${c.isPremium?c.price+' ريال':'مجاني'}</td><td>${c.totalLessons||0}</td><td><button class="btn-danger" onclick="deleteCourse('${c._id}')">حذف</button></td></tr>`).join('')}</tbody></table>`;
-        }
         
-        document.getElementById('addCourseForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const token = localStorage.getItem('token');
-            const data = { title: document.getElementById('courseTitle').value, description: document.getElementById('courseDescription').value, level: document.getElementById('courseLevel').value, price: parseInt(document.getElementById('coursePrice').value), isPremium: document.getElementById('coursePremium').checked, freeLessons: parseInt(document.getElementById('freeLessons').value) };
-            const res = await fetch(API_URL + '/admin/courses', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(data) });
-            if(res.ok) { showAlert('✅ تم إضافة الدورة','success'); e.target.reset(); loadCourses(); loadCoursesForSelect(); loadCoursesForSelect2(); } else showAlert('❌ خطأ','error');
-        };
         
-        window.deleteCourse = async (id) => { if(confirm('حذف الدورة؟')) { const token = localStorage.getItem('token'); await fetch(API_URL + '/admin/courses/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } }); showAlert('✅ تم الحذف','success'); loadCourses(); loadCoursesForSelect(); loadCoursesForSelect2(); } };
-
+        
         async function loadCoursesForSelect() {
             const token = localStorage.getItem('token');
             const res = await fetch(API_URL + '/admin/courses', { headers: { 'Authorization': 'Bearer ' + token } });
