@@ -311,7 +311,7 @@ const botSchema = new mongoose.Schema({
     level: { type: String, enum: ['beginner', 'intermediate', 'advanced'], default: 'beginner' },
     isActive: { type: Boolean, default: true },
     messages: [{ type: String }],
-    messageInterval: { type: Number, default: 60000 },
+    messageInterval: { type: Number, default: 3600000 },
     createdAt: { type: Date, default: Date.now }
 });
 
