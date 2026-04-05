@@ -1588,17 +1588,32 @@ function generateCertificateHTML(data, qrCode) {
 }
         
         function shareCertificate() {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'شهادة إتمام دورة',
-                    text: 'لقد أكملت دورة ${data.courseTitle} على منصة EnGo',
-                    url: window.location.href
-                });
-            } else {
-                navigator.clipboard.writeText(window.location.href);
-                alert('✅ تم نسخ رابط الشهادة! يمكنك مشاركته مع أصدقائك.');
-            }
-        }
+    // ✅ استخدام رابط التحقق الصحيح من بيانات الشهادة
+    const certificateId = '${data.certificateId}';
+    const verifyUrl = '${data.verifyUrl}';
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'شهادة إتمام دورة',
+            text: 'لقد أكملت دورة ${data.courseTitle} على منصة EnGo',
+            url: verifyUrl
+        }).catch(err => {
+            console.log('Share cancelled:', err);
+            // إذا فشل المشاركة، نسخ الرابط
+            copyToClipboard(verifyUrl);
+        });
+    } else {
+        copyToClipboard(verifyUrl);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✅ تم نسخ رابط التحقق من الشهادة! يمكنك مشاركته مع أصدقائك.');
+    }).catch(() => {
+        alert('❌ حدث خطأ في نسخ الرابط');
+    });
+}
     </script>
 </body>
 </html>`;
