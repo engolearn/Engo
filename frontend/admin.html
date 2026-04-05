@@ -1128,21 +1128,51 @@ async function loadBots() {
 async function loadRoomsForBots() {
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(API_URL + '/admin/rooms-with-bots', {
+        // جلب الغرف من المسار الصحيح
+        const res = await fetch(API_URL + '/admin/rooms', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
+        
+        if (!res.ok) {
+            console.error('Failed to load rooms:', res.status);
+            return;
+        }
+        
         const rooms = await res.json();
+        console.log('📋 Rooms loaded:', rooms);
         
         const roomSelect = document.getElementById('runRoomSelect');
         if (roomSelect) {
-            roomSelect.innerHTML = '<option value="">-- اختر غرفة --</option>' + 
-                rooms.map(room => `<option value="${room.roomId}">${escapeHtml(room.name)}</option>`).join('');
+            if (rooms.length === 0) {
+                roomSelect.innerHTML = '<option value="">-- لا توجد غرف --</option>';
+                // عرض زر لإنشاء غرفة
+                const container = document.getElementById('roomsListForBots');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-message">
+                            لا توجد غرف دردشة. 
+                            <button class="btn-primary" onclick="createTestRoom()" style="margin-top: 10px;">
+                                <i class="fas fa-plus"></i> إنشاء غرفة اختبار
+                            </button>
+                        </div>
+                    `;
+                }
+            } else {
+                roomSelect.innerHTML = '<option value="">-- اختر غرفة --</option>' + 
+                    rooms.map(room => `<option value="${room.roomId}">📢 ${escapeHtml(room.name)} (${room.members?.length || 0} أعضاء)</option>`).join('');
+            }
         }
         
     } catch (error) {
         console.error('Error loading rooms:', error);
+        const roomSelect = document.getElementById('runRoomSelect');
+        if (roomSelect) {
+            roomSelect.innerHTML = '<option value="">-- خطأ في تحميل الغرف --</option>';
+        }
     }
 }
+
+
 
 // إنشاء بوت جديد
 document.getElementById('createBotForm')?.addEventListener('submit', async (e) => {
