@@ -1413,7 +1413,15 @@ app.post('/api/ai/chat', auth, async (req, res) => {
             return res.status(500).json({ success: false, message: 'مفتاح API غير موجود. يرجى إضافته في ملف .env' });
         }
         
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+        // ✅ استخدم نموذج صحيح - جرب أحد هذه النماذج:
+        // gemini-1.5-flash (سريع)
+        // gemini-1.5-pro (قوي)
+        // gemini-1.0-pro (مستقر)
+        const MODEL = 'gemini-1.5-flash';  // ✅ غيّر إلى هذا النموذج
+        
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+        
+        console.log('📤 Sending request to Gemini API...');
         
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -1435,6 +1443,7 @@ app.post('/api/ai/chat', auth, async (req, res) => {
         
         if (data.candidates && data.candidates[0]) {
             const reply = data.candidates[0].content.parts[0].text;
+            console.log('✅ AI response sent');
             res.json({ success: true, reply: reply });
         } else if (data.error) {
             console.error('Gemini API Error:', data.error);
