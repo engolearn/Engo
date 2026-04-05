@@ -234,7 +234,8 @@ const certificateSchema = new mongoose.Schema({
     courseTitle: { type: String, required: true },
     courseLevel: { type: String, required: true },
     issueDate: { type: Date, default: Date.now },
-    finalScore: { type: Number, default: 0 }
+    finalScore: { type: Number, default: 0 },
+    totalLessons: { type: Number, default: 0 }  // ✅ أضف هذا الحقل
 });
 const Certificate = mongoose.model('Certificate', certificateSchema);
 
@@ -1038,16 +1039,19 @@ app.put('/api/notifications/read-all', auth, async (req, res) => {
 
 // ==================== Certificate Generation ====================
 const QRCode = require('qrcode');
-
 // إنشاء شهادة وإعادة توجيه إلى صفحة العرض
 app.get('/api/certificate/:courseId', auth, async (req, res) => {
     try {
         const { courseId } = req.params;
         const userId = req.user._id;
         
+        console.log('📝 Generating certificate for course:', courseId);
+        console.log('👤 User ID:', userId);
+        
         // جلب بيانات الدورة
         const course = await Course.findById(courseId);
         if (!course) {
+            console.log('❌ Course not found:', courseId);
             return res.status(404).json({ message: 'الدورة غير موجودة' });
         }
         
@@ -1055,6 +1059,8 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
         const progress = await UserProgress.findOne({ userId, courseId });
         const completedLessons = progress?.completedLessons?.length || 0;
         const totalLessons = course.totalLessons;
+        
+        console.log(`📊 Progress: ${completedLessons}/${totalLessons} lessons completed`);
         
         // التحقق من إكمال الدورة
         if (completedLessons < totalLessons) {
@@ -1084,8 +1090,10 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
         
         if (certificate) {
             certificateId = certificate.certificateId;
+            console.log('✅ Using existing certificate:', certificateId);
         } else {
             certificateId = `ENGO-${Date.now()}-${userId.toString().slice(-6)}`;
+            console.log('📝 Creating new certificate:', certificateId);
             
             certificate = new Certificate({
                 certificateId: certificateId,
@@ -1095,46 +1103,68 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
                 courseTitle: course.title,
                 courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
                 issueDate: new Date(),
-                finalScore: finalScore || 0
+                finalScore: finalScore || 0,
+                totalLessons: totalLessons
             });
+            
             await certificate.save();
+            console.log('✅ Certificate saved to database');
         }
         
         // إعادة التوجيه إلى صفحة عرض الشهادة
-        res.redirect(`/certificate-viewer.html?id=${certificateId}`);
+        const viewerUrl = `/certificate-viewer.html?id=${certificateId}`;
+        console.log('🔄 Redirecting to:', viewerUrl);
+        res.redirect(viewerUrl);
         
     } catch (error) {
-        console.error('Certificate Error:', error);
-        res.status(500).json({ message: error.message });
+        console.error('❌ Certificate Error:', error);
+        res.status(500).json({ 
+            message: 'حدث خطأ في إنشاء الشهادة: ' + error.message 
+        });
     }
 });
-// API لجلب بيانات الشهادة
+
+// ==================== API لجلب بيانات الشهادة ====================
 app.get('/api/certificate-data/:certId', async (req, res) => {
     try {
         const { certId } = req.params;
         
+        console.log('🔍 Searching for certificate:', certId);
+        
+        // البحث عن الشهادة في قاعدة البيانات
         const certificate = await Certificate.findOne({ certificateId: certId });
         
         if (!certificate) {
-            return res.json({ valid: false, message: 'لم يتم العثور على الشهادة' });
+            console.log('❌ Certificate not found:', certId);
+            return res.json({ 
+                valid: false, 
+                message: 'لم يتم العثور على هذه الشهادة' 
+            });
         }
         
-        const qrCode = await QRCode.toDataURL(`https://engo.koyeb.app/certificate-viewer.html?id=${certificate.certificateId}`);
+        console.log('✅ Certificate found:', certificate.certificateId);
+        
+        // إنشاء رابط التحقق
+        const verifyUrl = `https://engo.koyeb.app/verify-certificate/${certificate.certificateId}`;
+        
+        // إنشاء QR Code
+        const QRCode = require('qrcode');
+        const qrCode = await QRCode.toDataURL(verifyUrl);
         
         res.json({
             valid: true,
             userName: certificate.userName,
             courseTitle: certificate.courseTitle,
             courseLevel: certificate.courseLevel,
-            completionDate: certificate.issueDate.toLocaleDateString('ar-EG'),
+            completionDate: certificate.issueDate ? certificate.issueDate.toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG'),
             totalLessons: certificate.totalLessons || 'جميع الدروس',
-            finalScore: certificate.finalScore + '%',
+            finalScore: certificate.finalScore ? certificate.finalScore + '%' : 'اجتاز',
             certificateId: certificate.certificateId,
             qrCode: qrCode
         });
         
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Certificate data error:', error);
         res.json({ valid: false, message: error.message });
     }
 });
