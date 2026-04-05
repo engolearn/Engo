@@ -89,12 +89,11 @@
         </div>
     </div>
 
-    <!-- ✅ زر الحصول على الشهادة (يظهر فقط عند إكمال الدورة) -->
-    <div id="certificateBtn" style="display: none; text-align: center; margin: 30px 0;">
-        <a href="#" id="certificateLink" class="btn-certificate" target="_blank">
-            🎓 الحصول على الشهادة
-        </a>
-    </div>
+<div id="certificateBtn" style="display: none; text-align: center; margin: 30px 0;">
+    <button id="certificateButton" class="btn-certificate" onclick="getCertificate()">
+        🎓 الحصول على الشهادة
+    </button>
+</div>
 
 </div>
 
@@ -171,7 +170,42 @@
                 console.error('Error loading progress:', error);
             }
         }
-
+// ==================== الحصول على الشهادة ====================
+async function getCertificate() {
+    const token = localStorage.getItem('token');
+    const courseId = getCourseId();
+    
+    // ✅ التحقق من وجود التوكن
+    if (!token) {
+        showAlert('❌ يرجى تسجيل الدخول أولاً', 'error');
+        return;
+    }
+    
+    if (!courseId) {
+        showAlert('❌ حدث خطأ في تحديد الدورة', 'error');
+        return;
+    }
+    
+    // ✅ إظهار مؤشر التحميل
+    const btn = document.getElementById('certificateButton');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ جاري تجهيز الشهادة...';
+    btn.disabled = true;
+    
+    try {
+        // ✅ فتح الشهادة في نافذة جديدة مع إرسال التوكن
+        window.open(API_URL + '/certificate/' + courseId + '?token=' + encodeURIComponent(token), '_blank');
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('❌ حدث خطأ في فتح الشهادة', 'error');
+    } finally {
+        // ✅ إعادة الزر إلى حالته الأصلية
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 1000);
+    }
+}
         // تحميل تفاصيل الدورة
         async function loadCourseDetails() {
             const courseId = getCourseId();
@@ -292,6 +326,8 @@ async function checkCertificateEligibility() {
         
         // جلب نتيجة الاختبار النهائي
         let finalScore = null;
+        let passedFinal = true; // ✅ افتراضي true إذا لم يكن هناك اختبار نهائي
+        
         try {
             const quizzesRes = await fetch(API_URL + '/courses/' + courseId + '/quizzes', {
                 headers: { 'Authorization': 'Bearer ' + token }
@@ -299,22 +335,19 @@ async function checkCertificateEligibility() {
             const quizzes = await quizzesRes.json();
             if (quizzes.final && quizzes.final.completed) {
                 finalScore = quizzes.final.score;
+                passedFinal = finalScore >= 60;
+            } else if (quizzes.final && !quizzes.final.completed) {
+                passedFinal = false;
             }
         } catch (err) {
-            console.log('No final quiz found or not completed');
+            console.log('No final quiz found - assuming passed');
+            passedFinal = true;
         }
         
-        // التحقق من اجتياز الاختبار النهائي (60% فأكثر)
-        const passedFinal = finalScore !== null && finalScore >= 60;
-        
-        // إظهار الزر إذا اكتملت جميع الدروس واجتاز الاختبار النهائي
+        // ✅ إظهار الزر إذا اكتملت جميع الدروس واجتاز الاختبار النهائي (أو لا يوجد اختبار)
         const certificateBtn = document.getElementById('certificateBtn');
-        const certificateLink = document.getElementById('certificateLink');
         
-        if (allLessonsCompleted && (passedFinal || finalScore === null)) {
-            if (certificateLink) {
-                certificateLink.href = API_URL + '/certificate/' + courseId;
-            }
+        if (allLessonsCompleted && passedFinal) {
             if (certificateBtn) {
                 certificateBtn.style.display = 'block';
                 console.log('✅ زر الشهادة ظهر للمستخدم');
@@ -323,7 +356,11 @@ async function checkCertificateEligibility() {
             if (certificateBtn) {
                 certificateBtn.style.display = 'none';
             }
-            console.log('❌ زر الشهادة مخفي - لم يتم استيفاء الشروط');
+            if (!allLessonsCompleted) {
+                console.log(`❌ زر الشهادة مخفي - لم تكمل الدورة: ${completedCount}/${totalLessons}`);
+            } else if (!passedFinal) {
+                console.log(`❌ زر الشهادة مخفي - لم تجتز الاختبار النهائي: ${finalScore}%`);
+            }
         }
         
     } catch (error) {
