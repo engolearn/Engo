@@ -225,6 +225,18 @@ const userProgressSchema = new mongoose.Schema({
     finalScore: { type: Number, default: null }
 });
 const UserProgress = mongoose.model('UserProgress', userProgressSchema);
+// نموذج الشهادات
+const certificateSchema = new mongoose.Schema({
+    certificateId: { type: String, required: true, unique: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
+    userName: { type: String, required: true },
+    courseTitle: { type: String, required: true },
+    courseLevel: { type: String, required: true },
+    issueDate: { type: Date, default: Date.now },
+    finalScore: { type: Number, default: 0 }
+});
+const Certificate = mongoose.model('Certificate', certificateSchema);
 
 // ==================== Helper Functions ====================
 // دالة إضافة إشعار للمستخدم
@@ -640,48 +652,25 @@ app.get('/verify-certificate/:id', async (req, res) => {
     }
 });
 
-// API للتحقق من صحة الشهادة
 app.get('/api/verify-certificate/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // التحقق من تنسيق الشهادة
-        if (!id || !id.startsWith('ENGO-')) {
-            return res.json({ valid: false, message: 'تنسيق الشهادة غير صحيح' });
+        const certificate = await Certificate.findOne({ certificateId: id })
+            .populate('userId', 'fullName username')
+            .populate('courseId', 'title level');
+        
+        if (!certificate) {
+            return res.json({ valid: false, message: 'لم يتم العثور على هذه الشهادة' });
         }
-        
-        // استخراج userId من معرف الشهادة
-        // تنسيق الشهادة: ENGO-1700000000000-abc123
-        const parts = id.split('-');
-        if (parts.length < 3) {
-            return res.json({ valid: false, message: 'معرف الشهادة غير صالح' });
-        }
-        
-        const userId = parts[2]; // الجزء الأخير هو معرف المستخدم
-        
-        // البحث عن المستخدم
-        const user = await User.findOne({ _id: { $regex: userId, $options: 'i' } });
-        if (!user) {
-            return res.json({ valid: false, message: 'لم يتم العثور على المستخدم' });
-        }
-        
-        // البحث عن الدورة (يمكن تحسينها بتخزين معلومات الشهادة في قاعدة بيانات)
-        // للتبسيط، سنبحث عن أي دورة أكملها المستخدم
-        const userProgress = await UserProgress.findOne({ userId: user._id }).populate('courseId');
-        
-        if (!userProgress || !userProgress.courseId) {
-            return res.json({ valid: false, message: 'لم يتم العثور على الدورة' });
-        }
-        
-        const course = userProgress.courseId;
         
         res.json({
             valid: true,
-            certificateId: id,
-            userName: user.fullName || user.username,
-            courseTitle: course.title,
-            courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
-            issueDate: new Date().toLocaleDateString('ar-EG')
+            certificateId: certificate.certificateId,
+            userName: certificate.userName || certificate.userId?.fullName,
+            courseTitle: certificate.courseTitle,
+            courseLevel: certificate.courseLevel,
+            issueDate: certificate.issueDate.toLocaleDateString('ar-EG')
         });
         
     } catch (error) {
@@ -1106,7 +1095,18 @@ const certificateData = {
     finalScore: finalScore || 'اجتاز',
     verifyUrl: verifyUrl
 };
-
+// بعد إنشاء certificateData وقبل إنشاء QR
+const newCertificate = new Certificate({
+    certificateId: certificateId,
+    userId: userId,
+    courseId: courseId,
+    userName: req.user.fullName,
+    courseTitle: course.title,
+    courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+    issueDate: new Date(),
+    finalScore: finalScore || 0
+});
+await newCertificate.save();
 // ✅ 4. إنشاء رمز QR
 const qrCode = await QRCode.toDataURL(verifyUrl);
 
