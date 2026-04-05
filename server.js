@@ -33,10 +33,10 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 
 // User Model (محدث لاستخدام username)
 const userSchema = new mongoose.Schema({
-    username: { type: String, unique: true, required: true }, // ✅ اسم المستخدم (للظهور)
-    email: { type: String, unique: true, sparse: true }, // ✅ اختياري، يمكن إخفاؤه
+    username: { type: String, unique: true, required: true },
+    email: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
-    name: { type: String, default: '' }, // ✅ الاسم الحقيقي (اختياري)
+    fullName: { type: String, required: true }, // ✅ الاسم الكامل - إلزامي للشهادة
     role: { type: String, default: 'user', enum: ['user', 'admin'] },
     level: { type: String, enum: ['beginner', 'advanced', null], default: null },
     levelScore: { type: Number, default: 0 },
@@ -611,15 +611,20 @@ app.get('/api/admin/rooms', auth, adminAuth, async (req, res) => {
 // تسجيل مستخدم جديد (باستخدام username فقط)
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { username, password, name } = req.body;
+        const { username, fullName, password } = req.body;
         
         // التحقق من وجود اسم المستخدم
         if (!username) {
             return res.status(400).json({ message: 'اسم المستخدم مطلوب' });
         }
         
+        // ✅ التحقق من الاسم الكامل
+        if (!fullName || fullName.trim().length < 3) {
+            return res.status(400).json({ message: 'الاسم الكامل مطلوب (3 أحرف على الأقل)' });
+        }
+        
         // التحقق من عدم تكرار اسم المستخدم
-        const existingUser = await User.findOne({ username });
+        const existingUser = await User.findOne({ username: username.toLowerCase() });
         if (existingUser) {
             return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
         }
@@ -629,7 +634,7 @@ app.post('/api/auth/register', async (req, res) => {
         
         const user = new User({ 
             username: username.toLowerCase(),
-            name: name || username,
+            fullName: fullName.trim(),
             password: hashedPassword,
             role: 'user'
         });
@@ -643,16 +648,14 @@ app.post('/api/auth/register', async (req, res) => {
             { expiresIn: '7d' }
         );
         
-        // لا نرسل البريد الإلكتروني في الرد
         res.json({ 
             message: 'تم التسجيل بنجاح', 
             token, 
             user: { 
                 id: user._id, 
                 username: user.username,
-                name: user.name,
+                fullName: user.fullName,
                 role: user.role,
-                avatar: user.avatar,
                 level: user.level,
                 purchasedCourses: user.purchasedCourses || [] 
             } 
@@ -662,12 +665,10 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// تسجيل الدخول (باستخدام username)
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
         
-        // البحث باستخدام username
         const user = await User.findOne({ username: username.toLowerCase() });
         if (!user) {
             return res.status(401).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
@@ -686,16 +687,14 @@ app.post('/api/auth/login', async (req, res) => {
             { expiresIn: '7d' }
         );
         
-        // لا نرسل البريد الإلكتروني
         res.json({ 
             message: 'تم تسجيل الدخول', 
             token, 
             user: { 
                 id: user._id, 
                 username: user.username,
-                name: user.name,
+                fullName: user.fullName,
                 role: user.role,
-                avatar: user.avatar,
                 level: user.level,
                 purchasedCourses: user.purchasedCourses || [] 
             } 
@@ -704,7 +703,6 @@ app.post('/api/auth/login', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
-
 // ==================== Course Routes ====================
 app.get('/api/courses', async (req, res) => {
     try {
@@ -842,17 +840,17 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
             }
         }
         
-        // بيانات الشهادة
-        const certificateData = {
-            userName: req.user.name,
-            courseTitle: course.title,
-            courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
-            completionDate: new Date().toLocaleDateString('ar-EG'),
-            certificateId: `ENGO-${Date.now()}-${userId.toString().slice(-6)}`,
-            totalLessons: totalLessons,
-            finalScore: finalScore || 'اجتاز',
-            verifyUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/verify-certificate/${Date.now()}`
-        };
+        // في دالة إنشاء الشهادة
+const certificateData = {
+    userName: req.user.fullName, // ✅ استخدام الاسم الكامل من قاعدة البيانات
+    courseTitle: course.title,
+    courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+    completionDate: new Date().toLocaleDateString('ar-EG'),
+    certificateId: `ENGO-${Date.now()}-${userId.toString().slice(-6)}`,
+    totalLessons: totalLessons,
+    finalScore: finalScore || 'اجتاز',
+    verifyUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/verify-certificate/${Date.now()}`
+};
         
         // إنشاء رمز QR
         const qrCode = await QRCode.toDataURL(certificateData.verifyUrl);
