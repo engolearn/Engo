@@ -645,29 +645,44 @@ app.get('/api/verify-certificate/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // هنا يجب البحث في قاعدة البيانات عن الشهادة
-        // للتوضيح، سنستخدم مثالاً، لكن يجب تخزين الشهادات في قاعدة بيانات منفصلة
-        
-        // مثال: البحث في سجل الشهادات
-        // const certificate = await Certificate.findOne({ certificateId: id });
-        
-        // مؤقتاً، نتحقق من التنسيق
-        if (id && id.startsWith('ENGO-')) {
-            // شهادة صالحة (مثال)
-            res.json({
-                valid: true,
-                certificateId: id,
-                userName: 'أحمد محمد',
-                courseTitle: 'دورة اللغة الإنجليزية للمبتدئين',
-                courseLevel: 'المستوى المبتدئ',
-                issueDate: new Date().toLocaleDateString('ar-EG')
-            });
-        } else {
-            res.json({
-                valid: false,
-                message: 'لم يتم العثور على هذه الشهادة في قاعدة البيانات'
-            });
+        // التحقق من تنسيق الشهادة
+        if (!id || !id.startsWith('ENGO-')) {
+            return res.json({ valid: false, message: 'تنسيق الشهادة غير صحيح' });
         }
+        
+        // استخراج userId من معرف الشهادة
+        // تنسيق الشهادة: ENGO-1700000000000-abc123
+        const parts = id.split('-');
+        if (parts.length < 3) {
+            return res.json({ valid: false, message: 'معرف الشهادة غير صالح' });
+        }
+        
+        const userId = parts[2]; // الجزء الأخير هو معرف المستخدم
+        
+        // البحث عن المستخدم
+        const user = await User.findOne({ _id: { $regex: userId, $options: 'i' } });
+        if (!user) {
+            return res.json({ valid: false, message: 'لم يتم العثور على المستخدم' });
+        }
+        
+        // البحث عن الدورة (يمكن تحسينها بتخزين معلومات الشهادة في قاعدة بيانات)
+        // للتبسيط، سنبحث عن أي دورة أكملها المستخدم
+        const userProgress = await UserProgress.findOne({ userId: user._id }).populate('courseId');
+        
+        if (!userProgress || !userProgress.courseId) {
+            return res.json({ valid: false, message: 'لم يتم العثور على الدورة' });
+        }
+        
+        const course = userProgress.courseId;
+        
+        res.json({
+            valid: true,
+            certificateId: id,
+            userName: user.fullName || user.username,
+            courseTitle: course.title,
+            courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+            issueDate: new Date().toLocaleDateString('ar-EG')
+        });
         
     } catch (error) {
         console.error('API Verification error:', error);
