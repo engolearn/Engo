@@ -1712,6 +1712,64 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// ==================== User Stats ====================
+app.get('/api/user/stats', auth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        
+        // جلب عدد الدروس المكتملة
+        const userProgress = await UserProgress.find({ userId });
+        let totalLessonsCompleted = 0;
+        let totalCoursesCompleted = 0;
+        const coursesCompleted = new Set();
+        
+        for (const progress of userProgress) {
+            totalLessonsCompleted += progress.completedLessons?.length || 0;
+            if (progress.completedLessons?.length === progress.totalLessons) {
+                coursesCompleted.add(progress.courseId.toString());
+            }
+        }
+        totalCoursesCompleted = coursesCompleted.size;
+        
+        // نظام النقاط والمستويات
+        const xpPerLesson = 100;
+        const xpForNextLevel = 1000;
+        const totalXP = totalLessonsCompleted * xpPerLesson;
+        const level = Math.floor(totalXP / xpForNextLevel) + 1;
+        const levelProgress = totalXP % xpForNextLevel;
+        
+        // الشارات
+        const badges = [];
+        if (totalLessonsCompleted >= 5) {
+            badges.push({ name: 'بداية رائعة', description: 'أكملت 5 دروس', icon: 'fa-star', earnedAt: new Date() });
+        }
+        if (totalLessonsCompleted >= 20) {
+            badges.push({ name: 'متعلم نشط', description: 'أكملت 20 درس', icon: 'fa-fire', earnedAt: new Date() });
+        }
+        if (totalCoursesCompleted >= 1) {
+            badges.push({ name: 'أول دورة', description: 'أكملت أول دورة', icon: 'fa-trophy', earnedAt: new Date() });
+        }
+        
+        res.json({
+            points: {
+                totalXP: totalXP,
+                level: level,
+                levelProgress: levelProgress
+            },
+            nextLevel: {
+                level: level + 1,
+                needed: xpForNextLevel
+            },
+            badges: badges,
+            totalLessonsCompleted: totalLessonsCompleted,
+            totalCoursesCompleted: totalCoursesCompleted
+        });
+        
+    } catch (error) {
+        console.error('Error getting user stats:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
 
 // ==================== Level Test Routes ====================
 app.get('/api/level-tests', async (req, res) => {
@@ -1719,6 +1777,42 @@ app.get('/api/level-tests', async (req, res) => {
         const tests = await Quiz.find({ quizType: 'level_test', isActive: true }).select('-questions');
         res.json(tests);
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+// ==================== Level Test Routes ====================
+// جلب اختبار تحديد المستوى (للصفحة الرئيسية)
+app.get('/api/level-test', async (req, res) => {
+    try {
+        // جلب أول اختبار مستوى نشط
+        const test = await Quiz.findOne({ 
+            quizType: 'level_test', 
+            isActive: true 
+        }).select('-questions.correctAnswer -questions.correctOption -questions.isTrue -questions.correctAnswers');
+        
+        if (!test) {
+            return res.status(404).json({ message: 'لا توجد اختبارات مستوى متاحة حالياً' });
+        }
+        
+        // تنسيق الأسئلة للعرض (إخفاء الإجابات الصحيحة)
+        const safeQuestions = test.questions.map(q => ({
+            id: q.id,
+            question: q.question,
+            options: q.options,
+            type: q.type
+        }));
+        
+        res.json({
+            _id: test._id,
+            name: test.name,
+            description: test.description,
+            duration: test.duration,
+            questions: safeQuestions,
+            totalQuestions: test.questions.length
+        });
+        
+    } catch (error) {
+        console.error('Error fetching level test:', error);
         res.status(500).json({ message: error.message });
     }
 });
