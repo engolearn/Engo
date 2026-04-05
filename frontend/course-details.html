@@ -262,23 +262,68 @@
             // الانتقال إلى صفحة عرض الدرس مع تمرير معرف الدورة ومعرف الدرس
             window.location.href = `/lesson.html?courseId=${courseId}&lessonId=${lessonId}&lessonIndex=${lessonIndex}`;
         }
-    // التحقق من إكمال الدورة وعرض زر الشهادة
+// ==================== التحقق من أهلية الحصول على الشهادة ====================
 async function checkCertificateEligibility() {
     const token = localStorage.getItem('token');
+    if (!token) return;
+    
     const courseId = getCourseId();
+    if (!courseId) return;
     
-    const res = await fetch(API_URL + '/progress/' + courseId, {
-        headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const progress = await res.json();
-    const totalLessons = courseData.totalLessons;
-    
-    if (progress.completedLessons?.length >= totalLessons) {
-        const certLink = document.getElementById('certificateLink');
-        if (certLink) {
-            certLink.href = API_URL + '/certificate/' + courseId;
-            document.getElementById('certificateBtn').style.display = 'block';
+    try {
+        // جلب تقدم المستخدم
+        const progressRes = await fetch(API_URL + '/progress/' + courseId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const progress = await progressRes.json();
+        
+        // عدد الدروس المكتملة
+        const completedCount = progress.completedLessons?.length || 0;
+        const totalLessons = courseData?.totalLessons || 0;
+        
+        console.log(`📊 التقدم: ${completedCount}/${totalLessons} درس مكتمل`);
+        
+        // التحقق من اكتمال جميع الدروس
+        const allLessonsCompleted = completedCount >= totalLessons && totalLessons > 0;
+        
+        // جلب نتيجة الاختبار النهائي
+        let finalScore = null;
+        try {
+            const quizzesRes = await fetch(API_URL + '/courses/' + courseId + '/quizzes', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const quizzes = await quizzesRes.json();
+            if (quizzes.final && quizzes.final.completed) {
+                finalScore = quizzes.final.score;
+            }
+        } catch (err) {
+            console.log('No final quiz found or not completed');
         }
+        
+        // التحقق من اجتياز الاختبار النهائي (60% فأكثر)
+        const passedFinal = finalScore !== null && finalScore >= 60;
+        
+        // إظهار الزر إذا اكتملت جميع الدروس واجتاز الاختبار النهائي
+        const certificateBtn = document.getElementById('certificateBtn');
+        const certificateLink = document.getElementById('certificateLink');
+        
+        if (allLessonsCompleted && (passedFinal || finalScore === null)) {
+            if (certificateLink) {
+                certificateLink.href = API_URL + '/certificate/' + courseId;
+            }
+            if (certificateBtn) {
+                certificateBtn.style.display = 'block';
+                console.log('✅ زر الشهادة ظهر للمستخدم');
+            }
+        } else {
+            if (certificateBtn) {
+                certificateBtn.style.display = 'none';
+            }
+            console.log('❌ زر الشهادة مخفي - لم يتم استيفاء الشروط');
+        }
+        
+    } catch (error) {
+        console.error('Error checking certificate eligibility:', error);
     }
 }
 
@@ -286,6 +331,7 @@ async function checkCertificateEligibility() {
         async function init() {
             if (await checkAuth()) {
                 await loadCourseDetails();
+                await checkCertificateEligibility();
             }
         }
         
