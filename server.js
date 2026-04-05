@@ -298,6 +298,288 @@ const adminAuth = async (req, res, next) => {
     next();
 };
 
+// ==================== Fake Users Bot System - كامل ====================
+
+// نموذج البوتات
+const botSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    avatar: { type: String, default: '🤖' },
+    level: { type: String, enum: ['beginner', 'intermediate', 'advanced'], default: 'beginner' },
+    isActive: { type: Boolean, default: true },
+    messages: [{ type: String }],
+    messageInterval: { type: Number, default: 60000 }, // بالمللي ثانية
+    createdAt: { type: Date, default: Date.now }
+});
+
+const Bot = mongoose.model('Bot', botSchema);
+
+// نموذج سجل رسائل البوتات
+const botMessageLogSchema = new mongoose.Schema({
+    botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot' },
+    botName: String,
+    roomId: String,
+    roomName: String,
+    message: String,
+    sentAt: { type: Date, default: Date.now }
+});
+const BotMessageLog = mongoose.model('BotMessageLog', botMessageLogSchema);
+
+// متغير لتخزين المؤقتات النشطة
+let activeBotIntervals = new Map();
+
+// دالة إنشاء بوت جديد
+async function createBot(botData) {
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash('botpassword123', 10);
+    
+    const user = new User({
+        name: botData.name,
+        email: botData.email,
+        password: hashedPassword,
+        role: 'user',
+        level: botData.level,
+        avatar: botData.avatar,
+        createdAt: new Date()
+    });
+    await user.save();
+    
+    const bot = new Bot({
+        name: botData.name,
+        email: botData.email,
+        avatar: botData.avatar,
+        level: botData.level,
+        messages: botData.messages || [],
+        messageInterval: botData.messageInterval || 60000,
+        isActive: true
+    });
+    await bot.save();
+    
+    return { bot, user };
+}
+
+// دالة إرسال رسالة من بوت
+async function sendBotMessage(bot, user, roomId, io) {
+    if (!bot.isActive) return;
+    if (!bot.messages || bot.messages.length === 0) return;
+    
+    const randomMessage = bot.messages[Math.floor(Math.random() * bot.messages.length)];
+    
+    const room = await Room.findOne({ roomId });
+    if (!room) return;
+    
+    const message = {
+        userId: user._id,
+        userName: bot.name,
+        text: randomMessage,
+        timestamp: new Date(),
+        readBy: []
+    };
+    
+    room.messages.push(message);
+    room.lastActivity = new Date();
+    await room.save();
+    
+    // تسجيل الرسالة
+    const log = new BotMessageLog({
+        botId: bot._id,
+        botName: bot.name,
+        roomId: roomId,
+        roomName: room.name,
+        message: randomMessage
+    });
+    await log.save();
+    
+    io.to(roomId).emit('new_message', message);
+    console.log(`🤖 Bot ${bot.name} sent: "${randomMessage}" in room ${room.name}`);
+}
+
+// دالة تشغيل بوت في غرفة
+async function startBotInRoom(botId, roomId, io) {
+    const bot = await Bot.findById(botId);
+    if (!bot || !bot.isActive) return false;
+    
+    const user = await User.findOne({ email: bot.email });
+    if (!user) return false;
+    
+    const room = await Room.findOne({ roomId });
+    if (!room) return false;
+    
+    // إضافة المستخدم إلى الغرفة إذا لم يكن موجوداً
+    if (!room.members.includes(user._id)) {
+        room.members.push(user._id);
+        await room.save();
+    }
+    
+    // إيقاف أي مؤقت موجود مسبقاً
+    const existingInterval = activeBotIntervals.get(`${botId}_${roomId}`);
+    if (existingInterval) {
+        clearInterval(existingInterval);
+    }
+    
+    // إنشاء مؤقت جديد
+    const interval = setInterval(async () => {
+        await sendBotMessage(bot, user, roomId, io);
+    }, bot.messageInterval);
+    
+    activeBotIntervals.set(`${botId}_${roomId}`, interval);
+    
+    return true;
+}
+
+// دالة إيقاف بوت في غرفة
+function stopBotInRoom(botId, roomId) {
+    const key = `${botId}_${roomId}`;
+    const interval = activeBotIntervals.get(key);
+    if (interval) {
+        clearInterval(interval);
+        activeBotIntervals.delete(key);
+        return true;
+    }
+    return false;
+}
+
+// دالة إيقاف جميع بوتات غرفة
+function stopAllBotsInRoom(roomId) {
+    let count = 0;
+    for (const [key, interval] of activeBotIntervals.entries()) {
+        if (key.endsWith(`_${roomId}`)) {
+            clearInterval(interval);
+            activeBotIntervals.delete(key);
+            count++;
+        }
+    }
+    return count;
+}
+
+// ==================== API Routes للبوتات ====================
+
+// جلب جميع البوتات
+app.get('/api/admin/bots', auth, adminAuth, async (req, res) => {
+    try {
+        const bots = await Bot.find().sort({ createdAt: -1 });
+        res.json(bots);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// إنشاء بوت جديد
+app.post('/api/admin/bots', auth, adminAuth, async (req, res) => {
+    try {
+        const { name, avatar, level, messages, messageInterval } = req.body;
+        
+        const email = `bot_${Date.now()}_${name.replace(/\s/g, '')}@engo.com`;
+        
+        const bot = await createBot({
+            name,
+            email,
+            avatar: avatar || '🤖',
+            level: level || 'beginner',
+            messages: messages || [],
+            messageInterval: messageInterval || 60000
+        });
+        
+        res.json({ success: true, bot: bot.bot, user: bot.user });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تحديث بوت
+app.put('/api/admin/bots/:botId', auth, adminAuth, async (req, res) => {
+    try {
+        const { name, avatar, level, messages, messageInterval, isActive } = req.body;
+        
+        const bot = await Bot.findByIdAndUpdate(req.params.botId, {
+            name,
+            avatar,
+            level,
+            messages,
+            messageInterval,
+            isActive
+        }, { new: true });
+        
+        // تحديث المستخدم المرتبط
+        await User.findOneAndUpdate({ email: bot.email }, {
+            name: name,
+            level: level
+        });
+        
+        res.json({ success: true, bot });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// حذف بوت
+app.delete('/api/admin/bots/:botId', auth, adminAuth, async (req, res) => {
+    try {
+        const bot = await Bot.findById(req.params.botId);
+        if (bot) {
+            await User.deleteOne({ email: bot.email });
+            await Bot.findByIdAndDelete(req.params.botId);
+            await BotMessageLog.deleteMany({ botId: req.params.botId });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تشغيل بوت في غرفة
+app.post('/api/admin/bots/:botId/start', auth, adminAuth, async (req, res) => {
+    try {
+        const { roomId } = req.body;
+        const result = await startBotInRoom(req.params.botId, roomId, io);
+        res.json({ success: result });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// إيقاف بوت في غرفة
+app.post('/api/admin/bots/:botId/stop', auth, adminAuth, async (req, res) => {
+    try {
+        const { roomId } = req.body;
+        const result = stopBotInRoom(req.params.botId, roomId);
+        res.json({ success: result });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب البوتات النشطة في غرفة
+app.get('/api/admin/rooms/:roomId/active-bots', auth, adminAuth, async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const activeBots = [];
+        
+        for (const [key, interval] of activeBotIntervals.entries()) {
+            if (key.endsWith(`_${roomId}`)) {
+                const botId = key.split('_')[0];
+                const bot = await Bot.findById(botId);
+                if (bot) {
+                    activeBots.push(bot);
+                }
+            }
+        }
+        
+        res.json(activeBots);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب سجل رسائل البوتات
+app.get('/api/admin/bots/logs', auth, adminAuth, async (req, res) => {
+    try {
+        const logs = await BotMessageLog.find().sort({ sentAt: -1 }).limit(100);
+        res.json(logs);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 // ==================== Auth Routes ====================
 app.post('/api/auth/register', async (req, res) => {
     try {
