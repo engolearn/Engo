@@ -431,6 +431,7 @@
             <button class="tab-btn" onclick="showTab('levelTests')">📝 اختبارات المستوى</button>
             <button class="tab-btn" onclick="showTab('quizzes')">📝 الاختبارات</button>
             <button class="tab-btn" onclick="showTab('notifications')">🔔 الإشعارات</button>
+            <button class="tab-btn" onclick="showTab('bots')">🤖 إدارة البوتات</button>
             <button class="tab-btn" onclick="showTab('users')">👥 المستخدمين</button>
             <button class="tab-btn" onclick="showTab('payments')">💰 طلبات الدفع</button>
         </div>
@@ -746,6 +747,88 @@
         </div>
     </div>
 </div>
+        <!-- تبويب إدارة البوتات -->
+<div id="botsTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-robot"></i> إنشاء بوت جديد</h2>
+        <form id="createBotForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>اسم البوت *</label>
+                    <input type="text" id="botName" required placeholder="مثال: أحمد">
+                </div>
+                <div class="form-group">
+                    <label>الرمز التعبيري (Avatar)</label>
+                    <select id="botAvatar">
+                        <option value="🤖">🤖 روبوت</option>
+                        <option value="👨‍💻">👨‍💻 مبرمج</option>
+                        <option value="👩‍🎓">👩‍🎓 طالبة</option>
+                        <option value="👨‍🏫">👨‍🏫 معلم</option>
+                        <option value="💬">💬 دردشة</option>
+                        <option value="⭐">⭐ نجمة</option>
+                        <option value="🔥">🔥 نار</option>
+                        <option value="💪">💪 قوة</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>المستوى</label>
+                    <select id="botLevel">
+                        <option value="beginner">مبتدئ</option>
+                        <option value="intermediate">متوسط</option>
+                        <option value="advanced">متقدم</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>المدة بين الرسائل (ثواني)</label>
+                    <input type="number" id="botInterval" value="60" min="10" max="300">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>الرسائل (سطر لكل رسالة) *</label>
+                <textarea id="botMessages" rows="5" required placeholder="مثال:
+مرحباً! أنا جديد هنا
+الدروس رائعة جداً
+هل أحد يريد ممارسة المحادثة؟"></textarea>
+                <small>اكتب كل رسالة في سطر منفصل</small>
+            </div>
+            <button type="submit" class="btn-primary">➕ إنشاء البوت</button>
+        </form>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-list"></i> قائمة البوتات</h2>
+        <div id="botsList"><div class="loading">جاري تحميل البوتات...</div></div>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-comments"></i> تشغيل البوتات في الغرف</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>اختر بوت</label>
+                <select id="runBotSelect"></select>
+            </div>
+            <div class="form-group">
+                <label>اختر غرفة</label>
+                <select id="runRoomSelect"></select>
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-primary" onclick="startSelectedBot()" style="background: #48bb78;">
+                <i class="fas fa-play"></i> تشغيل البوت في الغرفة
+            </button>
+            <button class="btn-danger" onclick="stopSelectedBot()">
+                <i class="fas fa-stop"></i> إيقاف البوت
+            </button>
+        </div>
+    </div>
+    
+    <div class="admin-section">
+        <h2><i class="fas fa-history"></i> سجل رسائل البوتات</h2>
+        <div id="botsLogs"><div class="loading">جاري تحميل السجل...</div></div>
+    </div>
+</div>
         
         <!-- تبويب المستخدمين -->
         <div id="usersTab" class="tab-content">
@@ -981,7 +1064,249 @@ window.deleteCourse = async (id) => {
         }
     } 
 };
+// ==================== إدارة البوتات ====================
 
+// تحميل قائمة البوتات
+async function loadBots() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/bots', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const bots = await res.json();
+        
+        const container = document.getElementById('botsList');
+        if (!bots.length) {
+            container.innerHTML = '<div class="empty-message">لا توجد بوتات. قم بإنشاء بوت جديد</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <table class="table">
+                <thead>
+                    <tr><th>الاسم</th><th>المستوى</th><th>الرسائل</th><th>المدة</th><th>الحالة</th><th>الإجراءات</th></tr>
+                </thead>
+                <tbody>
+                    ${bots.map(bot => `
+                        <tr>
+                            <td>
+                                <div style="font-size: 1.5rem;">${bot.avatar || '🤖'}</div>
+                                <strong>${escapeHtml(bot.name)}</strong>
+                            </td>
+                            <td>${bot.level === 'beginner' ? '🟢 مبتدئ' : bot.level === 'intermediate' ? '🟡 متوسط' : '🔴 متقدم'}</td>
+                            <td>${bot.messages?.length || 0} رسالة</td>
+                            <td>${Math.round(bot.messageInterval / 1000)} ثانية</td>
+                            <td>
+                                ${bot.isActive ? 
+                                    '<span style="color: #48bb78;">✅ نشط</span>' : 
+                                    '<span style="color: #e53e3e;">❌ غير نشط</span>'
+                                }
+                             </td>
+                            <td class="inline-buttons">
+                                <button class="btn-warning btn-sm" onclick="editBot('${bot._id}')">✏️ تعديل</button>
+                                <button class="btn-danger btn-sm" onclick="deleteBot('${bot._id}')">🗑️ حذف</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        
+        // تحديث القائمة المنسدلة للبوتات
+        const botSelect = document.getElementById('runBotSelect');
+        if (botSelect) {
+            botSelect.innerHTML = '<option value="">-- اختر بوت --</option>' + 
+                bots.map(bot => `<option value="${bot._id}">${bot.avatar} ${escapeHtml(bot.name)}</option>`).join('');
+        }
+        
+    } catch (error) {
+        console.error('Error loading bots:', error);
+    }
+}
+
+// تحميل قائمة الغرف
+async function loadRoomsForBots() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/rooms-with-bots', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const rooms = await res.json();
+        
+        const roomSelect = document.getElementById('runRoomSelect');
+        if (roomSelect) {
+            roomSelect.innerHTML = '<option value="">-- اختر غرفة --</option>' + 
+                rooms.map(room => `<option value="${room.roomId}">${escapeHtml(room.name)}</option>`).join('');
+        }
+        
+    } catch (error) {
+        console.error('Error loading rooms:', error);
+    }
+}
+
+// إنشاء بوت جديد
+document.getElementById('createBotForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    
+    const messages = document.getElementById('botMessages').value
+        .split('\n')
+        .filter(m => m.trim().length > 0);
+    
+    if (messages.length === 0) {
+        showAlert('❌ الرجاء إدخال رسالة واحدة على الأقل', 'error');
+        return;
+    }
+    
+    const data = {
+        name: document.getElementById('botName').value,
+        avatar: document.getElementById('botAvatar').value,
+        level: document.getElementById('botLevel').value,
+        messages: messages,
+        messageInterval: parseInt(document.getElementById('botInterval').value) * 1000
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/bots', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم إنشاء البوت بنجاح', 'success');
+            document.getElementById('createBotForm').reset();
+            loadBots();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + err.message, 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+});
+
+// تشغيل بوت في غرفة
+async function startSelectedBot() {
+    const botId = document.getElementById('runBotSelect').value;
+    const roomId = document.getElementById('runRoomSelect').value;
+    
+    if (!botId || !roomId) {
+        showAlert('❌ اختر بوت وغرفة أولاً', 'error');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/bots/' + botId + '/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ roomId })
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم تشغيل البوت في الغرفة', 'success');
+        } else {
+            showAlert('❌ حدث خطأ', 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// إيقاف بوت في غرفة
+async function stopSelectedBot() {
+    const botId = document.getElementById('runBotSelect').value;
+    const roomId = document.getElementById('runRoomSelect').value;
+    
+    if (!botId || !roomId) {
+        showAlert('❌ اختر بوت وغرفة أولاً', 'error');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/bots/' + botId + '/stop', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ roomId })
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم إيقاف البوت في الغرفة', 'success');
+        } else {
+            showAlert('❌ حدث خطأ', 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// تحميل سجل رسائل البوتات
+async function loadBotsLogs() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/bots/logs', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const logs = await res.json();
+        
+        const container = document.getElementById('botsLogs');
+        if (!logs.length) {
+            container.innerHTML = '<div class="empty-message">لا توجد رسائل مسجلة</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <table class="table">
+                <thead>
+                    <tr><th>البوت</th><th>الغرفة</th><th>الرسالة</th><th>التاريخ</th></tr>
+                </thead>
+                <tbody>
+                    ${logs.map(log => `
+                        <tr>
+                            <td><strong>${escapeHtml(log.botName)}</strong></td>
+                            <td>${escapeHtml(log.roomName)}</td>
+                            <td>${escapeHtml(log.message)}</td>
+                            <td>${new Date(log.sentAt).toLocaleString('ar')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error loading logs:', error);
+    }
+}
+
+// حذف بوت
+async function deleteBot(botId) {
+    if (!confirm('⚠️ هل أنت متأكد من حذف هذا البوت؟')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/bots/' + botId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم حذف البوت', 'success');
+            loadBots();
+        }
+    } catch (error) {
+        showAlert('❌ خطأ', 'error');
+    }
+}
 // تحديث دالة عرض قائمة الدورات في لوحة الأدمن
 async function loadCourses() {
     const token = localStorage.getItem('token');
@@ -1457,6 +1782,11 @@ function saveNotificationToHistory(notification) {
     if(tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
     if(tabName === 'levelTests') loadLevelTests();
     if(tabName === 'quizzes') loadQuizzes();
+            if(tabName === 'bots') { 
+    loadBots(); 
+    loadRoomsForBots(); 
+    loadBotsLogs(); 
+            }
     if(tabName === 'notifications') { 
         loadUsersForNotification(); 
         loadSentNotifications();
