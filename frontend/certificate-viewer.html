@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>شهادة إتمام - EnGo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .certificate {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .certificate-border {
+            border: 3px double #fbbf24;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .logo { text-align: center; margin-bottom: 15px; }
+        .logo h1 { font-size: 1.5rem; color: #667eea; }
+        
+        .certificate-title { text-align: center; margin: 15px 0; }
+        .certificate-title h2 { font-size: 1.3rem; color: #fbbf24; }
+        
+        .certificate-body { text-align: center; margin: 20px 0; }
+        .student-name { font-size: 1.5rem; font-weight: bold; color: #667eea; margin: 10px 0; }
+        .course-name { font-size: 1.2rem; font-weight: bold; color: #764ba2; margin: 10px 0; }
+        
+        .certificate-details {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .detail-box {
+            background: #f7fafc;
+            padding: 8px 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .detail-box .value { font-size: 0.85rem; font-weight: bold; }
+        
+        .certificate-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .signature-line { width: 120px; height: 2px; background: #2d3748; margin-top: 20px; }
+        .qr-code img { width: 70px; height: 70px; }
+        
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Cairo', sans-serif;
+            cursor: pointer;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-outline { background: transparent; border: 1px solid #667eea; color: #667eea; }
+        
+        @media (max-width: 600px) {
+            .certificate { padding: 12px; }
+            .student-name { font-size: 1.2rem; }
+            .qr-code img { width: 50px; height: 50px; }
+            .btn { padding: 8px 15px; font-size: 0.75rem; }
+        }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate" id="certificate">
+        <div class="certificate-border">
+            <div class="logo"><h1>🏆 EnGo</h1></div>
+            <div class="certificate-title"><h2>شهادة إتمام</h2></div>
+            <div class="certificate-body">
+                <p>تشهد منصة EnGo بأن</p>
+                <div class="student-name" id="userName">...</div>
+                <p>قد أتم بنجاح دورة</p>
+                <div class="course-name" id="courseTitle">...</div>
+                <p id="courseLevel"></p>
+            </div>
+            <div class="certificate-details">
+                <div class="detail-box"><div class="value" id="completionDate"></div><div class="label">تاريخ الإكمال</div></div>
+                <div class="detail-box"><div class="value" id="totalLessons"></div><div class="label">عدد الدروس</div></div>
+                <div class="detail-box"><div class="value" id="finalScore"></div><div class="label">النتيجة</div></div>
+                <div class="detail-box"><div class="value" id="certificateId"></div><div class="label">رقم الشهادة</div></div>
+            </div>
+            <div class="certificate-footer">
+                <div class="signature"><div class="signature-line"></div><div>مدير الأكاديمية<br>EnGo Team</div></div>
+                <div class="qr-code"><img id="qrCode" src="" alt="QR"><p>مسح للتحقق</p></div>
+            </div>
+        </div>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>
+        <button class="btn btn-outline" onclick="shareCertificate()">📤 مشاركة</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const certId = urlParams.get('id');
+        
+        async function loadCertificate() {
+            if (!certId) {
+                document.body.innerHTML = '<div style="background:white;padding:2rem;text-align:center"><h2>❌ رابط غير صالح</h2></div>';
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/certificate-data/' + certId);
+                const data = await res.json();
+                
+                if (data.valid) {
+                    document.getElementById('userName').innerText = data.userName;
+                    document.getElementById('courseTitle').innerText = data.courseTitle;
+                    document.getElementById('courseLevel').innerHTML = `في ${data.courseLevel}`;
+                    document.getElementById('completionDate').innerHTML = data.completionDate;
+                    document.getElementById('totalLessons').innerHTML = data.totalLessons + ' درس';
+                    document.getElementById('finalScore').innerHTML = data.finalScore;
+                    document.getElementById('certificateId').innerHTML = data.certificateId.slice(-12);
+                    document.getElementById('qrCode').src = data.qrCode;
+                } else {
+                    document.body.innerHTML = '<div style="background:white;padding:2rem;text-align:center"><h2>❌ شهادة غير صالحة</h2><p>' + (data.message || 'لم يتم العثور على الشهادة') + '</p></div>';
+                }
+            } catch (error) {
+                document.body.innerHTML = '<div style="background:white;padding:2rem;text-align:center"><h2>❌ حدث خطأ</h2></div>';
+            }
+        }
+        
+        function shareCertificate() {
+            if (navigator.share) {
+                navigator.share({ title: 'شهادة إتمام', url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('✅ تم نسخ رابط الشهادة');
+            }
+        }
+        
+        loadCertificate();
+    </script>
+</body>
+</html>
