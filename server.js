@@ -1079,8 +1079,7 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
 const certificateId = `ENGO-${Date.now()}-${userId.toString().slice(-6)}`;
 
 // ✅ 2. إنشاء رابط التحقق
-const verifyUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/verify-certificate/${certificateId}`;
-
+const verifyUrl = `https://engo.koyeb.app/verify-certificate/${certificateId}`;
 // ✅ 3. إنشاء كائن البيانات
 const certificateData = {
     userName: req.user.fullName,
