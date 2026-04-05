@@ -193,11 +193,32 @@ async function getCertificate() {
     btn.disabled = true;
     
     try {
-        // ✅ فتح الشهادة في نافذة جديدة مع إرسال التوكن
-        window.open(API_URL + '/certificate/' + courseId + '?token=' + encodeURIComponent(token), '_blank');
+        // ✅ إرسال طلب للحصول على الشهادة (بدون فتح نافذة جديدة)
+        const response = await fetch(API_URL + '/certificate/' + courseId, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        
+        if (response.ok) {
+            const html = await response.text();
+            // ✅ فتح نافذة جديدة وعرض الشهادة
+            const newWindow = window.open();
+            newWindow.document.write(html);
+            newWindow.document.close();
+        } else if (response.status === 401) {
+            showAlert('❌ انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى', 'error');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setTimeout(() => window.location.href = '/', 2000);
+        } else {
+            const error = await response.json();
+            showAlert('❌ ' + (error.message || 'حدث خطأ في الحصول على الشهادة'), 'error');
+        }
     } catch (error) {
         console.error('Error:', error);
-        showAlert('❌ حدث خطأ في فتح الشهادة', 'error');
+        showAlert('❌ حدث خطأ في الاتصال', 'error');
     } finally {
         // ✅ إعادة الزر إلى حالته الأصلية
         setTimeout(() => {
