@@ -463,6 +463,20 @@ app.get('/api/admin/bots', auth, adminAuth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// جلب الغرف مع حالة البوتات
+app.get('/api/admin/rooms-with-bots', auth, adminAuth, async (req, res) => {
+    try {
+        const rooms = await Room.find({}).sort({ lastActivity: -1 });
+        const roomsWithBots = rooms.map(room => ({
+            ...room.toObject(),
+            botsActive: false, // يمكن تحديثها لاحقاً
+            botCount: 0
+        }));
+        res.json(roomsWithBots);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 // إنشاء بوت جديد
 app.post('/api/admin/bots', auth, adminAuth, async (req, res) => {
@@ -580,6 +594,16 @@ app.get('/api/admin/bots/logs', auth, adminAuth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// جلب جميع الغرف للتشغيل عليها
+app.get('/api/admin/rooms', auth, adminAuth, async (req, res) => {
+    try {
+        const rooms = await Room.find({}).sort({ lastActivity: -1 });
+        res.json(rooms);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // ==================== Auth Routes ====================
 app.post('/api/auth/register', async (req, res) => {
     try {
