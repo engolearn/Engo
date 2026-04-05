@@ -1397,30 +1397,103 @@ function generateAIResponse(message, userName) {
 ما الذي تود أن تتعلمه اليوم؟ 🎓`;
 }
     
-// ==================== AI Assistant API (Gemini - يعمل 100%) ====================
+// ==================== AI Assistant API (مدمج مع تقدم المستخدم) ====================
 app.post('/api/ai/chat', auth, async (req, res) => {
     try {
         const { message } = req.body;
+        const userId = req.user._id;
         
         if (!message) {
             return res.status(400).json({ success: false, message: 'الرسالة مطلوبة' });
         }
         
+        // ========== جلب بيانات تقدم المستخدم ==========
+        
+        // جلب المستخدم ومستواه
+        const user = await User.findById(userId);
+        
+        // جلب تقدم المستخدم في جميع الدورات
+        const userProgress = await UserProgress.find({ userId: userId }).populate('courseId completedLessons.lessonId');
+        
+        // جلب الدروس المكتملة
+        let completedLessons = [];
+        let completedLessonsIds = [];
+        
+        for (const progress of userProgress) {
+            for (const lesson of progress.completedLessons) {
+                if (lesson.lessonId) {
+                    completedLessons.push({
+                        id: lesson.lessonId._id,
+                        title: lesson.lessonId.title,
+                        lessonNumber: lesson.lessonId.lessonNumber,
+                        courseTitle: progress.courseId?.title || 'غير معروف',
+                        score: lesson.score
+                    });
+                    completedLessonsIds.push(lesson.lessonId._id.toString());
+                }
+            }
+        }
+        
+        // جلب الدروس المتاحة (غير مكتملة)
+        const allLessons = await Lesson.find({});
+        const availableLessons = allLessons.filter(l => !completedLessonsIds.includes(l._id.toString()));
+        
+        // مستوى المستخدم
+        const userLevel = user.level || 'beginner';
+        const levelName = userLevel === 'beginner' ? 'مبتدئ' : 'متقدم';
+        
+        // إحصائيات سريعة
+        const stats = {
+            totalCompleted: completedLessons.length,
+            level: levelName,
+            recentLessons: completedLessons.slice(-3).reverse()
+        };
+        
+        console.log(`📊 User Stats: ${stats.totalCompleted} lessons completed, Level: ${stats.level}`);
+        
+        // ========== بناء التعليمات للنظام ==========
+        
+        const systemInstruction = `أنت مساعد ذكي اسمك "EnGo AI". أنت متخصص في مساعدة طالب اللغة الإنجليزية.
+
+📋 **معلومات عن المستخدم**:
+- المستوى: ${stats.level}
+- عدد الدروس المكتملة: ${stats.totalCompleted} درس
+- آخر الدروس التي أكملها: ${stats.recentLessons.map(l => l.title).join(', ') || 'لا يوجد'}
+
+🚫 **قواعد صارمة - ممنوع تماماً**:
+1. شرح أي قاعدة نحوية أو درس لم يسبق للمستخدم أن أخذه
+2. إعطاء معلومات جديدة خارج ما تعلمه المستخدم
+3. تقديم أمثلة متقدمة لا تناسب مستوى المستخدم
+
+✅ **مسموح فقط**:
+1. الإجابة عن أسئلة حول الدروس التي أخذها المستخدم (المذكورة أعلاه)
+2. تقديم نصائح عامة لتحسين التعلم (بدون محتوى تعليمي جديد)
+3. تذكير المستخدم بمراجعة الدروس التي أكملها
+4. اقتراح مراجعة دروس محددة موجودة في قائمة الدروس المكتملة
+
+⚠️ **إذا سأل المستخدم عن شيء لم يدرسه بعد**:
+قل له: "هذا الموضوع لم تدرسه بعد. أكمل دروسك أولاً، ثم سأتمكن من مساعدتك فيه."
+
+⚠️ **إذا طلب شرح قاعدة جديدة**:
+قل له: "هذا الدرس سيأتي لاحقاً في المنهج. استمر في تعلم الدروس الحالية أولاً."
+
+📝 **أسلوب الإجابة**:
+- كن مختصراً (سطرين كحد أقصى)
+- استخدم لغة بسيطة
+- ركز على مراجعة ما تعلمه المستخدم فقط`;
+
+        // ========== استخدام Gemini API مع تعليمات مخصصة ==========
+        
         const apiKey = process.env.GEMINI_API_KEY;
         
         if (!apiKey) {
-            console.error('❌ GEMINI_API_KEY not found');
-            return res.status(500).json({ 
-                success: false, 
-                message: 'مفتاح API غير موجود' 
-            });
+            // إذا لم يكن هناك API، استخدم ردود محلية ذكية
+            const localReply = getLocalSmartReply(message, stats, completedLessons);
+            return res.json({ success: true, reply: localReply });
         }
         
-        // ✅ استخدم أفضل نموذج متاح لديك
-        const MODEL = 'gemini-2.5-flash';  // أو 'gemini-2.5-pro' للدقة الأعلى
+        const MODEL = 'gemini-2.5-flash';
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
-        
-        console.log(`📤 Sending to Gemini API using model: ${MODEL}`);
         
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -1428,18 +1501,13 @@ app.post('/api/ai/chat', auth, async (req, res) => {
             body: JSON.stringify({
                 contents: [{
                     parts: [{
-                        text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
-                        أجب على السؤال بالعربية مع أمثلة إنجليزية. 
-                        اجعل إجابتك مفيدة وسهلة الفهم.
-                        إذا سألك المستخدم عن شيء ليس له علاقة بالإنجليزية، اعتذر بلطف.
-                        
-                        السؤال: ${message}`
+                        text: `${systemInstruction}\n\nسؤال المستخدم: ${message}\n\nتذكر: أجيب فقط بناءً على الدروس التي أخذها المستخدم (${stats.totalCompleted} درس مكتمل). لا تشرح أي شيء جديد.`
                     }]
                 }],
                 generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 1000,
-                    topP: 0.95
+                    temperature: 0.3,
+                    maxOutputTokens: 250,
+                    topP: 0.9
                 }
             })
         });
@@ -1447,22 +1515,118 @@ app.post('/api/ai/chat', auth, async (req, res) => {
         const data = await response.json();
         
         if (response.ok && data.candidates && data.candidates[0]) {
-            const reply = data.candidates[0].content.parts[0].text;
-            console.log('✅ AI response sent successfully');
+            let reply = data.candidates[0].content.parts[0].text;
+            
+            // تأكد من أن الرد قصير
+            if (reply.length > 300) {
+                reply = reply.substring(0, 300) + "...\n\n📚 راجع دروسك المكتملة للحصول على التفاصيل.";
+            }
+            
+            console.log('✅ AI response sent');
             res.json({ success: true, reply: reply });
         } else {
             console.error('Gemini API Error:', data.error);
-            res.status(500).json({ 
-                success: false, 
-                message: data.error?.message || 'حدث خطأ في معالجة الطلب' 
-            });
+            // استخدم الردود المحلية كبديل
+            const localReply = getLocalSmartReply(message, stats, completedLessons);
+            res.json({ success: true, reply: localReply });
         }
         
     } catch (error) {
         console.error('AI Error:', error);
+        const localReply = getLocalSmartReply(req.body.message, { totalCompleted: 0, level: 'مبتدئ' }, []);
+        res.json({ success: true, reply: localReply });
+    }
+});
+// ==================== جلب تقدم المستخدم للـ AI ====================
+app.get('/api/user/progress-summary', auth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        
+        // جلب المستخدم
+        const user = await User.findById(userId);
+        
+        // جلب التقدم
+        const userProgress = await UserProgress.find({ userId: userId }).populate('courseId completedLessons.lessonId');
+        
+        let completedLessons = [];
+        for (const progress of userProgress) {
+            for (const lesson of progress.completedLessons) {
+                if (lesson.lessonId) {
+                    completedLessons.push({
+                        id: lesson.lessonId._id,
+                        title: lesson.lessonId.title,
+                        lessonNumber: lesson.lessonId.lessonNumber,
+                        courseTitle: progress.courseId?.title || 'غير معروف',
+                        score: lesson.score,
+                        completedAt: lesson.completedAt
+                    });
+                }
+            }
+        }
+        
+        res.json({
+            success: true,
+            stats: {
+                level: user.level || 'beginner',
+                levelName: user.level === 'beginner' ? 'مبتدئ' : 'متقدم',
+                totalLessonsCompleted: completedLessons.length,
+                recentLessons: completedLessons.slice(-5).reverse(),
+                allLessons: completedLessons
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
+// ========== ردود ذكية محلية (بدون API) ==========
+function getLocalSmartReply(message, stats, completedLessons) {
+    const msg = message.toLowerCase();
+    const completedTitles = completedLessons.map(l => l.title.toLowerCase());
+    
+    // التحقق مما إذا كان المستخدم يسأل عن درس أكمله
+    for (const lesson of completedLessons) {
+        if (msg.includes(lesson.title.toLowerCase())) {
+            return `📘 **${lesson.title}**\n\nهذا الدرس موجود في سجل إنجازاتك. حصلت على ${lesson.score || '?'}% فيه.\n\nهل تريد مراجعة الدرس مرة أخرى؟`;
+        }
+    }
+    
+    // نصائح عامة حسب المستوى
+    if (msg.includes('نصيحة') || msg.includes('tip') || msg.includes('كيف أتعلم')) {
+        if (stats.totalCompleted < 5) {
+            return "📖 **نصيحة للمبتدئين**: ركز على إكمال الدروس الأولى. خصص 15 دقيقة يومياً للتعلم. استمر ولا تتوقف!";
+        } else if (stats.totalCompleted < 15) {
+            return "📖 **نصيحة لك**: أنت في منتصف الطريق! راجع الدروس السابقة كل 3 أيام لتثبيت المعلومات.";
+        } else {
+            return "📖 **نصيحة للمتقدمين**: حاول استخدام ما تعلمته في محادثات يومية. التطبيق العملي هو مفتاح الإتقان!";
+        }
+    }
+    
+    // مراجعة عامة
+    if (msg.includes('مراجعة') || msg.includes('review')) {
+        if (completedLessons.length > 0) {
+            const lastLesson = completedLessons[completedLessons.length - 1];
+            return `📚 **مراجعة سريعة**\n\nآخر درس أكملته: "${lastLesson.title}"\n\nنقاط مهمة في هذا الدرس:\n• راجع التمارين التي حللتها\n• حاول إعادة حل الواجب\n\nهل تريد مساعدة في مراجعة درس محدد؟`;
+        } else {
+            return "📚 لم تكمل أي درس بعد. ابدأ بتعلم الدروس الأولى في المنصة!";
+        }
+    }
+    
+    // سؤال عن درس غير مكتمل
+    if (msg.includes('شرح') || msg.includes('قاعدة') || msg.includes('grammar')) {
+        return "📚 **تنبيه**: هذا الدرس لم تدرسه بعد في منصتنا.\n\nأكمل الدروس بالترتيب أولاً، ثم سأتمكن من مساعدتك في مراجعة ما تعلمته.\n\n💡 نصيحة: راجع قائمة الدروس في صفحة الدورات وابدأ من البداية.";
+    }
+    
+    // رد ترحيبي
+    if (msg.includes('مرحب') || msg.includes('السلام')) {
+        return `👋 وعليكم السلام! أنا EnGo AI.\n\n📊 **تقدمك**:\n• عدد الدروس المكتملة: ${stats.totalCompleted}\n• مستواك: ${stats.level}\n\nاسألني عن:\n• 📖 مراجعة درس معين أخذته\n• 💡 نصائح لتحسين تعلمك\n• 📚 تذكير بدروسك المكتملة`;
+    }
+    
+    // رد عام
+    return `📚 **EnGo AI**\n\nلقد أكملت ${stats.totalCompleted} درساً حتى الآن في المستوى ${stats.level}.\n\nاسألني عن:\n• مراجعة درس محدد أخذته\n• نصائح لتحسين تعلمك\n• تقدمك في المنصة\n\nما الذي تريد معرفته عن دروسك؟`;
+}
+
 // ==================== Socket.IO ====================
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
