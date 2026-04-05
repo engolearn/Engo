@@ -1397,7 +1397,57 @@ function generateAIResponse(message, userName) {
 ما الذي تود أن تتعلمه اليوم؟ 🎓`;
 }
     
-
+// ==================== AI Assistant API (Gemini) ====================
+app.post('/api/ai/chat', auth, async (req, res) => {
+    try {
+        const { message } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ success: false, message: 'الرسالة مطلوبة' });
+        }
+        
+        const apiKey = process.env.GEMINI_API_KEY;
+        
+        if (!apiKey) {
+            console.error('❌ GEMINI_API_KEY not found in .env');
+            return res.status(500).json({ success: false, message: 'مفتاح API غير موجود. يرجى إضافته في ملف .env' });
+        }
+        
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
+                        أجب على السؤال بالعربية مع أمثلة إنجليزية. 
+                        إذا سألك المستخدم عن شيء ليس له علاقة بالإنجليزية، اعتذر بلطف وقل أنك متخصص فقط في تعليم الإنجليزية.
+                        
+                        السؤال: ${message}`
+                    }]
+                }]
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.candidates && data.candidates[0]) {
+            const reply = data.candidates[0].content.parts[0].text;
+            res.json({ success: true, reply: reply });
+        } else if (data.error) {
+            console.error('Gemini API Error:', data.error);
+            res.status(500).json({ success: false, message: data.error.message || 'خطأ في API' });
+        } else {
+            res.status(500).json({ success: false, message: 'حدث خطأ في معالجة الطلب' });
+        }
+        
+    } catch (error) {
+        console.error('AI Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 
 // ==================== Socket.IO ====================
 const server = http.createServer(app);
