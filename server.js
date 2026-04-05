@@ -1039,6 +1039,7 @@ app.put('/api/notifications/read-all', auth, async (req, res) => {
 // ==================== Certificate Generation ====================
 const QRCode = require('qrcode');
 
+
 // إنشاء شهادة لإكمال الدورة
 app.get('/api/certificate/:courseId', auth, async (req, res) => {
     try {
@@ -1078,49 +1079,99 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
             }
         }
         
-        // في دالة إنشاء الشهادة
-// ✅ 1. إنشاء المعرف أولاً
-const certificateId = `ENGO-${Date.now()}-${userId.toString().slice(-6)}`;
-
-// ✅ 2. إنشاء رابط التحقق
-const verifyUrl = `https://engo.koyeb.app/verify-certificate/${certificateId}`;
-// ✅ 3. إنشاء كائن البيانات
-const certificateData = {
-    userName: req.user.fullName,
-    courseTitle: course.title,
-    courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
-    completionDate: new Date().toLocaleDateString('ar-EG'),
-    certificateId: certificateId,
-    totalLessons: totalLessons,
-    finalScore: finalScore || 'اجتاز',
-    verifyUrl: verifyUrl
-};
-// بعد إنشاء certificateData وقبل إنشاء QR
-const newCertificate = new Certificate({
-    certificateId: certificateId,
-    userId: userId,
-    courseId: courseId,
-    userName: req.user.fullName,
-    courseTitle: course.title,
-    courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
-    issueDate: new Date(),
-    finalScore: finalScore || 0
-});
-await newCertificate.save();
-// ✅ 4. إنشاء رمز QR
-const qrCode = await QRCode.toDataURL(verifyUrl);
-
-// ✅ 5. إنشاء HTML الشهادة
-const certificateHtml = generateCertificateHTML(certificateData, qrCode);
-
-res.setHeader('Content-Type', 'text/html');
-res.send(certificateHtml);
-                
+        // ✅ 1. التحقق من وجود شهادة سابقة للمستخدم لهذه الدورة
+        let certificate = await Certificate.findOne({ 
+            userId: userId, 
+            courseId: courseId 
+        });
+        
+        let certificateId, verifyUrl, qrCode;
+        
+        if (certificate) {
+            // ✅ الشهادة موجودة - استخدم البيانات الموجودة
+            console.log('✅ Certificate already exists for this user and course');
+            certificateId = certificate.certificateId;
+            verifyUrl = certificate.verifyUrl || `https://engo.koyeb.app/verify-certificate/${certificateId}`;
+            qrCode = await QRCode.toDataURL(verifyUrl);
+            
+        } else {
+            // ✅ الشهادة غير موجودة - أنشئ واحدة جديدة
+            console.log('📝 Creating new certificate...');
+            certificateId = `ENGO-${Date.now()}-${userId.toString().slice(-6)}`;
+            verifyUrl = `https://engo.koyeb.app/verify-certificate/${certificateId}`;
+            qrCode = await QRCode.toDataURL(verifyUrl);
+            
+            // حفظ الشهادة في قاعدة البيانات
+            certificate = new Certificate({
+                certificateId: certificateId,
+                userId: userId,
+                courseId: courseId,
+                userName: req.user.fullName,
+                courseTitle: course.title,
+                courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+                issueDate: new Date(),
+                finalScore: finalScore || 0,
+                verifyUrl: verifyUrl
+            });
+            
+            await certificate.save();
+            console.log('✅ New certificate saved to database');
+        }
+        
+        // ✅ 2. إنشاء كائن البيانات للشهادة
+        const certificateData = {
+            userName: req.user.fullName,
+            courseTitle: course.title,
+            courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+            completionDate: certificate.issueDate ? certificate.issueDate.toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG'),
+            certificateId: certificateId,
+            totalLessons: totalLessons,
+            finalScore: finalScore || certificate.finalScore || 'اجتاز',
+            verifyUrl: verifyUrl
+        };
+        
+        // ✅ 3. إنشاء HTML الشهادة
+        const certificateHtml = generateCertificateHTML(certificateData, qrCode);
+        
+        res.setHeader('Content-Type', 'text/html');
+        res.send(certificateHtml);
+        
     } catch (error) {
         console.error('Certificate Error:', error);
+        
+        // ✅ معالجة خطأ التكرار (11000)
+        if (error.code === 11000) {
+            try {
+                // حاول جلب الشهادة الموجودة بدلاً من إنشاء جديدة
+                const existingCert = await Certificate.findOne({ 
+                    userId: req.user._id, 
+                    courseId: req.params.courseId 
+                });
+                
+                if (existingCert) {
+                    const qrCode = await QRCode.toDataURL(existingCert.verifyUrl);
+                    const certificateData = {
+                        userName: req.user.fullName,
+                        courseTitle: 'جاري التحميل...',
+                        courseLevel: 'المستوى',
+                        completionDate: existingCert.issueDate.toLocaleDateString('ar-EG'),
+                        certificateId: existingCert.certificateId,
+                        totalLessons: 0,
+                        finalScore: 'اجتاز',
+                        verifyUrl: existingCert.verifyUrl
+                    };
+                    const certificateHtml = generateCertificateHTML(certificateData, qrCode);
+                    return res.send(certificateHtml);
+                }
+            } catch (innerError) {
+                console.error('Error recovering certificate:', innerError);
+            }
+        }
+        
         res.status(500).json({ message: error.message });
     }
-});  // ✅ إغلاق مسار الشهادة
+});
+
 // دالة إنشاء قالب الشهادة
 function generateCertificateHTML(data, qrCode) {
     return `<!DOCTYPE html>
