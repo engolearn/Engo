@@ -31,15 +31,18 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 
 // ==================== Models ====================
 
-// User Model (مع دعم الإشعارات)
+// User Model (محدث لاستخدام username)
 const userSchema = new mongoose.Schema({
-    name: String,
-    email: { type: String, unique: true },
-    password: String,
-    role: { type: String, default: 'user' },
+    username: { type: String, unique: true, required: true }, // ✅ اسم المستخدم (للظهور)
+    email: { type: String, unique: true, sparse: true }, // ✅ اختياري، يمكن إخفاؤه
+    password: { type: String, required: true },
+    name: { type: String, default: '' }, // ✅ الاسم الحقيقي (اختياري)
+    role: { type: String, default: 'user', enum: ['user', 'admin'] },
     level: { type: String, enum: ['beginner', 'advanced', null], default: null },
     levelScore: { type: Number, default: 0 },
-    purchasedCourses: { type: Array, default: [] },
+    purchasedCourses: { type: [String], default: [] },
+    avatar: { type: String, default: '👤' },
+    bio: { type: String, default: '' },
     notifications: [{
         id: { type: String, required: true },
         title: { type: String, required: true },
@@ -605,40 +608,98 @@ app.get('/api/admin/rooms', auth, adminAuth, async (req, res) => {
 });
 
 // ==================== Auth Routes ====================
+// تسجيل مستخدم جديد (باستخدام username فقط)
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        const existing = await User.findOne({ email });
-        if (existing) return res.status(400).json({ message: 'البريد موجود بالفعل' });
-
+        const { username, password, name } = req.body;
+        
+        // التحقق من وجود اسم المستخدم
+        if (!username) {
+            return res.status(400).json({ message: 'اسم المستخدم مطلوب' });
+        }
+        
+        // التحقق من عدم تكرار اسم المستخدم
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
+        }
+        
         const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ name, email, password: hashedPassword });
+        
+        const user = new User({ 
+            username: username.toLowerCase(),
+            name: name || username,
+            password: hashedPassword,
+            role: 'user'
+        });
+        
         await user.save();
-
+        
         const jwt = require('jsonwebtoken');
-        const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
-
-        res.json({ message: 'تم التسجيل بنجاح', token, user: { id: user._id, name: user.name, email: user.email, role: user.role, purchasedCourses: [] } });
+        const token = jwt.sign(
+            { userId: user._id, role: user.role, username: user.username }, 
+            process.env.JWT_SECRET || 'secret123', 
+            { expiresIn: '7d' }
+        );
+        
+        // لا نرسل البريد الإلكتروني في الرد
+        res.json({ 
+            message: 'تم التسجيل بنجاح', 
+            token, 
+            user: { 
+                id: user._id, 
+                username: user.username,
+                name: user.name,
+                role: user.role,
+                avatar: user.avatar,
+                level: user.level,
+                purchasedCourses: user.purchasedCourses || [] 
+            } 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
+// تسجيل الدخول (باستخدام username)
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
-        if (!user) return res.status(401).json({ message: 'بيانات غير صحيحة' });
-
+        const { username, password } = req.body;
+        
+        // البحث باستخدام username
+        const user = await User.findOne({ username: username.toLowerCase() });
+        if (!user) {
+            return res.status(401).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+        }
+        
         const bcrypt = require('bcryptjs');
         const valid = await bcrypt.compare(password, user.password);
-        if (!valid) return res.status(401).json({ message: 'بيانات غير صحيحة' });
-
+        if (!valid) {
+            return res.status(401).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+        }
+        
         const jwt = require('jsonwebtoken');
-        const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123', { expiresIn: '7d' });
-
-        res.json({ message: 'تم تسجيل الدخول', token, user: { id: user._id, name: user.name, email: user.email, role: user.role, level: user.level, purchasedCourses: user.purchasedCourses || [] } });
+        const token = jwt.sign(
+            { userId: user._id, role: user.role, username: user.username }, 
+            process.env.JWT_SECRET || 'secret123', 
+            { expiresIn: '7d' }
+        );
+        
+        // لا نرسل البريد الإلكتروني
+        res.json({ 
+            message: 'تم تسجيل الدخول', 
+            token, 
+            user: { 
+                id: user._id, 
+                username: user.username,
+                name: user.name,
+                role: user.role,
+                avatar: user.avatar,
+                level: user.level,
+                purchasedCourses: user.purchasedCourses || [] 
+            } 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -1337,9 +1398,10 @@ app.delete('/api/admin/lessons/:lessonId', auth, adminAuth, async (req, res) => 
     }
 });
 
+// جلب جميع المستخدمين (للوحة الأدمن) - بدون إظهار البريد
 app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
     try {
-        const users = await User.find().select('-password');
+        const users = await User.find().select('-password -email'); // ✅ إخفاء البريد
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -2419,7 +2481,7 @@ io.on('connection', (socket) => {
                 roomId: roomId,
                 name: data.name,
                 createdBy: socket.user._id,
-                creatorName: socket.user.name,
+                creatorName: socket.user.username,
                 members: [socket.user._id],
                 messages: [],
                 isPrivate: data.private || false,
@@ -2504,31 +2566,32 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_message', async (data, callback) => {
-        try {
-            const room = await Room.findOne({ roomId: data.roomId });
-            if (!room) {
-                return callback({ success: false, error: 'الغرفة غير موجودة' });
-            }
-            
-            const message = {
-                userId: socket.user._id,
-                userName: socket.user.name,
-                text: data.text,
-                timestamp: new Date(),
-                readBy: [socket.user._id]
-            };
-            
-            room.messages.push(message);
-            room.lastActivity = new Date();
-            await room.save();
-            
-            io.to(data.roomId).emit('new_message', message);
-            if (callback) callback({ success: true });
-        } catch (error) {
-            console.error('Error sending message:', error);
-            callback({ success: false, error: error.message });
+    try {
+        const room = await Room.findOne({ roomId: data.roomId });
+        if (!room) {
+            return callback({ success: false, error: 'الغرفة غير موجودة' });
         }
-    });
+        
+        const message = {
+            userId: socket.user._id,
+            userName: socket.user.username,
+            userAvatar: socket.user.avatar || '👤',
+            text: data.text,
+            timestamp: new Date(),
+            readBy: [socket.user._id]
+        };
+        
+        room.messages.push(message);
+        room.lastActivity = new Date();
+        await room.save();
+        
+        io.to(data.roomId).emit('new_message', message);
+        if (callback) callback({ success: true });
+    } catch (error) {
+        console.error('Error sending message:', error);
+        callback({ success: false, error: error.message });
+    }
+});
 
     socket.on('start_private_chat', async (targetUserId, callback) => {
         try {
@@ -2633,16 +2696,28 @@ io.on('connection', (socket) => {
     });
 
     socket.on('get_users_for_chat', async (callback) => {
-        try {
-            const users = await User.find({ _id: { $ne: socket.user._id } }).select('_id name email');
-            if (callback && typeof callback === 'function') {
-                callback({ success: true, users });
-            }
-        } catch (error) {
-            console.error('Error getting users:', error);
-            if (callback) callback({ success: false, error: error.message });
+    try {
+        // ✅ جلب المستخدمين بدون بريد إلكتروني
+        const users = await User.find({ _id: { $ne: socket.user._id } })
+            .select('_id username name avatar level'); // ✅ فقط username و name
+        
+        // تنسيق البيانات للإرسال
+        const formattedUsers = users.map(user => ({
+            id: user._id,
+            username: user.username,
+            name: user.name || user.username,
+            avatar: user.avatar || '👤',
+            level: user.level
+        }));
+        
+        if (callback && typeof callback === 'function') {
+            callback({ success: true, users: formattedUsers });
         }
-    });
+    } catch (error) {
+        console.error('Error getting users:', error);
+        if (callback) callback({ success: false, error: error.message });
+    }
+});
 
     socket.on('get_my_conversations', async (callback) => {
         try {
