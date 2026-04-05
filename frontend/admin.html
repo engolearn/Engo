@@ -951,6 +951,36 @@ document.getElementById('addCourseForm').onsubmit = async (e) => {
         showAlert('❌ خطأ في الاتصال', 'error');
     }
 };
+        // حذف دورة
+window.deleteCourse = async (id) => { 
+    if(confirm('⚠️ هل أنت متأكد من حذف هذه الدورة؟ سيتم حذف جميع دروسها أيضاً.')) { 
+        const token = localStorage.getItem('token'); 
+        try {
+            const res = await fetch(API_URL + '/admin/courses/' + id, { 
+                method: 'DELETE', 
+                headers: { 'Authorization': 'Bearer ' + token } 
+            });
+            
+            if (res.ok) {
+                showAlert('✅ تم حذف الدورة بنجاح', 'success'); 
+                loadCourses(); 
+                loadCoursesForSelect(); 
+                loadCoursesForSelect2();
+                // إعادة تحميل قائمة الدروس إذا كانت مفتوحة
+                const courseForLessons = document.getElementById('courseForLessons');
+                if (courseForLessons && courseForLessons.value) {
+                    loadLessonsForCourse();
+                }
+            } else {
+                const err = await res.json();
+                showAlert('❌ خطأ: ' + (err.message || 'حدث خطأ'), 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('❌ خطأ في الاتصال', 'error');
+        }
+    } 
+};
 
 // تحديث دالة عرض قائمة الدورات في لوحة الأدمن
 async function loadCourses() {
@@ -1476,7 +1506,49 @@ function saveNotificationToHistory(notification) {
             if(!lessonImages.length) { container.innerHTML = '<div class="empty-message">لا توجد صور</div>'; return; }
             container.innerHTML = lessonImages.map(img => `<div class="image-card-item"><div style="display:flex;gap:1rem;">${img.url?`<img src="${img.url}" class="image-preview-small">`:'<div style="width:80px;height:80px;background:#fef3c7;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image"></i></div>'}<div style="flex:1;"><input type="text" value="${escapeHtml(img.url)}" placeholder="رابط الصورة" onchange="updateImage('${img.id}','url',this.value)"><input type="text" value="${escapeHtml(img.caption)}" placeholder="العنوان" onchange="updateImage('${img.id}','caption',this.value)"><textarea placeholder="الشرح" onchange="updateImage('${img.id}','description',this.value)">${escapeHtml(img.description)}</textarea></div><button class="btn-danger" onclick="removeImage('${img.id}')">✖</button></div></div>`).join('');
         }
-
+// تعديل اختبار مستوى
+async function editLevelTest(testId) {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/admin/quizzes/' + testId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const test = await res.json();
+        
+        if (!res.ok) throw new Error(test.message);
+        
+        currentEditingTest = test;
+        
+        // تعبئة النموذج
+        document.getElementById('testLevel').value = test.level;
+        document.getElementById('testName').value = test.name;
+        document.getElementById('testDescription').value = test.description || '';
+        document.getElementById('testDuration').value = test.duration;
+        document.getElementById('testPassingScore').value = test.passingScore;
+        
+        // تحويل الأسئلة
+        testQuestions = test.questions.map((q, idx) => ({
+            id: 'test_q_' + Date.now() + '_' + idx,
+            type: q.type,
+            question: q.question,
+            points: q.points || 10,
+            options: q.options || ['', '', ''],
+            correctAnswer: q.type === 'true_false' ? q.isTrue : (q.correctOption || 0),
+            essayKeywords: q.essayKeywords || []
+        }));
+        
+        testQuestionCounter = testQuestions.length;
+        renderTestQuestions();
+        
+        document.getElementById('saveTestBtn').innerHTML = '✏️ تحديث الاختبار';
+        document.getElementById('addLevelTestForm').scrollIntoView({ behavior: 'smooth' });
+        showAlert('✏️ يمكنك الآن تعديل الاختبار', 'success');
+        
+    } catch (error) {
+        console.error('Error loading test:', error);
+        showAlert('❌ فشل تحميل الاختبار', 'error');
+    }
+}
 
 // ==================== Assignment Questions Professional ====================
 
@@ -1930,8 +2002,8 @@ function renderQuizQuestions() {
             <div class="prof-question-field">
                 <label><i class="fas fa-star"></i> عدد النقاط</label>
                 <input type="number" value="${q.points}" min="1" step="1"
-                    onchange="updateQuizQuestionField('${q.id}', 'points', parseInt(this.value))">
-            </div>
+    onchange="updateQuizQuestionField('${q.id}', 'points', parseInt(this.value) || 0)">
+    </div>
         `;
         
         // أنواع الأسئلة المختلفة
