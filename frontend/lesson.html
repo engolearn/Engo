@@ -563,16 +563,20 @@ const displayContent = escapeHtml(cleanText(para.content || ''));
         }
 
         function nextParagraph() {
-            if (currentParagraphIndex < totalParagraphs - 1) {
-                currentParagraphIndex++;
-                renderCurrentParagraph();
-            } else {
-                if (lessonData.assignment && lessonData.assignment.questions && lessonData.assignment.questions.length > 0) {
-                    renderAssignment();
-                } else {
-                    completeLesson();
-                }
-            }
+    if (currentParagraphIndex < totalParagraphs - 1) {
+        // انتقل إلى الفقرة التالية
+        currentParagraphIndex++;
+        renderCurrentParagraph();
+    } else {
+        // وصلنا إلى آخر فقرة
+        if (lessonData.assignment && lessonData.assignment.questions && lessonData.assignment.questions.length > 0) {
+            // يوجد واجب - عرض الواجب
+            renderAssignment();
+        } else {
+            // لا يوجد واجب - إكمال الدرس مباشرة
+            completeLesson();
+        }
+    }
         }
 
         function previousParagraph() {
@@ -701,11 +705,38 @@ const displayContent = escapeHtml(cleanText(para.content || ''));
         }
 
         function completeLesson() {
+    // ✅ إرسال طلب إكمال الدرس إلى الخادم (بدون واجب)
+    completeLessonWithoutAssignment();
+}
+
+async function completeLessonWithoutAssignment() {
+    const token = localStorage.getItem('token');
+    const { courseId, lessonId } = getUrlParams();
+    
+    try {
+        // إرسال طلب إكمال الدرس (بدون درجة)
+        const res = await fetch(API_URL + '/progress/' + courseId + '/lessons/' + lessonId + '/complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ score: 100 }) // ✅ درجة افتراضية 100%
+        });
+        
+        if (res.ok) {
             showAlert('🎉 تهانينا! لقد أكملت هذا الدرس بنجاح', 'success');
             setTimeout(() => {
-                window.location.href = '/course-details.html?id=' + getUrlParams().courseId;
+                window.location.href = '/course-details.html?id=' + courseId;
             }, 2000);
+        } else {
+            showAlert('❌ حدث خطأ في تسجيل إكمال الدرس', 'error');
         }
+    } catch (error) {
+        console.error('Error completing lesson:', error);
+        showAlert('❌ حدث خطأ في الاتصال', 'error');
+    }
+}
 
         async function init() {
             if (await checkAuth()) {
