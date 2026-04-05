@@ -920,14 +920,7 @@ function generateCertificateHTML(data, qrCode) {
             margin: 0 auto;
         }
         
-        .certificate {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
+        
         
         /* خلفية الشهادة */
         .certificate::before {
@@ -941,13 +934,85 @@ function generateCertificateHTML(data, qrCode) {
             pointer-events: none;
         }
         
-        /* الإطار الذهبي */
-        .certificate-border {
-            border: 8px double #fbbf24;
-            border-radius: 12px;
-            padding: 30px;
-            position: relative;
-        }
+        /* ✅ الأنماط الجديدة - أبعاد مصغرة */
+.certificate {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;  /* ✅ تم التصغير */
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+
+.certificate-border {
+    border: 5px double #fbbf24;  /* ✅ تم التصغير */
+    border-radius: 10px;
+    padding: 12px;  /* ✅ تم التصغير */
+    position: relative;
+}
+
+/* تصغير أحجام الخطوط */
+.logo h1 {
+    font-size: 1.5rem;  /* ✅ تم التصغير */
+}
+
+.certificate-title h2 {
+    font-size: 1.3rem;  /* ✅ تم التصغير */
+}
+
+.certificate-title h3 {
+    font-size: 0.9rem;  /* ✅ تم التصغير */
+}
+
+.student-name {
+    font-size: 1.5rem;  /* ✅ تم التصغير */
+}
+
+.course-name {
+    font-size: 1.2rem;  /* ✅ تم التصغير */
+}
+
+.certificate-body p {
+    font-size: 0.9rem;  /* ✅ تم التصغير */
+}
+
+.detail-box {
+    padding: 5px;  /* ✅ تم التصغير */
+}
+
+.detail-box .label {
+    font-size: 0.7rem;
+}
+
+.detail-box .value {
+    font-size: 0.8rem;
+}
+
+/* تصغير الزوايا */
+.corner {
+    width: 40px;  /* ✅ تم التصغير */
+    height: 40px;  /* ✅ تم التصغير */
+}
+
+/* تصغير المسافات */
+.certificate-details {
+    margin: 15px 0;  /* ✅ تم التصغير */
+    gap: 10px;
+}
+
+.certificate-footer {
+    margin-top: 15px;  /* ✅ تم التصغير */
+    gap: 15px;
+}
+
+.signature-line {
+    width: 120px;  /* ✅ تم التصغير */
+}
+
+.qr-code img {
+    width: 70px;  /* ✅ تم التصغير */
+    height: 70px;
+}
         
         /* الزوايا المزخرفة */
         .corner {
@@ -1137,17 +1202,23 @@ function generateCertificateHTML(data, qrCode) {
             .certificate-footer { flex-direction: column; align-items: center; }
             .signature-line { width: 150px; }
         }
-        /* ========== إعدادات الطباعة ========== */
+/* ========== إعدادات الطباعة ========== */
 @media print {
     /* إخفاء الأزرار */
-    .actions, .navbar, .btn-back {
+    .actions, .navbar, .btn-back, .no-print {
         display: none !important;
     }
     
-    /* ضبط الصفحة */
+    /* ضبط الصفحة - عرضي */
     @page {
         size: A4 landscape;
-        margin: 0.3cm;
+        margin: 0.2cm;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+        background: white;
     }
     
     /* منع تقسيم الشهادة */
@@ -1162,22 +1233,56 @@ function generateCertificateHTML(data, qrCode) {
         page-break-after: avoid;
     }
     
-    /* تصغير الخطوط قليلاً */
-    .student-name {
-        font-size: 1.3rem !important;
+    /* تصغير الأبعاد لتناسب الصفحة */
+    .certificate {
+        padding: 5px !important;
     }
-    .course-name {
+    
+    .certificate-border {
+        padding: 8px !important;
+        border-width: 3px !important;
+    }
+    
+    /* تصغير الخطوط قليلاً */
+    .logo h1 {
+        font-size: 1.2rem !important;
+    }
+    
+    .certificate-title h2 {
         font-size: 1.1rem !important;
     }
+    
+    .student-name {
+        font-size: 1.2rem !important;
+    }
+    
+    .course-name {
+        font-size: 1rem !important;
+    }
+    
     .certificate-body p {
-        font-size: 0.9rem !important;
+        font-size: 0.85rem !important;
     }
+    
+    .detail-box .label {
+        font-size: 0.7rem !important;
+    }
+    
     .detail-box .value {
-        font-size: 0.8rem !important;
+        font-size: 0.75rem !important;
     }
+    
     .qr-code img {
-        width: 60px !important;
-        height: 60px !important;
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    .signature-line {
+        width: 100px !important;
+    }
+    
+    .signature-name {
+        font-size: 0.7rem !important;
     }
 }
     </style>
