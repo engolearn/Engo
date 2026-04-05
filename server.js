@@ -1121,7 +1121,7 @@ app.post('/api/admin/notifications/send', auth, adminAuth, async (req, res) => {
                 if (specificUserId) {
                     targetUsers = [{ _id: specificUserId }];
                 }
-                bre                targetUsers = await User.find({ l'user' }).select('_id');
+                   targetUsers = await User.find({ l'user' }).select('_id');
                 break;
             case 'advanced':
                 targetUsers = await User.find({ level: 'advanced', role: 'user' }).select('_id');
