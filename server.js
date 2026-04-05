@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// Course Model
+// Course Model (مع إضافة حقل الصورة)
 const courseSchema = new mongoose.Schema({
     title: String,
     description: String,
@@ -65,7 +65,7 @@ const courseSchema = new mongoose.Schema({
     totalLessons: { type: Number, default: 0 },
     freeLessons: { type: Number, default: 5 },
     lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }],
-    image: String,
+    image: { type: String, default: '' },  // ✅ أضف هذا الحقل
     createdAt: { type: Date, default: Date.now }
 });
 const Course = mongoose.model('Course', courseSchema);
