@@ -380,6 +380,34 @@
             document.body.appendChild(alertDiv);
             setTimeout(() => alertDiv.remove(), 3000);
         }
+        function escapeHtml(str) {
+    if (!str) return '';
+    
+    // ✅ إزالة المسافات الزائدة من بداية ونهاية النص
+    let cleaned = str.trim();
+    
+    // ترميز الأحرف الخاصة
+    let encoded = cleaned.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    
+    // ✅ تحويل الأسطر الجديدة إلى <br> مع إزالة الأسطر الفارغة المتكررة
+    encoded = encoded.replace(/\n\s*\n/g, '<br><br>');  // سطرين فارغين
+    encoded = encoded.replace(/\n/g, '<br>');           // سطر واحد
+    
+    return encoded;
+        }
+        function cleanText(text) {
+    if (!text) return '';
+    
+    // ✅ إزالة المسافات الزائدة من بداية كل سطر
+    let lines = text.split('\n');
+    lines = lines.map(line => line.trimStart());  // إزالة المسافات من بداية كل سطر
+    let cleaned = lines.join('\n');
+    
+    // ✅ إزالة الأسطر الفارغة المتكررة
+    cleaned = cleaned.replace(/\n\s*\n/g, '\n\n');
+    
+    return cleaned.trim();
+        }
 
         
         function extractYouTubeId(url) {
@@ -436,34 +464,7 @@
             if (!lessonData.content || !lessonData.content[currentParagraphIndex]) return;
             
             const para = lessonData.content[currentParagraphIndex];
-            function escapeHtml(str) {
-    if (!str) return '';
-    
-    // ✅ إزالة المسافات الزائدة من بداية ونهاية النص
-    let cleaned = str.trim();
-    
-    // ترميز الأحرف الخاصة
-    let encoded = cleaned.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-    
-    // ✅ تحويل الأسطر الجديدة إلى <br> مع إزالة الأسطر الفارغة المتكررة
-    encoded = encoded.replace(/\n\s*\n/g, '<br><br>');  // سطرين فارغين
-    encoded = encoded.replace(/\n/g, '<br>');           // سطر واحد
-    
-    return encoded;
-        }
-        function cleanText(text) {
-    if (!text) return '';
-    
-    // ✅ إزالة المسافات الزائدة من بداية كل سطر
-    let lines = text.split('\n');
-    lines = lines.map(line => line.trimStart());  // إزالة المسافات من بداية كل سطر
-    let cleaned = lines.join('\n');
-    
-    // ✅ إزالة الأسطر الفارغة المتكررة
-    cleaned = cleaned.replace(/\n\s*\n/g, '\n\n');
-    
-    return cleaned.trim();
-}
+            
 
 // استخدمها في العرض:
 const displayContent = escapeHtml(cleanText(para.content || ''));
