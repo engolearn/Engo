@@ -1094,95 +1094,146 @@ async function loadCourses() {
             return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
         
-        // ==================== Level Test ====================
-        async function loadLevelTest() {
+ // ==================== Level Test ====================
+async function loadLevelTest() {
+    const container = document.getElementById('levelTestContent');
+    if (!container) return;
+    
     try {
+        console.log('📤 Fetching level test from:', API_URL + '/level-test');
+        
         const res = await fetch(API_URL + '/level-test');
+        
+        // ✅ التحقق من حالة الاستجابة
+        if (!res.ok) {
+            if (res.status === 404) {
+                container.innerHTML = `
+                    <div style="background: white; border-radius: 15px; padding: 1.5rem; text-align: center;">
+                        <i class="fas fa-file-alt" style="font-size: 3rem; color: #a0aec0;"></i>
+                        <h3>لا توجد اختبارات متاحة</h3>
+                        <p>سيتم إضافة اختبارات تحديد المستوى قريباً</p>
+                        <button class="btn-primary" onclick="showPage('courses')">استكشف الدورات</button>
+                    </div>
+                `;
+                return;
+            }
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
         const test = await res.json();
-        const container = document.getElementById('levelTestContent');
+        console.log('📥 Level test data:', test);
         
-        if (!container) return;
-        
-        if (!test || !test.questions) {
-            container.innerHTML = '<div class="empty-message">📝 لا توجد اختبارات مستوى متاحة حالياً</div>';
+        // ✅ التحقق من وجود أسئلة
+        if (!test || !test.questions || test.questions.length === 0) {
+            container.innerHTML = `
+                <div style="background: white; border-radius: 15px; padding: 1.5rem; text-align: center;">
+                    <i class="fas fa-file-alt" style="font-size: 3rem; color: #a0aec0;"></i>
+                    <h3>لا توجد أسئلة في هذا الاختبار</h3>
+                    <p>سيتم إضافة أسئلة قريباً</p>
+                    <button class="btn-primary" onclick="showPage('courses')">استكشف الدورات</button>
+                </div>
+            `;
             return;
         }
         
+        // ✅ عرض الاختبار
         container.innerHTML = `
             <div style="background: white; border-radius: 15px; padding: 1.5rem;">
                 <h3>${test.name || 'اختبار تحديد المستوى'}</h3>
                 <p>${test.description || 'هذا الاختبار سيساعدنا على تحديد مستواك في اللغة الإنجليزية.'}</p>
-                <p><strong>⏱️ المدة:</strong> ${test.duration} دقيقة</p>
-                <p><strong>📋 عدد الأسئلة:</strong> ${test.totalQuestions || test.questions?.length || 0}</p>
+                <div style="display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap;">
+                    <span><i class="fas fa-clock"></i> ⏱️ المدة: ${test.duration || 30} دقيقة</span>
+                    <span><i class="fas fa-question-circle"></i> 📋 عدد الأسئلة: ${test.questions.length}</span>
+                </div>
                 <div id="testQuestions"></div>
-                <button class="btn-primary" onclick="submitLevelTest()" style="margin-top: 1rem;">تقديم الاختبار</button>
+                <button class="btn-primary" onclick="submitLevelTest()" style="margin-top: 1rem; width: 100%;">
+                    <i class="fas fa-paper-plane"></i> تقديم الاختبار
+                </button>
             </div>
         `;
         
         const questionsContainer = document.getElementById('testQuestions');
-        if (test.questions && test.questions.length > 0) {
-            questionsContainer.innerHTML = test.questions.map((q, i) => `
-                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 10px;">
-                    <p><strong>${i+1}. ${escapeHtml(q.question)}</strong></p>
-                    <div style="margin-top: 0.5rem;">
-                        ${q.options.map((opt, optIndex) => `
-                            <label style="display: block; margin: 0.5rem 0;">
-                                <input type="radio" name="q${i}" value="${optIndex}"> ${escapeHtml(opt)}
-                            </label>
-                        `).join('')}
-                    </div>
+        questionsContainer.innerHTML = test.questions.map((q, i) => `
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 10px;">
+                <p><strong>${i+1}. ${escapeHtml(q.question)}</strong></p>
+                <div style="margin-top: 0.5rem;">
+                    ${(q.options || []).map((opt, optIndex) => `
+                        <label style="display: block; margin: 0.5rem 0; cursor: pointer;">
+                            <input type="radio" name="q${i}" value="${optIndex}"> 
+                            <span>${escapeHtml(opt)}</span>
+                        </label>
+                    `).join('')}
                 </div>
-            `).join('');
-        } else {
-            questionsContainer.innerHTML = '<div class="empty-message">لا توجد أسئلة في هذا الاختبار</div>';
-        }
+            </div>
+        `).join('');
         
         window.currentLevelTest = test;
+        
     } catch(err) {
-        showAlert('❌ حدث خطأ', 'error');
-        const container = document.getElementById('levelTestContent');
-        if (container) {
-            container.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبار</div>';
+        console.error('❌ Error loading level test:', err);
+        container.innerHTML = `
+            <div style="background: white; border-radius: 15px; padding: 1.5rem; text-align: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #e53e3e;"></i>
+                <h3>حدث خطأ في تحميل الاختبار</h3>
+                <p>${err.message}</p>
+                <button class="btn-primary" onclick="loadLevelTest()">🔄 إعادة المحاولة</button>
+            </div>
+        `;
+    }
+}
+        async function submitLevelTest() {
+    const test = window.currentLevelTest;
+    if (!test) {
+        showAlert('❌ لا يوجد اختبار حالياً', 'error');
+        return;
+    }
+    
+    const answers = [];
+    for (let i = 0; i < test.questions.length; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!selected) {
+            showAlert(`❌ يرجى الإجابة على السؤال ${i+1}`, 'error');
+            return;
         }
+        answers.push(parseInt(selected.value));
+    }
+    
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showAlert('❌ يرجى تسجيل الدخول أولاً', 'error');
+            showLoginModal();
+            return;
+        }
+        
+        showAlert('⏳ جاري تقديم الاختبار...', 'success');
+        
+        const res = await fetch(API_URL + '/level-tests/' + test._id + '/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ answers })
+        });
+        
+        const result = await res.json();
+        
+        if (result.passed) {
+            showAlert(`🎉 تهانينا! حصلت على ${Math.round(result.percentage)}% واجتزت الاختبار`, 'success');
+            // تحديث مستوى المستخدم
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            user.level = result.level || (result.percentage > 70 ? 'advanced' : 'beginner');
+            localStorage.setItem('user', JSON.stringify(user));
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showAlert(`📚 حصلت على ${Math.round(result.percentage)}%. حاول مرة أخرى لتحسين مستواك`, 'error');
+        }
+    } catch(err) {
+        console.error('Error submitting test:', err);
+        showAlert('❌ حدث خطأ في تقديم الاختبار', 'error');
     }
         }
-        
-        async function submitLevelTest() {
-            const test = window.currentLevelTest;
-            if (!test) return;
-            
-            const answers = [];
-            for (let i = 0; i < test.questions.length; i++) {
-                const selected = document.querySelector(`input[name="q${i}"]:checked`);
-                if (!selected) {
-                    showAlert('❌ يرجى الإجابة على جميع الأسئلة', 'error');
-                    return;
-                }
-                answers.push(parseInt(selected.value));
-            }
-            
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/quizzes/' + test._id + '/submit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ answers })
-                });
-                const result = await res.json();
-                
-                if (result.passed) {
-                    showAlert(`🎉 تهانينا! حصلت على ${Math.round(result.score)}% واجتزت الاختبار`, 'success');
-                } else {
-                    showAlert(`📚 حصلت على ${Math.round(result.score)}%. حاول مرة أخرى لتحسين مستواك`, 'error');
-                }
-            } catch(err) {
-                showAlert('❌ حدث خطأ', 'error');
-            }
-        }
-        
         // ==================== Notifications ====================
         async function loadNotifications() {
             try {
