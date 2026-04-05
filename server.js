@@ -1137,6 +1137,49 @@ function generateCertificateHTML(data, qrCode) {
             .certificate-footer { flex-direction: column; align-items: center; }
             .signature-line { width: 150px; }
         }
+        /* ========== إعدادات الطباعة ========== */
+@media print {
+    /* إخفاء الأزرار */
+    .actions, .navbar, .btn-back {
+        display: none !important;
+    }
+    
+    /* ضبط الصفحة */
+    @page {
+        size: A4 landscape;
+        margin: 0.3cm;
+    }
+    
+    /* منع تقسيم الشهادة */
+    .certificate,
+    .certificate-border,
+    .certificate-content,
+    .certificate-body,
+    .certificate-details,
+    .certificate-footer {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        page-break-after: avoid;
+    }
+    
+    /* تصغير الخطوط قليلاً */
+    .student-name {
+        font-size: 1.3rem !important;
+    }
+    .course-name {
+        font-size: 1.1rem !important;
+    }
+    .certificate-body p {
+        font-size: 0.9rem !important;
+    }
+    .detail-box .value {
+        font-size: 0.8rem !important;
+    }
+    .qr-code img {
+        width: 60px !important;
+        height: 60px !important;
+    }
+}
     </style>
 </head>
 <body>
@@ -1215,16 +1258,9 @@ function generateCertificateHTML(data, qrCode) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         function downloadCertificate() {
-            const element = document.querySelector('.certificate');
-            const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
-                filename: 'EnGo_Certificate_${data.certificateId}.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-            };
-            html2pdf().set(opt).from(element).save();
-        }
+    // استخدام الطباعة بدلاً من PDF
+    window.print();
+}
         
         function shareCertificate() {
             if (navigator.share) {
