@@ -1075,32 +1075,32 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
         }
         
         // في دالة إنشاء الشهادة
+// ✅ 1. إنشاء المعرف أولاً
+const certificateId = `ENGO-${Date.now()}-${userId.toString().slice(-6)}`;
+
+// ✅ 2. إنشاء رابط التحقق
+const verifyUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/verify-certificate/${certificateId}`;
+
+// ✅ 3. إنشاء كائن البيانات
 const certificateData = {
-    userName: req.user.fullName, // ✅ استخدام الاسم الكامل من قاعدة البيانات
+    userName: req.user.fullName,
     courseTitle: course.title,
     courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
     completionDate: new Date().toLocaleDateString('ar-EG'),
-    certificateId: `ENGO-${Date.now()}-${userId.toString().slice(-6)}`,
+    certificateId: certificateId,
     totalLessons: totalLessons,
     finalScore: finalScore || 'اجتاز',
-    verifyUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/verify-certificate/${certificateData.certificateId}`
+    verifyUrl: verifyUrl
 };
-        
-        // إنشاء رمز QR
-        const qrCode = await QRCode.toDataURL(certificateData.verifyUrl);
-        
-        // إنشاء HTML الشهادة
-        const certificateHtml = generateCertificateHTML(certificateData, qrCode);
-        
-        res.setHeader('Content-Type', 'text/html');
-        res.send(certificateHtml);
-        
-    } catch (error) {
-        console.error('Certificate Error:', error);
-        res.status(500).json({ message: error.message });
-    }
-});
 
+// ✅ 4. إنشاء رمز QR
+const qrCode = await QRCode.toDataURL(verifyUrl);
+
+// ✅ 5. إنشاء HTML الشهادة
+const certificateHtml = generateCertificateHTML(certificateData, qrCode);
+
+res.setHeader('Content-Type', 'text/html');
+res.send(certificateHtml);
 // دالة إنشاء قالب الشهادة
 function generateCertificateHTML(data, qrCode) {
     return `<!DOCTYPE html>
