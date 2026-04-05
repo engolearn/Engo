@@ -2,10 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- منع التخزين المؤقت -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>عرض الدرس - EnGo</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -53,16 +52,47 @@
             font-size: 0.85rem;
         }
         
-        /* محتوى الفقرة */
-        .paragraph-card {
-            background: white;
-            border-radius: 24px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            min-height: 400px;
+        /* ========== أنماط الفقرات المتسلسلة (مثل صفحة الأدمن) ========== */
+        .paragraphs-container {
             display: flex;
             flex-direction: column;
+            gap: 1.5rem;
         }
+        
+        .paragraph-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.8rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            border: 1px solid #e2e8f0;
+        }
+        .paragraph-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        .paragraph-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .paragraph-number {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
         .paragraph-type-badge {
             display: inline-flex;
             align-items: center;
@@ -71,8 +101,6 @@
             border-radius: 30px;
             font-size: 0.8rem;
             font-weight: 600;
-            width: fit-content;
-            margin-bottom: 1rem;
         }
         .type-text { background: #667eea; color: white; }
         .type-video { background: #e53e3e; color: white; }
@@ -80,14 +108,14 @@
         .type-image { background: #d97706; color: white; }
         
         .paragraph-content {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             line-height: 1.8;
             color: #2d3748;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
         
         .paragraph-media {
-            margin: 1rem 0;
+            margin-top: 1rem;
             text-align: center;
         }
         .paragraph-media iframe {
@@ -111,7 +139,7 @@
             display: flex;
             justify-content: space-between;
             gap: 1rem;
-            margin-top: 1.5rem;
+            margin-top: 2rem;
         }
         .nav-btn {
             background: #667eea;
@@ -189,9 +217,10 @@
         }
         
         @media (max-width: 768px) {
-            .paragraph-media iframe { height: 250px; }
-            .paragraph-card { padding: 1.5rem; }
+            .paragraph-media iframe { height: 200px; }
+            .paragraph-card { padding: 1rem; }
             .navigation-buttons button { padding: 10px 20px; font-size: 0.9rem; }
+            .paragraph-number { width: 32px; height: 32px; font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -213,17 +242,15 @@
         <!-- مؤشر التقدم -->
         <div class="progress-indicator" id="progressIndicator" style="display: none;">
             <div class="progress-text">
-                <span id="currentParaNum">0</span> / <span id="totalParas">0</span>
+                <i class="fas fa-list"></i> الفقرة <span id="currentParaNum">0</span> من <span id="totalParas">0</span>
             </div>
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
             </div>
         </div>
 
-        <!-- محتوى الفقرة الحالية -->
-        <div class="paragraph-card" id="paragraphContent">
-            <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدرس...</div>
-        </div>
+        <!-- محتوى الفقرات المتسلسلة -->
+        <div class="paragraphs-container" id="paragraphsContainer"></div>
 
         <!-- أزرار التنقل -->
         <div class="navigation-buttons" id="navButtons" style="display: none;">
@@ -246,7 +273,6 @@
         let totalParagraphs = 0;
         let assignmentAnswers = {};
 
-        // الحصول على معرف الدورة والدرس من الرابط
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
             return {
@@ -285,11 +311,10 @@
             return (match && match[2].length === 11) ? match[2] : '';
         }
 
-        // تحميل الدرس
         async function loadLesson() {
             const { lessonId } = getUrlParams();
             if (!lessonId) {
-                document.getElementById('paragraphContent').innerHTML = '<div class="loading-spinner">❌ لم يتم تحديد الدرس</div>';
+                document.getElementById('paragraphsContainer').innerHTML = '<div class="loading-spinner">❌ لم يتم تحديد الدرس</div>';
                 return;
             }
 
@@ -303,11 +328,9 @@
                 
                 lessonData = await res.json();
                 
-                // عرض معلومات الدرس
                 document.getElementById('lessonTitle').innerText = lessonData.title;
                 document.getElementById('lessonNumber').innerHTML = `<i class="fas fa-book"></i> الدرس ${lessonData.lessonNumber}`;
                 
-                // تحضير الفقرات
                 if (lessonData.content && Array.isArray(lessonData.content) && lessonData.content.length > 0) {
                     totalParagraphs = lessonData.content.length;
                     document.getElementById('progressIndicator').style.display = 'block';
@@ -317,38 +340,32 @@
                     currentParagraphIndex = 0;
                     renderCurrentParagraph();
                 } else {
-                    // توافق مع الإصدار القديم (نص عادي)
                     totalParagraphs = 1;
                     document.getElementById('progressIndicator').style.display = 'none';
                     document.getElementById('navButtons').style.display = 'flex';
                     document.getElementById('prevBtn').disabled = true;
                     document.getElementById('nextBtn').disabled = true;
-                    
                     renderLegacyContent();
                 }
                 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('paragraphContent').innerHTML = '<div class="loading-spinner">❌ حدث خطأ في تحميل الدرس</div>';
+                document.getElementById('paragraphsContainer').innerHTML = '<div class="loading-spinner">❌ حدث خطأ في تحميل الدرس</div>';
             }
         }
 
-        // عرض الفقرة الحالية
         function renderCurrentParagraph() {
             if (!lessonData.content || !lessonData.content[currentParagraphIndex]) return;
             
             const para = lessonData.content[currentParagraphIndex];
             
-            // تحديث مؤشر التقدم
             document.getElementById('currentParaNum').innerText = currentParagraphIndex + 1;
             const progressPercent = ((currentParagraphIndex + 1) / totalParagraphs) * 100;
             document.getElementById('progressBar').style.width = progressPercent + '%';
             
-            // تحديث أزرار التنقل
             document.getElementById('prevBtn').disabled = currentParagraphIndex === 0;
             document.getElementById('nextBtn').disabled = false;
             
-            // تغيير نص زر التالي إذا كانت هذه آخر فقرة
             const nextBtn = document.getElementById('nextBtn');
             if (currentParagraphIndex === totalParagraphs - 1) {
                 nextBtn.innerHTML = 'إكمال الدرس <i class="fas fa-check"></i>';
@@ -356,7 +373,6 @@
                 nextBtn.innerHTML = 'التالي <i class="fas fa-arrow-left"></i>';
             }
             
-            // عرض الفقرة
             let typeClass = '';
             let typeIcon = '';
             let typeName = '';
@@ -397,44 +413,49 @@
                     break;
             }
             
-            document.getElementById('paragraphContent').innerHTML = `
-                <div class="paragraph-type-badge ${typeClass}">
-                    <i class="fas ${typeIcon}"></i> ${typeName}
+            document.getElementById('paragraphsContainer').innerHTML = `
+                <div class="paragraph-card">
+                    <div class="paragraph-header">
+                        <div class="paragraph-number">${currentParagraphIndex + 1}</div>
+                        <div class="paragraph-type-badge ${typeClass}">
+                            <i class="fas ${typeIcon}"></i> ${typeName}
+                        </div>
+                    </div>
+                    <div class="paragraph-content">
+                        ${para.content || ''}
+                    </div>
+                    ${mediaHtml}
                 </div>
-                <div class="paragraph-content">
-                    ${para.content || ''}
-                </div>
-                ${mediaHtml}
             `;
             
-            // إخفاء الواجب إذا كان ظاهراً
             document.getElementById('assignmentContainer').style.display = 'none';
         }
 
-        // عرض المحتوى القديم (نص عادي)
         function renderLegacyContent() {
-            document.getElementById('paragraphContent').innerHTML = `
-                <div class="paragraph-type-badge type-text">
-                    <i class="fas fa-file-alt"></i> نص
-                </div>
-                <div class="paragraph-content">
-                    ${lessonData.content || ''}
+            document.getElementById('paragraphsContainer').innerHTML = `
+                <div class="paragraph-card">
+                    <div class="paragraph-header">
+                        <div class="paragraph-number">1</div>
+                        <div class="paragraph-type-badge type-text">
+                            <i class="fas fa-file-alt"></i> نص
+                        </div>
+                    </div>
+                    <div class="paragraph-content">
+                        ${lessonData.content || ''}
+                    </div>
                 </div>
             `;
             
-            // إذا كان هناك واجب، عرضه
             if (lessonData.assignment && lessonData.assignment.questions && lessonData.assignment.questions.length > 0) {
                 renderAssignment();
             }
         }
 
-        // الانتقال إلى الفقرة التالية
         function nextParagraph() {
             if (currentParagraphIndex < totalParagraphs - 1) {
                 currentParagraphIndex++;
                 renderCurrentParagraph();
             } else {
-                // آخر فقرة - عرض الواجب
                 if (lessonData.assignment && lessonData.assignment.questions && lessonData.assignment.questions.length > 0) {
                     renderAssignment();
                 } else {
@@ -443,7 +464,6 @@
             }
         }
 
-        // الانتقال إلى الفقرة السابقة
         function previousParagraph() {
             if (currentParagraphIndex > 0) {
                 currentParagraphIndex--;
@@ -451,7 +471,6 @@
             }
         }
 
-        // عرض الواجب
         function renderAssignment() {
             const assignment = lessonData.assignment;
             if (!assignment || !assignment.questions || assignment.questions.length === 0) {
@@ -465,7 +484,7 @@
                     case 'multiple_choice':
                         questionsHtml += `
                             <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
+                                <h4>📌 سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
                                 <div class="assignment-options">
                                     ${q.options.map((opt, optIdx) => `
                                         <label class="assignment-option">
@@ -480,7 +499,7 @@
                     case 'true_false':
                         questionsHtml += `
                             <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
+                                <h4>📌 سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
                                 <div class="assignment-options">
                                     <label class="assignment-option"><input type="radio" name="q_${q.id}" value="true" onchange="assignmentAnswers['${q.id}'] = true"> ✅ صح</label>
                                     <label class="assignment-option"><input type="radio" name="q_${q.id}" value="false" onchange="assignmentAnswers['${q.id}'] = false"> ❌ خطأ</label>
@@ -491,7 +510,7 @@
                     case 'fill_blank':
                         questionsHtml += `
                             <div class="assignment-question">
-                                <h4>سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
+                                <h4>📌 سؤال ${idx + 1}: ${escapeHtml(q.questionText)} (${q.points} نقطة)</h4>
                                 <input type="text" class="assignment-input" placeholder="أدخل إجابتك..." 
                                     style="width:100%; padding:10px; border-radius:10px; border:1px solid #e2e8f0;"
                                     onchange="assignmentAnswers['${q.id}'] = this.value">
@@ -501,7 +520,7 @@
                 }
             });
             
-            document.getElementById('paragraphContent').innerHTML = `
+            document.getElementById('paragraphsContainer').innerHTML = `
                 <div class="assignment-section">
                     <h3><i class="fas fa-tasks"></i> ${escapeHtml(assignment.title || 'واجب الدرس')}</h3>
                     <p>${escapeHtml(assignment.description || '')}</p>
@@ -515,7 +534,6 @@
             document.getElementById('progressIndicator').style.display = 'none';
         }
 
-        // تقديم الواجب
         async function submitAssignment() {
             const token = localStorage.getItem('token');
             const { courseId, lessonId } = getUrlParams();
@@ -571,7 +589,6 @@
             }
         }
 
-        // إكمال الدرس
         function completeLesson() {
             showAlert('🎉 تهانينا! لقد أكملت هذا الدرس بنجاح', 'success');
             setTimeout(() => {
@@ -579,7 +596,6 @@
             }, 2000);
         }
 
-        // تهيئة الصفحة
         async function init() {
             if (await checkAuth()) {
                 await loadLesson();
