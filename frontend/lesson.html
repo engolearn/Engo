@@ -24,7 +24,14 @@
         .lesson-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 20px; margin-bottom: 1.5rem; text-align: center; }
         .lesson-header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
         .lesson-header .lesson-number { opacity: 0.9; font-size: 0.9rem; }
-        
+        .paragraph-content {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    white-space: pre-wrap;     /* ✅ يحافظ على الأسطر والمسافات */
+    word-wrap: break-word;     /* ✅ يكسر الكلمات الطويلة */
+        }
         /* مؤشر التقدم */
         .progress-indicator {
             background: white;
@@ -107,12 +114,7 @@
         .type-audio { background: #38a169; color: white; }
         .type-image { background: #d97706; color: white; }
         
-        .paragraph-content {
-            font-size: 1.05rem;
-            line-height: 1.8;
-            color: #2d3748;
-            margin-bottom: 1rem;
-        }
+        
         
         .paragraph-media {
             margin-top: 1rem;
@@ -418,19 +420,19 @@
             }
             
             document.getElementById('paragraphsContainer').innerHTML = `
-                <div class="paragraph-card">
-                    <div class="paragraph-header">
-                        <div class="paragraph-number">${currentParagraphIndex + 1}</div>
-                        <div class="paragraph-type-badge ${typeClass}">
-                            <i class="fas ${typeIcon}"></i> ${typeName}
-                        </div>
-                    </div>
-                    <div class="paragraph-content">
-                        ${para.content || ''}
-                    </div>
-                    ${mediaHtml}
-                </div>
-            `;
+    <div class="paragraph-card">
+        <div class="paragraph-header">
+            <div class="paragraph-number">${currentParagraphIndex + 1}</div>
+            <div class="paragraph-type-badge ${typeClass}">
+                <i class="fas ${typeIcon}"></i> ${typeName}
+            </div>
+        </div>
+        <div class="paragraph-content">
+            ${escapeHtml(para.content || '')}  <!-- ✅ تأكد من استخدام escapeHtml -->
+        </div>
+        ${mediaHtml}
+    </div>
+`;
             
             document.getElementById('assignmentContainer').style.display = 'none';
         }
