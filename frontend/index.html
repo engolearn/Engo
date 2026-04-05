@@ -695,7 +695,7 @@
         <div class="modal-content">
             <h3>تسجيل الدخول</h3>
             <form id="loginForm">
-                <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+                <input type="text" id="loginUsername" placeholder="اسم المستخدم" required>
                 <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
                 <button type="submit" class="btn-primary">دخول</button>
                 <button type="button" onclick="closeLoginModal()" style="background: #e2e8f0;">إلغاء</button>
@@ -707,8 +707,8 @@
         <div class="modal-content">
             <h3>إنشاء حساب جديد</h3>
             <form id="registerForm">
-                <input type="text" id="regName" placeholder="الاسم الكامل" required>
-                <input type="email" id="regEmail" placeholder="البريد الإلكتروني" required>
+                <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
+<input type="text" id="regName" placeholder="الاسم (اختياري)">
                 <input type="password" id="regPassword" placeholder="كلمة المرور" required>
                 <button type="submit" class="btn-primary">تسجيل</button>
                 <button type="button" onclick="closeRegisterModal()" style="background: #e2e8f0;">إلغاء</button>
@@ -811,49 +811,37 @@
             document.getElementById('registerModal').style.display = 'none';
         }
         
-        async function login(email, password) {
-            try {
-                const res = await fetch(API_URL + '/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message);
-                
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                currentUser = data.user;
-                
-                showAlert('✅ تم تسجيل الدخول بنجاح', 'success');
-                closeLoginModal();
-                location.reload();
-            } catch(err) {
-                showAlert('❌ ' + err.message, 'error');
-            }
-        }
-        
-        async function register(name, email, password) {
-            try {
-                const res = await fetch(API_URL + '/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message);
-                
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                currentUser = data.user;
-                
-                showAlert('✅ تم إنشاء الحساب بنجاح', 'success');
-                closeRegisterModal();
-                location.reload();
-            } catch(err) {
-                showAlert('❌ ' + err.message, 'error');
-            }
-        }
+        async function login(username, password) {
+    const res = await fetch(API_URL + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    currentUser = data.user;
+    showAlert(`✅ مرحباً ${data.user.username}!`, 'success');
+    location.reload();
+}
+
+async function register(username, name, password) {
+    const res = await fetch(API_URL + '/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, name, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    currentUser = data.user;
+    showAlert(`✅ مرحباً ${data.user.username}!`, 'success');
+    location.reload();
+}
         
         function logout() {
             localStorage.removeItem('token');
@@ -1035,7 +1023,7 @@ function showNotification(title, body, link) {
                         <i class="fas fa-user fa-3x" style="color: white;"></i>
                     </div>
                     <h2>${user.name || 'مستخدم'}</h2>
-                    <p style="color: #718096;">${user.email}</p>
+                    <p style="color: #718096;">@${user.username}</p>
                     <hr style="margin: 1rem 0;">
                     <div style="text-align: right;">
                         <p><strong>📅 تاريخ التسجيل:</strong> ${new Date(user.createdAt || Date.now()).toLocaleDateString('ar')}</p>
@@ -1238,7 +1226,7 @@ async function loadCourses() {
             if (token && user.id) {
                 if (authButtons) authButtons.style.display = 'none';
                 if (userMenu) userMenu.style.display = 'flex';
-                if (userName) userName.innerText = user.name || user.email;
+                if (userName) userName.innerText = user.name || user.username;
                 if (notificationsIcon) notificationsIcon.style.display = 'block';
                 currentUser = user;
                 
@@ -1270,27 +1258,27 @@ async function loadCourses() {
             loadLevelTest();
             
             const loginForm = document.getElementById('loginForm');
-            if (loginForm) {
-                loginForm.onsubmit = (e) => {
-                    e.preventDefault();
-                    login(
-                        document.getElementById('loginEmail').value,
-                        document.getElementById('loginPassword').value
-                    );
-                };
-            }
-            
-            const registerForm = document.getElementById('registerForm');
-            if (registerForm) {
-                registerForm.onsubmit = (e) => {
-                    e.preventDefault();
-                    register(
-                        document.getElementById('regName').value,
-                        document.getElementById('regEmail').value,
-                        document.getElementById('regPassword').value
-                    );
-                };
-            }
+if (loginForm) {
+    loginForm.onsubmit = (e) => {
+        e.preventDefault();
+        login(
+            document.getElementById('loginUsername').value,
+            document.getElementById('loginPassword').value
+        );
+    };
+}
+
+const registerForm = document.getElementById('registerForm');
+if (registerForm) {
+    registerForm.onsubmit = (e) => {
+        e.preventDefault();
+        register(
+            document.getElementById('regUsername').value,
+            document.getElementById('regName').value,
+            document.getElementById('regPassword').value
+        );
+    };
+}
             
             window.onclick = (e) => {
                 if (e.target.classList && e.target.classList.contains('modal')) {
