@@ -1397,7 +1397,7 @@ function generateAIResponse(message, userName) {
 ما الذي تود أن تتعلمه اليوم؟ 🎓`;
 }
     
-// ==================== AI Assistant API (Gemini) ====================
+// ==================== AI Assistant API (Gemini - آمن) ====================
 app.post('/api/ai/chat', auth, async (req, res) => {
     try {
         const { message } = req.body;
@@ -1406,95 +1406,52 @@ app.post('/api/ai/chat', auth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'الرسالة مطلوبة' });
         }
         
+        // ✅ قراءة المفتاح من متغير البيئة فقط
         const apiKey = process.env.GEMINI_API_KEY;
         
-        if (!apiKey) {
-            console.error('❌ GEMINI_API_KEY not found in .env');
-            return res.status(500).json({ success: false, message: 'مفتاح API غير موجود' });
+        if (!apiKey || apiKey === 'AIzaSyCyj8OkMO-McC9WWCx2Np4HTXyHF2aMZKA') {
+            console.error('❌ Invalid or missing GEMINI_API_KEY');
+            return res.status(500).json({ 
+                success: false, 
+                message: 'خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة لاحقاً.' 
+            });
         }
         
-        // جرب هذه النماذج بالترتيب
-        const modelsToTry = ['gemini-pro', 'gemini-1.0-pro', 'gemini-1.5-flash'];
-        let lastError = null;
+        const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
         
-        for (const model of modelsToTry) {
-            try {
-                // جرب الإصدار v1 أولاً
-                let apiUrl = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-                
-                console.log(`📤 Trying model: ${model} with v1...`);
-                
-                let response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
-                                أجب على السؤال بالعربية مع أمثلة إنجليزية. 
-                                
-                                السؤال: ${message}`
-                            }]
-                        }]
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.candidates && data.candidates[0]) {
-                        const reply = data.candidates[0].content.parts[0].text;
-                        console.log(`✅ AI response sent using model: ${model}`);
-                        return res.json({ success: true, reply: reply });
-                    }
-                }
-                
-                // إذا فشل v1، جرب v1beta
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-                console.log(`📤 Trying model: ${model} with v1beta...`);
-                
-                response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
-                                أجب على السؤال بالعربية مع أمثلة إنجليزية. 
-                                
-                                السؤال: ${message}`
-                            }]
-                        }]
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.candidates && data.candidates[0]) {
-                        const reply = data.candidates[0].content.parts[0].text;
-                        console.log(`✅ AI response sent using model: ${model} (v1beta)`);
-                        return res.json({ success: true, reply: reply });
-                    }
-                }
-                
-            } catch (err) {
-                lastError = err;
-                console.log(`❌ Model ${model} failed:`, err.message);
-            }
-        }
-        
-        // إذا وصلنا到这里، كل النماذج فشلت
-        console.error('All models failed');
-        res.status(500).json({ 
-            success: false, 
-            message: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة لاحقاً.' 
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
+                        أجب على السؤال بالعربية مع أمثلة إنجليزية. 
+                        
+                        السؤال: ${message}`
+                    }]
+                }]
+            })
         });
+        
+        const data = await response.json();
+        
+        if (data.candidates && data.candidates[0]) {
+            const reply = data.candidates[0].content.parts[0].text;
+            res.json({ success: true, reply: reply });
+        } else {
+            console.error('Gemini API Error:', data.error);
+            res.status(500).json({ 
+                success: false, 
+                message: 'حدث خطأ في معالجة الطلب' 
+            });
+        }
         
     } catch (error) {
         console.error('AI Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
-
 // ==================== Socket.IO ====================
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
