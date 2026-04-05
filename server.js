@@ -1397,7 +1397,7 @@ function generateAIResponse(message, userName) {
 ما الذي تود أن تتعلمه اليوم؟ 🎓`;
 }
     
-// ==================== AI Assistant API (Gemini - الإصدار الصحيح) ====================
+// ==================== AI Assistant API (Gemini - يعمل 100%) ====================
 app.post('/api/ai/chat', auth, async (req, res) => {
     try {
         const { message } = req.body;
@@ -1412,34 +1412,34 @@ app.post('/api/ai/chat', auth, async (req, res) => {
             console.error('❌ GEMINI_API_KEY not found');
             return res.status(500).json({ 
                 success: false, 
-                message: 'خدمة الذكاء الاصطناعي غير متاحة حالياً' 
+                message: 'مفتاح API غير موجود' 
             });
         }
         
-        // ✅ استخدم الإصدار v1beta والنموذج الصحيح
-        const MODEL = 'gemini-2.0-flash-exp';
+        // ✅ استخدم أفضل نموذج متاح لديك
+        const MODEL = 'gemini-2.5-flash';  // أو 'gemini-2.5-pro' للدقة الأعلى
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
         
-        console.log('📤 Sending to Gemini API...');
+        console.log(`📤 Sending to Gemini API using model: ${MODEL}`);
         
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{
                     parts: [{
                         text: `أنت مساعد ذكي متخصص في اللغة الإنجليزية فقط، اسمك "EnGo AI". 
                         أجب على السؤال بالعربية مع أمثلة إنجليزية. 
                         اجعل إجابتك مفيدة وسهلة الفهم.
+                        إذا سألك المستخدم عن شيء ليس له علاقة بالإنجليزية، اعتذر بلطف.
                         
                         السؤال: ${message}`
                     }]
                 }],
                 generationConfig: {
                     temperature: 0.7,
-                    maxOutputTokens: 800
+                    maxOutputTokens: 1000,
+                    topP: 0.95
                 }
             })
         });
@@ -1452,42 +1452,10 @@ app.post('/api/ai/chat', auth, async (req, res) => {
             res.json({ success: true, reply: reply });
         } else {
             console.error('Gemini API Error:', data.error);
-            
-            // محاولة استخدام نموذج بديل
-            const fallbackModels = ['gemini-1.5-flash', 'gemini-1.5-pro'];
-            let fallbackSuccess = false;
-            
-            for (const fallbackModel of fallbackModels) {
-                try {
-                    const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${apiKey}`;
-                    const fallbackRes = await fetch(fallbackUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [{ text: message }]
-                            }]
-                        })
-                    });
-                    
-                    const fallbackData = await fallbackRes.json();
-                    if (fallbackData.candidates && fallbackData.candidates[0]) {
-                        const reply = fallbackData.candidates[0].content.parts[0].text;
-                        res.json({ success: true, reply: reply });
-                        fallbackSuccess = true;
-                        break;
-                    }
-                } catch (err) {
-                    console.log(`Fallback model ${fallbackModel} failed:`, err.message);
-                }
-            }
-            
-            if (!fallbackSuccess) {
-                res.status(500).json({ 
-                    success: false, 
-                    message: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة لاحقاً.' 
-                });
-            }
+            res.status(500).json({ 
+                success: false, 
+                message: data.error?.message || 'حدث خطأ في معالجة الطلب' 
+            });
         }
         
     } catch (error) {
