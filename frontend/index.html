@@ -1096,40 +1096,55 @@ async function loadCourses() {
         
         // ==================== Level Test ====================
         async function loadLevelTest() {
-            try {
-                const res = await fetch(API_URL + '/level-test');
-                const test = await res.json();
-                const container = document.getElementById('levelTestContent');
-                
-                if (!container) return;
-                
-                container.innerHTML = `
-                    <div style="background: white; border-radius: 15px; padding: 1.5rem;">
-                        <h3>اختبار تحديد المستوى</h3>
-                        <p>هذا الاختبار سيساعدنا على تحديد مستواك في اللغة الإنجليزية.</p>
-                        <div id="testQuestions"></div>
-                        <button class="btn-primary" onclick="submitLevelTest()" style="margin-top: 1rem;">تقديم الاختبار</button>
+    try {
+        const res = await fetch(API_URL + '/level-test');
+        const test = await res.json();
+        const container = document.getElementById('levelTestContent');
+        
+        if (!container) return;
+        
+        if (!test || !test.questions) {
+            container.innerHTML = '<div class="empty-message">📝 لا توجد اختبارات مستوى متاحة حالياً</div>';
+            return;
+        }
+        
+        container.innerHTML = `
+            <div style="background: white; border-radius: 15px; padding: 1.5rem;">
+                <h3>${test.name || 'اختبار تحديد المستوى'}</h3>
+                <p>${test.description || 'هذا الاختبار سيساعدنا على تحديد مستواك في اللغة الإنجليزية.'}</p>
+                <p><strong>⏱️ المدة:</strong> ${test.duration} دقيقة</p>
+                <p><strong>📋 عدد الأسئلة:</strong> ${test.totalQuestions || test.questions?.length || 0}</p>
+                <div id="testQuestions"></div>
+                <button class="btn-primary" onclick="submitLevelTest()" style="margin-top: 1rem;">تقديم الاختبار</button>
+            </div>
+        `;
+        
+        const questionsContainer = document.getElementById('testQuestions');
+        if (test.questions && test.questions.length > 0) {
+            questionsContainer.innerHTML = test.questions.map((q, i) => `
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 10px;">
+                    <p><strong>${i+1}. ${escapeHtml(q.question)}</strong></p>
+                    <div style="margin-top: 0.5rem;">
+                        ${q.options.map((opt, optIndex) => `
+                            <label style="display: block; margin: 0.5rem 0;">
+                                <input type="radio" name="q${i}" value="${optIndex}"> ${escapeHtml(opt)}
+                            </label>
+                        `).join('')}
                     </div>
-                `;
-                
-                const questionsContainer = document.getElementById('testQuestions');
-                questionsContainer.innerHTML = test.questions.map((q, i) => `
-                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 10px;">
-                        <p><strong>${i+1}. ${escapeHtml(q.question)}</strong></p>
-                        <div style="margin-top: 0.5rem;">
-                            ${q.options.map((opt, optIndex) => `
-                                <label style="display: block; margin: 0.5rem 0;">
-                                    <input type="radio" name="q${i}" value="${optIndex}"> ${escapeHtml(opt)}
-                                </label>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('');
-                
-                window.currentLevelTest = test;
-            } catch(err) {
-                console.error(err);
-            }
+                </div>
+            `).join('');
+        } else {
+            questionsContainer.innerHTML = '<div class="empty-message">لا توجد أسئلة في هذا الاختبار</div>';
+        }
+        
+        window.currentLevelTest = test;
+    } catch(err) {
+        showAlert('❌ حدث خطأ', 'error');
+        const container = document.getElementById('levelTestContent');
+        if (container) {
+            container.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبار</div>';
+        }
+    }
         }
         
         async function submitLevelTest() {
