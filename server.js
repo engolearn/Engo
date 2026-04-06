@@ -235,7 +235,7 @@ const certificateSchema = new mongoose.Schema({
     courseLevel: { type: String, required: true },
     issueDate: { type: Date, default: Date.now },
     finalScore: { type: Number, default: 0 },
-    totalLessons: { type: Number, default: 0 }  // ✅ أضف هذا الحقل
+    totalLessons: { type: Number, default: 0 }
 });
 const Certificate = mongoose.model('Certificate', certificateSchema);
 
@@ -1095,18 +1095,32 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
             console.log('📝 Creating new certificate:', certificateId);
             
             certificate = new Certificate({
-                certificateId: certificateId,
-                userId: userId,
-                courseId: courseId,
-                userName: req.user.fullName,
-                courseTitle: course.title,
-                courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
-                issueDate: new Date(),
-                finalScore: finalScore || 0,
-                totalLessons: totalLessons
-            });
-            
-            await certificate.save();
+    certificateId: certificateId,
+    userId: userId,
+    courseId: courseId,
+    userName: req.user.fullName,
+    courseTitle: course.title,
+    courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+    issueDate: new Date(),
+    finalScore: finalScore || 0,
+    totalLessons: totalLessons
+});
+
+try {
+    await certificate.save();
+    console.log('✅ Certificate saved to database');
+    
+    // ✅ التحقق الفوري من الحفظ
+    const savedCert = await Certificate.findOne({ certificateId: certificateId });
+    if (savedCert) {
+        console.log('✅ Verified: Certificate exists in DB');
+    } else {
+        console.log('❌ ERROR: Certificate not found after save!');
+    }
+} catch (saveError) {
+    console.error('❌ Error saving certificate:', saveError);
+    return res.status(500).json({ message: 'فشل حفظ الشهادة: ' + saveError.message });
+}
             // بعد الحفظ، تحقق من وجودها
 const checkCert = await Certificate.findOne({ certificateId: certificateId });
 console.log('🔍 Verification after save - Certificate found:', checkCert ? 'YES' : 'NO');
