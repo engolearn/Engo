@@ -1038,19 +1038,18 @@ app.put('/api/notifications/read-all', auth, async (req, res) => {
 });
 // ==================== Certificate Generation ====================
 const QRCode = require('qrcode');
-// إنشاء شهادة وإعادة توجيه إلى صفحة العرض
+
+        // إنشاء شهادة وإعادة التوجيه إلى صفحة العرض
 app.get('/api/certificate/:courseId', auth, async (req, res) => {
     try {
         const { courseId } = req.params;
         const userId = req.user._id;
         
         console.log('📝 Generating certificate for course:', courseId);
-        console.log('👤 User ID:', userId);
         
         // جلب بيانات الدورة
         const course = await Course.findById(courseId);
         if (!course) {
-            console.log('❌ Course not found:', courseId);
             return res.status(404).json({ message: 'الدورة غير موجودة' });
         }
         
@@ -1059,9 +1058,6 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
         const completedLessons = progress?.completedLessons?.length || 0;
         const totalLessons = course.totalLessons;
         
-        console.log(`📊 Progress: ${completedLessons}/${totalLessons} lessons completed`);
-        
-        // التحقق من إكمال الدورة
         if (completedLessons < totalLessons) {
             return res.status(403).json({ 
                 message: 'يجب إكمال جميع الدروس أولاً للحصول على الشهادة',
@@ -1095,77 +1091,52 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
             console.log('📝 Creating new certificate:', certificateId);
             
             certificate = new Certificate({
-    certificateId: certificateId,
-    userId: userId,
-    courseId: courseId,
-    userName: req.user.fullName,
-    courseTitle: course.title,
-    courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
-    issueDate: new Date(),
-    finalScore: finalScore || 0,
-    totalLessons: totalLessons
-});
-
-try {
-    await certificate.save();
-    console.log('✅ Certificate saved to database');
-    
-    // ✅ التحقق الفوري من الحفظ
-    const savedCert = await Certificate.findOne({ certificateId: certificateId });
-    if (savedCert) {
-        console.log('✅ Verified: Certificate exists in DB');
-    } else {
-        console.log('❌ ERROR: Certificate not found after save!');
-    }
-} catch (saveError) {
-    console.error('❌ Error saving certificate:', saveError);
-    return res.status(500).json({ message: 'فشل حفظ الشهادة: ' + saveError.message });
-}
-            // بعد الحفظ، تحقق من وجودها
-const checkCert = await Certificate.findOne({ certificateId: certificateId });
-console.log('🔍 Verification after save - Certificate found:', checkCert ? 'YES' : 'NO');
-console.log('🔍 Certificate ID in DB:', checkCert?.certificateId);
+                certificateId: certificateId,
+                userId: userId,
+                courseId: courseId,
+                userName: req.user.fullName,
+                courseTitle: course.title,
+                courseLevel: course.level === 'beginner' ? 'المستوى المبتدئ' : 'المستوى المتقدم',
+                issueDate: new Date(),
+                finalScore: finalScore || 0,
+                totalLessons: totalLessons
+            });
+            
+            await certificate.save();
             console.log('✅ Certificate saved to database');
         }
         
-        // إعادة التوجيه إلى صفحة عرض الشهادة
-        const viewerUrl = `/certificate-viewer.html?id=${certificateId}`;
-        console.log('🔄 Redirecting to:', viewerUrl);
-        res.redirect(viewerUrl);
+        // ✅ إرجاع certificateId بدلاً من إعادة التوجيه
+        res.json({ 
+            success: true, 
+            certificateId: certificateId,
+            message: 'تم إنشاء الشهادة بنجاح'
+        });
         
     } catch (error) {
         console.error('❌ Certificate Error:', error);
-        res.status(500).json({ 
-            message: 'حدث خطأ في إنشاء الشهادة: ' + error.message 
-        });
+        res.status(500).json({ message: error.message });
     }
 });
 
 
-// ==================== API لجلب بيانات الشهادة ====================
+// API لجلب بيانات الشهادة
 app.get('/api/certificate-data/:certId', async (req, res) => {
     try {
         const { certId } = req.params;
         
         console.log('🔍 Searching for certificate:', certId);
         
-        // البحث عن الشهادة في قاعدة البيانات
         const certificate = await Certificate.findOne({ certificateId: certId });
         
         if (!certificate) {
-            console.log('❌ Certificate not found:', certId);
             return res.json({ 
                 valid: false, 
                 message: 'لم يتم العثور على هذه الشهادة' 
             });
         }
         
-        console.log('✅ Certificate found:', certificate.certificateId);
-        
-        // إنشاء رابط التحقق
         const verifyUrl = `https://engo.koyeb.app/verify-certificate/${certificate.certificateId}`;
-        
-        // إنشاء QR Code
         const QRCode = require('qrcode');
         const qrCode = await QRCode.toDataURL(verifyUrl);
         
@@ -1174,7 +1145,7 @@ app.get('/api/certificate-data/:certId', async (req, res) => {
             userName: certificate.userName,
             courseTitle: certificate.courseTitle,
             courseLevel: certificate.courseLevel,
-            completionDate: certificate.issueDate ? certificate.issueDate.toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG'),
+            completionDate: certificate.issueDate.toLocaleDateString('ar-EG'),
             totalLessons: certificate.totalLessons || 'جميع الدروس',
             finalScore: certificate.finalScore ? certificate.finalScore + '%' : 'اجتاز',
             certificateId: certificate.certificateId,
@@ -1186,7 +1157,6 @@ app.get('/api/certificate-data/:certId', async (req, res) => {
         res.json({ valid: false, message: error.message });
     }
 });
-
 
 // ==================== إدارة الإشعارات (Admin) ====================
 
