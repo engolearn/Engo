@@ -39,6 +39,17 @@
         .alert-success { background: #c6f6d5; color: #22543d; }
         .alert-error { background: #fed7d7; color: #742a2a; }
         .course-card { background: #f7fafc; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; }
+        .btn-success {
+    background: #48bb78;
+    color: white;
+    padding: 5px 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.btn-success:hover {
+    background: #38a169;
+}
         .lesson-item { background: white; padding: 1rem; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     /* ========== أنماط بناء الدروس (Lesson Builder) ========== */
 .lesson-builder {
@@ -1561,7 +1572,7 @@ async function loadCourses() {
     container.innerHTML = `
         <table class="table">
             <thead>
-                <tr><th>الصورة</th><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الإجراءات</th></tr>
+                <tr><th>الصورة</th><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الحالة</th><th>الإجراءات</th></tr>
             </thead>
             <tbody>
                 ${courses.map(c => `
@@ -1576,12 +1587,54 @@ async function loadCourses() {
                         <td>${c.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</td>
                         <td>${c.isPremium ? c.price + ' ريال' : 'مجاني'}</td>
                         <td>${c.totalLessons || 0}</td>
-                        <td><button class="btn-danger" onclick="deleteCourse('${c._id}')">حذف</button></td>
+                        <td>
+                            ${c.isActive ? 
+                                '<span style="color: #48bb78;"><i class="fas fa-check-circle"></i> مفعلة</span>' : 
+                                '<span style="color: #e53e3e;"><i class="fas fa-ban"></i> مغلقة</span>'
+                            }
+                        </td>
+                        <td class="inline-buttons">
+                            <button class="btn-${c.isActive ? 'danger' : 'success'} btn-sm" onclick="toggleCourseStatus('${c._id}', ${!c.isActive})" style="background: ${c.isActive ? '#e53e3e' : '#48bb78'}; color: white; padding: 5px 12px; border-radius: 8px; margin: 2px;">
+                                <i class="fas fa-${c.isActive ? 'ban' : 'play'}"></i> ${c.isActive ? 'إغلاق' : 'فتح'}
+                            </button>
+                            <button class="btn-danger btn-sm" onclick="deleteCourse('${c._id}')">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        </td>
                     </tr>
                 `).join('')}
             </tbody>
         </table>
     `;
+}
+
+// دالة تبديل حالة الدورة
+async function toggleCourseStatus(courseId, newStatus) {
+    const action = newStatus ? 'تفعيل' : 'تعطيل';
+    if(!confirm(`⚠️ هل أنت متأكد من ${action} هذه الدورة؟\n${newStatus ? 'سيتمكن المستخدمون من رؤية الدورة والاشتراك فيها.' : 'لن يتمكن المستخدمون من رؤية الدورة.'}`)) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/courses/' + courseId + '/toggle-status', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ isActive: newStatus })
+        });
+        
+        if (res.ok) {
+            showAlert(`✅ تم ${action} الدورة بنجاح`, 'success');
+            loadCourses(); // إعادة تحميل القائمة
+            loadCoursesForSelect(); // تحديث القوائم المنسدلة
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
 }
         
         async function loadLevelTests() {
