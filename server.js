@@ -65,7 +65,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// Course Model (مع إضافة حقل الصورة)
+// Course Model (مع إضافة حقل تفعيل/تعطيل الدورة)
 const courseSchema = new mongoose.Schema({
     title: String,
     description: String,
@@ -75,7 +75,8 @@ const courseSchema = new mongoose.Schema({
     totalLessons: { type: Number, default: 0 },
     freeLessons: { type: Number, default: 5 },
     lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }],
-    image: { type: String, default: '' },  // ✅ أضف هذا الحقل
+    image: { type: String, default: '' },
+    isActive: { type: Boolean, default: true },  // ✅ أضف هذا الحقل
     createdAt: { type: Date, default: Date.now }
 });
 const Course = mongoose.model('Course', courseSchema);
@@ -988,14 +989,16 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 // ==================== Course Routes ====================
+// جلب الدورات للواجهة الرئيسية (النشطة فقط)
 app.get('/api/courses', async (req, res) => {
     try {
-        const courses = await Course.find().sort({ createdAt: -1 });
+        const courses = await Course.find({ isActive: true }).sort({ createdAt: -1 });
         res.json(courses);
     } catch (error) {
         res.json([]);
     }
 });
+
 
 app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
@@ -1007,6 +1010,31 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
             isLocked: !isPurchased && index >= course.freeLessons
         }));
         res.json({ ...course.toObject(), lessons: lessonsWithStatus, isPurchased });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+// تحديث حالة الدورة (تفعيل/تعطيل)
+app.put('/api/admin/courses/:courseId/toggle-status', auth, adminAuth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { isActive } = req.body;
+        
+        const course = await Course.findByIdAndUpdate(
+            courseId,
+            { isActive: isActive },
+            { new: true }
+        );
+        
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: `تم ${isActive ? 'تفعيل' : 'تعطيل'} الدورة بنجاح`,
+            course 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
