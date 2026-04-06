@@ -65,7 +65,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// Course Model (مع إضافة حقل تفعيل/تعطيل الدورة)
+// Course Model (مع إضافة حقل المستخدمين المسموح لهم)
 const courseSchema = new mongoose.Schema({
     title: String,
     description: String,
@@ -76,7 +76,8 @@ const courseSchema = new mongoose.Schema({
     freeLessons: { type: Number, default: 5 },
     lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }],
     image: { type: String, default: '' },
-    isActive: { type: Boolean, default: true },  // ✅ أضف هذا الحقل
+    isActive: { type: Boolean, default: true },
+    allowedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // ✅ أضف هذا الحقل
     createdAt: { type: Date, default: Date.now }
 });
 const Course = mongoose.model('Course', courseSchema);
@@ -988,6 +989,73 @@ app.post('/api/auth/login', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// ==================== إدارة صلاحيات المستخدمين للدورات ====================
+
+// جلب المستخدمين المسموح لهم بدورة محددة
+app.get('/api/admin/courses/:courseId/allowed-users', auth, adminAuth, async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.courseId).populate('allowedUsers', 'username fullName email');
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        res.json(course.allowedUsers || []);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// إضافة مستخدم إلى قائمة المسموح لهم بدورة
+app.post('/api/admin/courses/:courseId/add-user', auth, adminAuth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { userId } = req.body;
+        
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        
+        // التحقق من عدم تكرار المستخدم
+        if (!course.allowedUsers.includes(userId)) {
+            course.allowedUsers.push(userId);
+            await course.save();
+        }
+        
+        res.json({ success: true, message: 'تم إضافة المستخدم بنجاح' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// إزالة مستخدم من قائمة المسموح لهم بدورة
+app.delete('/api/admin/courses/:courseId/remove-user/:userId', auth, adminAuth, async (req, res) => {
+    try {
+        const { courseId, userId } = req.params;
+        
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        
+        course.allowedUsers = course.allowedUsers.filter(id => id.toString() !== userId);
+        await course.save();
+        
+        res.json({ success: true, message: 'تم إزالة المستخدم بنجاح' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// جلب قائمة المستخدمين (للعرض في واجهة الإدارة)
+app.get('/api/admin/users-list', auth, adminAuth, async (req, res) => {
+    try {
+        const users = await User.find({ role: 'user' }).select('_id username fullName email');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // ==================== Course Routes ====================
 // جلب الدورات للواجهة الرئيسية (النشطة فقط)
 app.get('/api/courses', async (req, res) => {
@@ -1000,15 +1068,25 @@ app.get('/api/courses', async (req, res) => {
 });
 
 
+
 app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId).populate('lessons');
         if (!course) return res.status(404).json({ message: 'Course not found' });
+        
+        // ✅ التحقق من صلاحية المستخدم
+        const isAllowed = course.allowedUsers.includes(req.user._id) || course.isActive;
+        
+        if (!isAllowed) {
+            return res.status(403).json({ message: 'غير مصرح لك بالوصول إلى هذه الدورة' });
+        }
+        
         const isPurchased = req.user.purchasedCourses.includes(course._id.toString());
         const lessonsWithStatus = course.lessons.map((lesson, index) => ({
             ...lesson.toObject(),
             isLocked: !isPurchased && index >= course.freeLessons
         }));
+        
         res.json({ ...course.toObject(), lessons: lessonsWithStatus, isPurchased });
     } catch (error) {
         res.status(500).json({ message: error.message });
