@@ -185,8 +185,8 @@ async function getCertificate() {
         return;
     }
     
-    // ✅ الانتقال إلى صفحة الشهادة المنفصلة مع معرف الدورة
-    window.location.href = `/certificate-viewer.html?courseId=${courseId}`;
+    // الانتقال إلى صفحة الشهادة مع id (وليس courseId)
+window.location.href = `/certificate-viewer.html?id=${courseId}`;
 }
         // تحميل تفاصيل الدورة
         async function loadCourseDetails() {
