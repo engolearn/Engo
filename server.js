@@ -1036,7 +1036,6 @@ app.put('/api/notifications/read-all', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
-
 // ==================== Certificate Generation ====================
 const QRCode = require('qrcode');
 // إنشاء شهادة وإعادة توجيه إلى صفحة العرض
@@ -1108,6 +1107,10 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
             });
             
             await certificate.save();
+            // بعد الحفظ، تحقق من وجودها
+const checkCert = await Certificate.findOne({ certificateId: certificateId });
+console.log('🔍 Verification after save - Certificate found:', checkCert ? 'YES' : 'NO');
+console.log('🔍 Certificate ID in DB:', checkCert?.certificateId);
             console.log('✅ Certificate saved to database');
         }
         
@@ -1123,6 +1126,7 @@ app.get('/api/certificate/:courseId', auth, async (req, res) => {
         });
     }
 });
+
 
 // ==================== API لجلب بيانات الشهادة ====================
 app.get('/api/certificate-data/:certId', async (req, res) => {
