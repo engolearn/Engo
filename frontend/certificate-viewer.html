@@ -156,14 +156,32 @@
             }
         }
         
-        function shareCertificate() {
-            if (navigator.share) {
-                navigator.share({ title: 'شهادة إتمام', url: window.location.href });
-            } else {
-                navigator.clipboard.writeText(window.location.href);
-                alert('✅ تم نسخ رابط الشهادة');
-            }
-        }
+        // دالة مشاركة الشهادة
+function shareCertificate() {
+    // ✅ استخدام رابط التحقق من صحة الشهادة
+    const shareUrl = `https://engo.koyeb.app/verify-certificate/${certificateId}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'شهادة إتمام دورة - EnGo',
+            text: `لقد أكملت دورة ${courseTitle} بنجاح على منصة EnGo`,
+            url: shareUrl
+        }).catch(err => {
+            console.log('Share cancelled:', err);
+            copyToClipboard(shareUrl);
+        });
+    } else {
+        copyToClipboard(shareUrl);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✅ تم نسخ رابط التحقق من الشهادة! يمكنك مشاركته مع أصدقائك.');
+    }).catch(() => {
+        alert('❌ حدث خطأ في نسخ الرابط');
+    });
+}
         
         loadCertificate();
     </script>
