@@ -899,17 +899,15 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, fullName, password } = req.body;
         
-        // التحقق من وجود اسم المستخدم
         if (!username) {
             return res.status(400).json({ message: 'اسم المستخدم مطلوب' });
         }
         
-        // ✅ التحقق من الاسم الكامل
         if (!fullName || fullName.trim().length < 3) {
             return res.status(400).json({ message: 'الاسم الكامل مطلوب (3 أحرف على الأقل)' });
         }
         
-        // التحقق من عدم تكرار اسم المستخدم
+        // ✅ التحقق من عدم تكرار اسم المستخدم فقط (بدون بريد)
         const existingUser = await User.findOne({ username: username.toLowerCase() });
         if (existingUser) {
             return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
@@ -923,6 +921,7 @@ app.post('/api/auth/register', async (req, res) => {
             fullName: fullName.trim(),
             password: hashedPassword,
             role: 'user'
+            // ✅ لا نرسل بريد إلكتروني
         });
         
         await user.save();
@@ -946,7 +945,15 @@ app.post('/api/auth/register', async (req, res) => {
                 purchasedCourses: user.purchasedCourses || [] 
             } 
         });
+        
     } catch (error) {
+        console.error('Register error:', error);
+        
+        // ✅ معالجة خطأ التكرار
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
+        }
+        
         res.status(500).json({ message: error.message });
     }
 });
