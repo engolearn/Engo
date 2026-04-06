@@ -126,20 +126,28 @@
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const certId = urlParams.get('id');
+    const urlParams = new URLSearchParams(window.location.search);
+    const certId = urlParams.get('id');
+    
+    let certificateId = '';
+    let courseTitle = '';
+    
         
         async function loadCertificate() {
-            if (!certId) {
-                document.body.innerHTML = '<div style="background:white;padding:2rem;text-align:center"><h2>❌ رابط غير صالح</h2></div>';
-                return;
-            }
+    if (!certId) {
+        document.body.innerHTML = '<div style="background:white;padding:2rem;text-align:center"><h2>❌ رابط غير صالح</h2></div>';
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/certificate-data/' + certId);
+        const data = await res.json();
+        
+        if (data.valid) {
+            // ✅ أضف هذين السطرين لحفظ القيم
+            certificateId = data.certificateId;
+            courseTitle = data.courseTitle;
             
-            try {
-                const res = await fetch('/api/certificate-data/' + certId);
-                const data = await res.json();
-                
-                if (data.valid) {
                     document.getElementById('userName').innerText = data.userName;
                     document.getElementById('courseTitle').innerText = data.courseTitle;
                     document.getElementById('courseLevel').innerHTML = `في ${data.courseLevel}`;
@@ -158,25 +166,27 @@
         
         // دالة مشاركة الشهادة
 function shareCertificate() {
-    // ✅ استخدام رابط التحقق من صحة الشهادة
+    // ✅ استخدام المتغيرات النصية المحفوظة
     const shareUrl = `https://engo.koyeb.app/verify-certificate/${certificateId}`;
+    const message = `لقد أكملت دورة ${courseTitle} بنجاح على منصة EnGo`;
     
     if (navigator.share) {
         navigator.share({
             title: 'شهادة إتمام دورة - EnGo',
-            text: `لقد أكملت دورة ${courseTitle} بنجاح على منصة EnGo`,
+            text: message,
             url: shareUrl
         }).catch(err => {
             console.log('Share cancelled:', err);
-            copyToClipboard(shareUrl);
+            copyToClipboard(shareUrl, message);
         });
     } else {
-        copyToClipboard(shareUrl);
+        copyToClipboard(shareUrl, message);
     }
 }
-
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
+        
+function copyToClipboard(url, message) {
+    const fullText = `${message}\n\nرابط التحقق: ${url}`;
+    navigator.clipboard.writeText(fullText).then(() => {
         alert('✅ تم نسخ رابط التحقق من الشهادة! يمكنك مشاركته مع أصدقائك.');
     }).catch(() => {
         alert('❌ حدث خطأ في نسخ الرابط');
