@@ -762,6 +762,40 @@
         </div>
     </div>
 </div>
+        <!-- مودال إدارة صلاحيات المستخدمين للدورات -->
+<div id="permissionsModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <h3><i class="fas fa-users"></i> إدارة صلاحيات الدورة</h3>
+        <p id="permissionCourseTitle" style="color: #667eea; font-weight: bold; margin-bottom: 1rem;"></p>
+        
+        <hr style="margin: 1rem 0;">
+        
+        <h4>👥 المستخدمين المسموح لهم</h4>
+        <div id="allowedUsersList" style="margin: 1rem 0; max-height: 250px; overflow-y: auto;">
+            <div class="loading">جاري التحميل...</div>
+        </div>
+        
+        <hr style="margin: 1rem 0;">
+        
+        <h4>➕ إضافة مستخدم جديد</h4>
+        <div class="form-group">
+            <select id="userToAddSelect" class="form-control">
+                <option value="">-- اختر مستخدم --</option>
+            </select>
+        </div>
+        <button class="btn-primary" onclick="addUserToCourse()" style="width: 100%;">
+            <i class="fas fa-plus-circle"></i> إضافة مستخدم
+        </button>
+        
+        <hr style="margin: 1rem 0;">
+        
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-danger" onclick="closePermissionsModal()" style="flex: 1;">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+    </div>
+</div>
         <!-- تبويب إدارة البوتات -->
 <div id="botsTab" class="tab-content">
     <div class="admin-section">
@@ -1570,42 +1604,45 @@ async function loadCourses() {
     }
     
     container.innerHTML = `
-        <table class="table">
-            <thead>
-                <tr><th>الصورة</th><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الحالة</th><th>الإجراءات</th></tr>
-            </thead>
-            <tbody>
-                ${courses.map(c => `
-                    <tr>
-                        <td>
-                            ${c.image ? 
-                                `<img src="${c.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">` : 
-                                `<div style="width: 50px; height: 50px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-book"></i></div>`
-                            }
-                        </td>
-                        <td><strong>${escapeHtml(c.title)}</strong><br><small>${escapeHtml(c.description.substring(0, 50))}...</small></td>
-                        <td>${c.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</td>
-                        <td>${c.isPremium ? c.price + ' ريال' : 'مجاني'}</td>
-                        <td>${c.totalLessons || 0}</td>
-                        <td>
-                            ${c.isActive ? 
-                                '<span style="color: #48bb78;"><i class="fas fa-check-circle"></i> مفعلة</span>' : 
-                                '<span style="color: #e53e3e;"><i class="fas fa-ban"></i> مغلقة</span>'
-                            }
-                        </td>
-                        <td class="inline-buttons">
-                            <button class="btn-${c.isActive ? 'danger' : 'success'} btn-sm" onclick="toggleCourseStatus('${c._id}', ${!c.isActive})" style="background: ${c.isActive ? '#e53e3e' : '#48bb78'}; color: white; padding: 5px 12px; border-radius: 8px; margin: 2px;">
-                                <i class="fas fa-${c.isActive ? 'ban' : 'play'}"></i> ${c.isActive ? 'إغلاق' : 'فتح'}
-                            </button>
-                            <button class="btn-danger btn-sm" onclick="deleteCourse('${c._id}')">
-                                <i class="fas fa-trash"></i> حذف
-                            </button>
-                        </td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
+    <table class="table">
+        <thead>
+            <tr><th>الصورة</th><th>العنوان</th><th>المستوى</th><th>السعر</th><th>الدروس</th><th>الحالة</th><th>الإجراءات</th></tr>
+        </thead>
+        <tbody>
+            ${courses.map(c => `
+                <tr>
+                    <td>
+                        ${c.image ? 
+                            `<img src="${c.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">` : 
+                            `<div style="width: 50px; height: 50px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-book"></i></div>`
+                        }
+                    </td>
+                    <td><strong>${escapeHtml(c.title)}</strong><br><small>${escapeHtml(c.description.substring(0, 50))}...</small></td>
+                    <td>${c.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</td>
+                    <td>${c.isPremium ? c.price + ' ريال' : 'مجاني'}</td>
+                    <td>${c.totalLessons || 0}</td>
+                    <td>
+                        ${c.isActive ? 
+                            '<span style="color: #48bb78;"><i class="fas fa-check-circle"></i> مفعلة</span>' : 
+                            '<span style="color: #e53e3e;"><i class="fas fa-ban"></i> مغلقة</span>'
+                        }
+                    </td>
+                    <td class="inline-buttons">
+                        <button class="btn-warning btn-sm" onclick="manageCoursePermissions('${c._id}', '${escapeHtml(c.title)}')" style="background: #ed8936; color: white; padding: 5px 12px; border-radius: 8px; margin: 2px;">
+                            <i class="fas fa-users"></i> صلاحيات
+                        </button>
+                        <button class="btn-${c.isActive ? 'danger' : 'success'} btn-sm" onclick="toggleCourseStatus('${c._id}', ${!c.isActive})" style="background: ${c.isActive ? '#e53e3e' : '#48bb78'}; color: white; padding: 5px 12px; border-radius: 8px; margin: 2px;">
+                            <i class="fas fa-${c.isActive ? 'ban' : 'play'}"></i> ${c.isActive ? 'إغلاق' : 'فتح'}
+                        </button>
+                        <button class="btn-danger btn-sm" onclick="deleteCourse('${c._id}')">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>
+`;
 }
 
 // دالة تبديل حالة الدورة
@@ -1703,7 +1740,134 @@ async function toggleCourseStatus(courseId, newStatus) {
         
         document.getElementById('addLevelTestForm')?.addEventListener('submit', async (e) => { e.preventDefault(); await createNewLevelTest(); });
 
+// ==================== إدارة صلاحيات المستخدمين للدورات ====================
 
+let currentCourseForPermissions = null;
+
+// فتح نافذة إدارة صلاحيات الدورة
+async function manageCoursePermissions(courseId, courseTitle) {
+    currentCourseForPermissions = courseId;
+    document.getElementById('permissionCourseTitle').innerText = courseTitle;
+    
+    // تحميل المستخدمين المسموح لهم
+    await loadAllowedUsers(courseId);
+    
+    // تحميل قائمة جميع المستخدمين
+    await loadAllUsersForPermission();
+    
+    document.getElementById('permissionsModal').style.display = 'flex';
+}
+
+// تحميل المستخدمين المسموح لهم
+async function loadAllowedUsers(courseId) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/courses/' + courseId + '/allowed-users', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const users = await res.json();
+        
+        const container = document.getElementById('allowedUsersList');
+        if (!users.length) {
+            container.innerHTML = '<div class="empty-message">لا يوجد مستخدمين مسموح لهم بهذه الدورة</div>';
+            return;
+        }
+        
+        container.innerHTML = users.map(user => `
+            <div class="permission-user-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7fafc; border-radius: 10px; margin-bottom: 8px;">
+                <div>
+                    <strong>${escapeHtml(user.username)}</strong><br>
+                    <small style="color: #718096;">${escapeHtml(user.fullName || user.email)}</small>
+                </div>
+                <button class="btn-danger btn-sm" onclick="removeUserPermission('${courseId}', '${user._id}')">
+                    <i class="fas fa-trash"></i> إزالة
+                </button>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading allowed users:', error);
+    }
+}
+
+// تحميل جميع المستخدمين للإضافة
+async function loadAllUsersForPermission() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/users-list', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const users = await res.json();
+        
+        const select = document.getElementById('userToAddSelect');
+        select.innerHTML = '<option value="">-- اختر مستخدم --</option>' + 
+            users.map(user => `<option value="${user._id}">${escapeHtml(user.username)} (${escapeHtml(user.fullName || user.email)})</option>`).join('');
+        
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+// إضافة مستخدم إلى الدورة
+async function addUserToCourse() {
+    const userId = document.getElementById('userToAddSelect').value;
+    if (!userId) {
+        showAlert('❌ اختر مستخدم أولاً', 'error');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/courses/' + currentCourseForPermissions + '/add-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ userId })
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم إضافة المستخدم بنجاح', 'success');
+            await loadAllowedUsers(currentCourseForPermissions);
+            document.getElementById('userToAddSelect').value = '';
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// إزالة مستخدم من الدورة
+async function removeUserPermission(courseId, userId) {
+    if (!confirm('⚠️ هل أنت متأكد من إزالة هذا المستخدم من الدورة؟')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/courses/' + courseId + '/remove-user/' + userId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم إزالة المستخدم بنجاح', 'success');
+            await loadAllowedUsers(courseId);
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// إغلاق نافذة الصلاحيات
+function closePermissionsModal() {
+    document.getElementById('permissionsModal').style.display = 'none';
+}
+        
         // ==================== Lesson Builder (فقرات الدرس المتسلسلة) ====================
 let lessonParagraphs = [];
 let paragraphCounter = 0;
