@@ -474,27 +474,85 @@ function stopAllBotsInRoom(roomId) {
     return count;
 }
 
-// ==================== التحقق من صحة الشهادة ====================
+
+                        
+                             // ==================== التحقق من صحة الشهادة ====================
+// صفحة التحقق من الشهادة (تعرض HTML)
 app.get('/verify-certificate/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // هنا يمكنك البحث في قاعدة البيانات عن الشهادة
-        // للتبسيط، سنستخدم معرف مؤقت، ولكن في الحقيقة يجب تخزين الشهادات في قاعدة بيانات
+        // البحث عن الشهادة في قاعدة البيانات
+        const certificate = await Certificate.findOne({ certificateId: id });
         
-        // مثال: البحث في سجل الشهادات
-        // const certificate = await Certificate.findOne({ certificateId: id });
+        // إذا لم يتم العثور على الشهادة
+        if (!certificate) {
+            return res.send(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>شهادة غير صالحة - EnGo</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body {
+                            font-family: 'Cairo', sans-serif;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            min-height: 100vh;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            padding: 20px;
+                        }
+                        .card {
+                            background: white;
+                            border-radius: 20px;
+                            padding: 2rem;
+                            max-width: 500px;
+                            width: 100%;
+                            text-align: center;
+                            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+                        }
+                        .invalid-icon { font-size: 4rem; color: #e53e3e; margin-bottom: 1rem; }
+                        h2 { color: #e53e3e; margin-bottom: 1rem; }
+                        p { color: #4a5568; margin-bottom: 1rem; line-height: 1.6; }
+                        .btn {
+                            background: #667eea;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 30px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            margin-top: 1rem;
+                        }
+                        .btn:hover { background: #5a67d8; transform: scale(1.02); }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="invalid-icon">❌</div>
+                        <h2>شهادة غير صالحة</h2>
+                        <p>لم يتم العثور على هذه الشهادة في قاعدة البيانات.</p>
+                        <p>يرجى التأكد من الرابط أو التواصل مع الدعم الفني.</p>
+                        <button class="btn" onclick="window.location.href='/'">🏠 العودة للرئيسية</button>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
         
-        // صفحة التحقق من الشهادة
+        // ✅ عرض صفحة التحقق من الشهادة (شهادة صالحة)
         res.send(`
             <!DOCTYPE html>
             <html lang="ar" dir="rtl">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>التحقق من الشهادة - EnGo</title>
-                <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                <title>شهادة صالحة - EnGo</title>
+                <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
                     body {
@@ -506,180 +564,167 @@ app.get('/verify-certificate/:id', async (req, res) => {
                         align-items: center;
                         padding: 20px;
                     }
-                    .verify-container {
-                        max-width: 500px;
-                        width: 100%;
+                    .certificate-verify {
                         background: white;
                         border-radius: 20px;
                         padding: 2rem;
+                        max-width: 600px;
+                        width: 100%;
                         box-shadow: 0 20px 40px rgba(0,0,0,0.2);
                         text-align: center;
                     }
-                    .verify-icon {
-                        font-size: 4rem;
-                        margin-bottom: 1rem;
-                    }
-                    .verify-icon.valid { color: #48bb78; }
-                    .verify-icon.invalid { color: #e53e3e; }
-                    .verify-icon.pending { color: #fbbf24; }
-                    .verify-title {
-                        font-size: 1.5rem;
-                        margin-bottom: 1rem;
-                        color: #2d3748;
-                    }
-                    .verify-message {
-                        color: #4a5568;
+                    .valid-icon { font-size: 4rem; color: #48bb78; margin-bottom: 1rem; }
+                    h2 { color: #2d3748; margin-bottom: 0.5rem; }
+                    .verified-badge {
+                        display: inline-block;
+                        background: #48bb78;
+                        color: white;
+                        padding: 5px 15px;
+                        border-radius: 30px;
+                        font-size: 0.8rem;
                         margin-bottom: 1.5rem;
-                        line-height: 1.6;
                     }
-                    .certificate-details {
+                    .info-box {
                         background: #f7fafc;
                         border-radius: 15px;
-                        padding: 1rem;
-                        margin: 1rem 0;
+                        padding: 1.5rem;
                         text-align: right;
+                        margin: 1.5rem 0;
                     }
-                    .certificate-details p {
-                        margin: 0.5rem 0;
+                    .info-row {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 10px 0;
+                        border-bottom: 1px solid #e2e8f0;
                     }
-                    .certificate-details strong {
-                        color: #667eea;
-                    }
-                    .btn-home {
+                    .info-row:last-child { border-bottom: none; }
+                    .info-label { font-weight: bold; color: #4a5568; }
+                    .info-value { color: #2d3748; }
+                    .btn {
                         background: #667eea;
                         color: white;
                         border: none;
-                        padding: 12px 30px;
+                        padding: 12px 24px;
                         border-radius: 30px;
                         cursor: pointer;
                         font-size: 1rem;
                         margin-top: 1rem;
-                        text-decoration: none;
-                        display: inline-block;
+                        transition: 0.3s;
                     }
-                    .btn-home:hover {
-                        background: #5a67d8;
-                        transform: scale(1.02);
-                    }
-                    .loading-spinner {
-                        display: inline-block;
-                        width: 40px;
-                        height: 40px;
-                        border: 3px solid #e2e8f0;
-                        border-top-color: #667eea;
-                        border-radius: 50%;
-                        animation: spin 0.8s linear infinite;
-                    }
-                    @keyframes spin {
-                        to { transform: rotate(360deg); }
+                    .btn:hover { transform: scale(1.02); background: #5a67d8; }
+                    .footer { margin-top: 1.5rem; font-size: 0.75rem; color: #a0aec0; }
+                    @media (max-width: 600px) {
+                        .certificate-verify { padding: 1.5rem; }
+                        .info-row { flex-direction: column; gap: 5px; text-align: center; }
                     }
                 </style>
             </head>
             <body>
-                <div class="verify-container" id="verifyContainer">
-                    <div class="verify-icon pending">
-                        <i class="fas fa-spinner fa-spin"></i>
+                <div class="certificate-verify">
+                    <div class="valid-icon">✅</div>
+                    <span class="verified-badge">✓ شهادة صالحة ومعتمدة</span>
+                    <h2>شهادة إتمام دورة</h2>
+                    <p style="color: #718096;">صادرة من منصة EnGo لتعليم اللغة الإنجليزية</p>
+                    
+                    <div class="info-box">
+                        <div class="info-row">
+                            <span class="info-label">📜 رقم الشهادة:</span>
+                            <span class="info-value">${certificate.certificateId}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">👤 اسم الحاصل على الشهادة:</span>
+                            <span class="info-value">${certificate.userName}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">📚 اسم الدورة:</span>
+                            <span class="info-value">${certificate.courseTitle}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">⭐ المستوى:</span>
+                            <span class="info-value">${certificate.courseLevel}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">📅 تاريخ الإصدار:</span>
+                            <span class="info-value">${certificate.issueDate.toLocaleDateString('ar-EG')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">🎯 نسبة الإنجاز:</span>
+                            <span class="info-value">${certificate.finalScore || '100'}%</span>
+                        </div>
                     </div>
-                    <h2 class="verify-title">جاري التحقق...</h2>
-                    <div class="loading-spinner"></div>
-                    <p class="verify-message">يرجى الانتظار، جاري التحقق من صحة الشهادة...</p>
+                    
+                    <p style="color: #48bb78; margin: 1rem 0;">
+                        <i class="fas fa-check-circle"></i> هذه الشهادة صالحة وصادرة من منصة EnGo
+                    </p>
+                    
+                    <button class="btn" onclick="window.location.href='/'">🏠 العودة للرئيسية</button>
+                    
+                    <div class="footer">
+                        <p>للتحقق من صحة الشهادة، يرجى مسح الرمز أو زيارة الرابط أعلاه</p>
+                        <p>© 2026 EnGo - منصة تعلم اللغة الإنجليزية</p>
+                    </div>
                 </div>
-
-                <script>
-                    // معرف الشهادة من الرابط
-                    const certificateId = window.location.pathname.split('/').pop();
-                    
-                    async function verifyCertificate() {
-                        try {
-                            const response = await fetch('/api/verify-certificate/' + certificateId);
-                            const data = await response.json();
-                            
-                            const container = document.getElementById('verifyContainer');
-                            
-                            if (data.valid) {
-                                container.innerHTML = \`
-                                    <div class="verify-icon valid">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                    <h2 class="verify-title">✓ شهادة صالحة</h2>
-                                    <div class="certificate-details">
-                                        <p><strong>📜 رقم الشهادة:</strong> \${data.certificateId}</p>
-                                        <p><strong>👤 اسم الحاصل على الشهادة:</strong> \${data.userName}</p>
-                                        <p><strong>📚 اسم الدورة:</strong> \${data.courseTitle}</p>
-                                        <p><strong>📅 تاريخ الإصدار:</strong> \${data.issueDate}</p>
-                                        <p><strong>⭐ المستوى:</strong> \${data.courseLevel}</p>
-                                    </div>
-                                    <p class="verify-message">هذه الشهادة صالحة وصادرة من منصة EnGo لتعليم اللغة الإنجليزية.</p>
-                                    <button class="btn-home" onclick="window.location.href='/'">
-                                        <i class="fas fa-home"></i> العودة للرئيسية
-                                    </button>
-                                \`;
-                            } else {
-                                container.innerHTML = \`
-                                    <div class="verify-icon invalid">
-                                        <i class="fas fa-times-circle"></i>
-                                    </div>
-                                    <h2 class="verify-title">✗ شهادة غير صالحة</h2>
-                                    <p class="verify-message">\${data.message || 'لم يتم العثور على هذه الشهادة في قاعدة البيانات. يرجى التأكد من الرابط أو التواصل مع الدعم الفني.'}</p>
-                                    <button class="btn-home" onclick="window.location.href='/'">
-                                        <i class="fas fa-home"></i> العودة للرئيسية
-                                    </button>
-                                \`;
-                            }
-                        } catch (error) {
-                            console.error('Verification error:', error);
-                            const container = document.getElementById('verifyContainer');
-                            container.innerHTML = \`
-                                <div class="verify-icon invalid">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                </div>
-                                <h2 class="verify-title">حدث خطأ</h2>
-                                <p class="verify-message">حدث خطأ في التحقق من الشهادة. يرجى المحاولة مرة أخرى لاحقاً.</p>
-                                <button class="btn-home" onclick="window.location.href='/'">
-                                    <i class="fas fa-home"></i> العودة للرئيسية
-                                </button>
-                            \`;
-                        }
-                    }
-                    
-                    verifyCertificate();
-                </script>
             </body>
             </html>
         `);
+        
     } catch (error) {
         console.error('Verification page error:', error);
-        res.status(500).send('حدث خطأ في التحقق من الشهادة');
+        res.status(500).send(`
+            <!DOCTYPE html>
+            <html lang="ar" dir="rtl">
+            <head><meta charset="UTF-8"><title>خطأ</title></head>
+            <body style="font-family:Cairo;text-align:center;padding:2rem;">
+                <h2>❌ حدث خطأ</h2>
+                <p>حدث خطأ في التحقق من الشهادة. يرجى المحاولة مرة أخرى لاحقاً.</p>
+                <button onclick="window.location.href='/'">العودة للرئيسية</button>
+            </body>
+            </html>
+        `);
     }
 });
 
+// API للتحقق من صحة الشهادة (يرجع JSON)
 app.get('/api/verify-certificate/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        const certificate = await Certificate.findOne({ certificateId: id })
-            .populate('userId', 'fullName username')
-            .populate('courseId', 'title level');
+        console.log('🔍 API Verification - Searching for certificate:', id);
+        
+        const certificate = await Certificate.findOne({ certificateId: id });
         
         if (!certificate) {
-            return res.json({ valid: false, message: 'لم يتم العثور على هذه الشهادة' });
+            console.log('❌ API Verification - Certificate not found');
+            return res.json({ 
+                valid: false, 
+                message: 'لم يتم العثور على هذه الشهادة في قاعدة البيانات' 
+            });
         }
+        
+        console.log('✅ API Verification - Certificate found:', certificate.certificateId);
         
         res.json({
             valid: true,
             certificateId: certificate.certificateId,
-            userName: certificate.userName || certificate.userId?.fullName,
+            userName: certificate.userName,
             courseTitle: certificate.courseTitle,
             courseLevel: certificate.courseLevel,
-            issueDate: certificate.issueDate.toLocaleDateString('ar-EG')
+            issueDate: certificate.issueDate.toLocaleDateString('ar-EG'),
+            finalScore: certificate.finalScore || 100
         });
         
     } catch (error) {
         console.error('API Verification error:', error);
-        res.status(500).json({ valid: false, message: 'حدث خطأ في التحقق' });
+        res.status(500).json({ 
+            valid: false, 
+            message: 'حدث خطأ في التحقق: ' + error.message 
+        });
     }
 });
-
+                             
+                             
+                             
+                        
 // ==================== API Routes للبوتات ====================
 
 // جلب جميع البوتات
