@@ -41,7 +41,7 @@ app.use((req, res, next) => {
 // User Model (محدث لاستخدام username)
 const userSchema = new mongoose.Schema({
     username: { type: String, unique: true, required: true },
-    email: { type: String, unique: true, sparse: true },
+    email: { type: String, default: null },
     password: { type: String, required: true },
     fullName: { type: String, required: true }, // ✅ الاسم الكامل - إلزامي للشهادة
     role: { type: String, default: 'user', enum: ['user', 'admin'] },
