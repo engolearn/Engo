@@ -2,22 +2,21 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- منع التخزين المؤقت -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EnGo">
     <title>EnGo - تعلم اللغة الإنجليزية</title>
     
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#667eea">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="EnGo">
-<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     
     <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -29,59 +28,117 @@
         
         body {
             font-family: 'Cairo', sans-serif;
-            background: #f7fafc;
-            color: #2d3748;
+            background: #f0f4f8;
+            color: #1a202c;
         }
-        .course-image {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    overflow: hidden;
-}
-
-.course-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-        /* Navbar */
+        
+        /* ========== تحسينات للهواتف ========== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px !important;
+            }
+            .hero {
+                padding: 2rem 1.5rem !important;
+                margin: 1rem 0 !important;
+                border-radius: 24px !important;
+            }
+            .hero h1 {
+                font-size: 1.6rem !important;
+            }
+            .hero p {
+                font-size: 0.95rem !important;
+            }
+            .courses-section h2 {
+                font-size: 1.3rem !important;
+            }
+            .course-card {
+                border-radius: 16px !important;
+            }
+            .course-image {
+                height: 140px !important;
+            }
+            .course-info {
+                padding: 1rem !important;
+            }
+            .course-info h3 {
+                font-size: 1rem !important;
+            }
+            .course-info p {
+                font-size: 0.8rem !important;
+            }
+            .user-stats {
+                flex-direction: column;
+                text-align: center;
+                border-radius: 20px !important;
+            }
+            .level-info {
+                justify-content: center;
+            }
+            .modal-content {
+                width: 90%;
+                margin: 0 auto;
+                border-radius: 24px;
+            }
+            .footer-section {
+                text-align: center;
+            }
+        }
+        
+        /* ========== تحسينات اللمس للأجهزة المحمولة ========== */
+        @media (max-width: 768px) {
+            button, 
+            .btn-primary, 
+            .btn-outline, 
+            .btn-enroll,
+            .lesson-card,
+            .course-card {
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+            }
+            button:active,
+            .btn-primary:active,
+            .course-card:active {
+                transform: scale(0.98);
+                transition: transform 0.05s;
+            }
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+        
+        /* ========== Navbar ========== */
         .navbar {
             background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
             position: sticky;
             top: 0;
             z-index: 1000;
+            backdrop-filter: blur(10px);
         }
         
         .navbar .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 1rem 20px;
+            padding: 0.8rem 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 0.8rem;
         }
         
         .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.4rem;
+            font-weight: 800;
             color: #667eea;
-        }
-        
-        .logo i {
-            margin-left: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .nav-links {
             display: flex;
-            gap: 1.5rem;
+            gap: 1rem;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -89,111 +146,58 @@
         .nav-links a {
             text-decoration: none;
             color: #4a5568;
-            transition: color 0.3s;
+            transition: all 0.3s;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 30px;
         }
         
         .nav-links a:hover {
             color: #667eea;
+            background: #f0f4ff;
         }
         
         .admin-nav-link {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white !important;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-weight: bold;
         }
         
         .admin-nav-link:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
         
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-        
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: #667eea;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            cursor: pointer;
-        }
-        
-        .dropdown {
-            position: relative;
-        }
-        
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            left: 0;
-            top: 100%;
-            background: white;
-            min-width: 180px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border-radius: 10px;
-            z-index: 1000;
-        }
-        
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        
-        .dropdown-content a {
-            display: block;
-            padding: 10px 15px;
-            text-decoration: none;
-            color: #4a5568;
-            cursor: pointer;
-        }
-        
-        .dropdown-content a:hover {
-            background: #f7fafc;
-        }
-        
-        .dropdown-content hr {
-            margin: 5px 0;
-        }
-        
-        /* Buttons */
+        /* ========== Buttons ========== */
         .btn-primary {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 25px;
+            border-radius: 40px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
-            transition: transform 0.3s;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
         
         .btn-outline {
             background: transparent;
             border: 2px solid #667eea;
             color: #667eea;
-            padding: 8px 18px;
-            border-radius: 25px;
+            padding: 10px 20px;
+            border-radius: 40px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s;
         }
         
         .btn-outline:hover {
@@ -201,54 +205,73 @@
             color: white;
         }
         
-        /* Hero Section */
+        /* ========== Hero Section ========== */
         .hero {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-align: center;
-            padding: 4rem 2rem;
-            border-radius: 20px;
-            margin: 2rem 0;
+            padding: 3rem 2rem;
+            border-radius: 32px;
+            margin: 1.5rem 0;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
         }
         
         .hero h1 {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             margin-bottom: 1rem;
+            font-weight: 800;
         }
         
         .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.95;
         }
         
-        /* Courses Grid */
+        /* ========== Courses Grid ========== */
         .courses-section {
-            padding: 2rem 0;
+            padding: 1.5rem 0;
         }
         
         .courses-section h2 {
             text-align: center;
-            margin-bottom: 2rem;
-            color: #2d3748;
+            margin-bottom: 1.5rem;
+            color: #1a202c;
+            font-size: 1.6rem;
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .courses-section h2:after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 8px auto 0;
+            border-radius: 4px;
         }
         
         .courses-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
+            gap: 1.5rem;
         }
         
         .course-card {
             background: white;
-            border-radius: 15px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s;
             cursor: pointer;
         }
         
         .course-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
         }
         
         .course-image {
@@ -260,14 +283,23 @@
             align-items: center;
             justify-content: center;
             font-size: 3rem;
+            overflow: hidden;
+        }
+        
+        .course-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         .course-info {
-            padding: 1.5rem;
+            padding: 1.2rem;
         }
         
         .course-info h3 {
-            color: #2d3748;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a202c;
             margin-bottom: 0.5rem;
         }
         
@@ -275,46 +307,54 @@
             color: #718096;
             margin-bottom: 1rem;
             line-height: 1.5;
+            font-size: 0.85rem;
         }
         
         .course-meta {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 1rem;
-            font-size: 0.85rem;
+            margin-bottom: 0.8rem;
+            font-size: 0.75rem;
             color: #a0aec0;
         }
         
         .course-price {
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: bold;
             color: #667eea;
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
         }
         
         .btn-enroll {
             width: 100%;
             padding: 10px;
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: 40px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s;
         }
         
-        /* Pages */
+        .btn-enroll:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* ========== Pages ========== */
         .page {
             display: none;
             min-height: 60vh;
-            padding: 2rem 0;
+            padding: 1rem 0;
         }
         
         #homePage {
             display: block;
         }
         
-        /* Modal */
+        /* ========== Modal ========== */
         .modal {
             display: none;
             position: fixed;
@@ -322,7 +362,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
             z-index: 2000;
             justify-content: center;
             align-items: center;
@@ -332,46 +373,70 @@
             background: white;
             width: 90%;
             max-width: 400px;
-            padding: 2rem;
-            border-radius: 20px;
+            padding: 1.8rem;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            animation: modalFadeIn 0.3s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
         
         .modal-content h3 {
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
             color: #667eea;
+            font-weight: 700;
         }
         
         .modal-content input {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
+            padding: 12px 16px;
+            margin: 8px 0;
             border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 30px;
             font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .modal-content input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
         }
         
         .modal-content button {
             width: 100%;
             padding: 12px;
-            margin-top: 10px;
+            margin-top: 8px;
             border: none;
-            border-radius: 10px;
+            border-radius: 30px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
+            font-weight: 600;
         }
         
-        /* User Stats */
+        /* ========== User Stats ========== */
         .user-stats {
             background: white;
-            border-radius: 15px;
-            padding: 1rem;
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
             margin-bottom: 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
         
         .level-info {
@@ -385,42 +450,42 @@
             width: 150px;
             height: 8px;
             background: #e2e8f0;
-            border-radius: 4px;
+            border-radius: 10px;
             overflow: hidden;
         }
         
         .progress-bar div {
             height: 100%;
-            background: #667eea;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
             transition: width 0.3s;
         }
         
-        /* Badges */
+        /* ========== Badges ========== */
         .badges-container {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
-            margin-top: 0.5rem;
         }
         
         .badge-icon {
-            width: 35px;
-            height: 35px;
-            background: #fef3c7;
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: all 0.3s;
         }
         
         .badge-icon:hover {
             transform: scale(1.1);
         }
         
-        /* Notifications */
+        /* ========== Notifications ========== */
         .notifications-dropdown {
             position: relative;
             cursor: pointer;
@@ -432,7 +497,7 @@
             right: -8px;
             background: #e53e3e;
             color: white;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             border-radius: 50%;
             width: 18px;
             height: 18px;
@@ -447,11 +512,11 @@
             left: 0;
             top: 100%;
             background: white;
-            min-width: 300px;
+            min-width: 280px;
             max-height: 400px;
             overflow-y: auto;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 16px;
             z-index: 1000;
         }
         
@@ -460,9 +525,10 @@
         }
         
         .notif-item {
-            padding: 10px 15px;
+            padding: 12px 15px;
             border-bottom: 1px solid #e2e8f0;
             cursor: pointer;
+            transition: background 0.2s;
         }
         
         .notif-item:hover {
@@ -476,6 +542,7 @@
         .notif-title {
             font-weight: 600;
             font-size: 0.85rem;
+            margin-bottom: 4px;
         }
         
         .notif-message {
@@ -483,23 +550,24 @@
             color: #718096;
         }
         
-        /* Footer */
+        /* ========== Footer ========== */
         .footer {
-            background: #2d3748;
+            background: #1a202c;
             color: white;
-            padding: 3rem 0 1rem;
-            margin-top: 3rem;
+            padding: 2.5rem 0 1rem;
+            margin-top: 2rem;
         }
         
         .footer-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 2rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         
         .footer-section h3, .footer-section h4 {
             margin-bottom: 1rem;
+            font-weight: 700;
         }
         
         .footer-section a {
@@ -508,43 +576,109 @@
             text-decoration: none;
             margin-bottom: 0.5rem;
             cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .footer-section a:hover {
+            color: #667eea;
         }
         
         .footer-bottom {
             text-align: center;
             padding-top: 1rem;
-            border-top: 1px solid #4a5568;
+            border-top: 1px solid #2d3748;
+            font-size: 0.8rem;
+            color: #a0aec0;
         }
         
+        /* ========== Loading & Empty States ========== */
         .loading-spinner {
             text-align: center;
             padding: 2rem;
             color: #667eea;
         }
         
+        .loading-spinner i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
         .empty-message {
             text-align: center;
             padding: 2rem;
             color: #718096;
+            background: white;
+            border-radius: 20px;
         }
         
-        @media (max-width: 768px) {
-            .navbar .container {
-                flex-direction: column;
-            }
-            .nav-links {
-                justify-content: center;
-            }
-            .hero h1 {
-                font-size: 1.5rem;
-            }
-            .courses-grid {
-                grid-template-columns: 1fr;
-            }
-            .user-stats {
-                flex-direction: column;
-                text-align: center;
-            }
+        /* ========== User Menu ========== */
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: white;
+            min-width: 180px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown-content a {
+            display: block;
+            padding: 12px 18px;
+            text-decoration: none;
+            color: #4a5568;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .dropdown-content a:hover {
+            background: #f7fafc;
+        }
+        
+        .dropdown-content hr {
+            margin: 0;
+            border-color: #e2e8f0;
+        }
+        
+        /* ========== Container ========== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
     </style>
 </head>
@@ -557,16 +691,16 @@
                 <span>EnGo</span>
             </div>
             <div class="nav-links" id="navLinks">
-    <a onclick="showPage('home')">الرئيسية</a>
-    <a onclick="showPage('courses')">الدورات</a>
-    <a href="/level-tests.html">📝 اختبار المستوى</a>
-    <a onclick="goToChat()">💬 المحادثات</a>
+                <a onclick="showPage('home')">الرئيسية</a>
+                <a onclick="showPage('courses')">الدورات</a>
+                <a href="/level-tests.html">📝 اختبار المستوى</a>
+                <a onclick="goToChat()">💬 المحادثات</a>
                 <a href="/ai-assistant.html" class="ai-chat-link">
-    <i class="fas fa-robot"></i> مساعد AI
+                    <i class="fas fa-robot"></i> مساعد AI
                 </a>
-    <a id="adminLink" onclick="goToAdmin()" style="display: none;" class="admin-nav-link">
-        <i class="fas fa-crown"></i> لوحة الأدمن
-    </a>
+                <a id="adminLink" onclick="goToAdmin()" style="display: none;" class="admin-nav-link">
+                    <i class="fas fa-crown"></i> لوحة الأدمن
+                </a>
             </div>
             
             <!-- Notifications Icon -->
@@ -574,7 +708,7 @@
                 <i class="fas fa-bell fa-lg"></i>
                 <span id="notifCount" class="notifications-badge" style="display: none;">0</span>
                 <div class="notifications-dropdown-content" id="notificationsList">
-                    <div style="padding: 10px; text-align: center;">لا توجد إشعارات</div>
+                    <div style="padding: 12px; text-align: center;">لا توجد إشعارات</div>
                 </div>
             </div>
             
@@ -586,10 +720,10 @@
                 <div class="user-avatar" id="userAvatar">👤</div>
                 <div>
                     <span id="userName"></span>
-                    <div class="level-info" id="userLevelInfo" style="font-size: 0.75rem; color: #667eea;"></div>
+                    <div class="level-info" id="userLevelInfo" style="font-size: 0.7rem; color: #667eea;"></div>
                 </div>
                 <div class="dropdown">
-                    <button class="dropdown-btn"><i class="fas fa-chevron-down"></i></button>
+                    <button class="dropdown-btn" style="background: none; border: none; cursor: pointer;"><i class="fas fa-chevron-down"></i></button>
                     <div class="dropdown-content">
                         <a onclick="showPage('dashboard')">📊 لوحة التحكم</a>
                         <a onclick="showPage('badges')">🏅 الشارات</a>
@@ -639,7 +773,7 @@
                 <div class="courses-section">
                     <h2>جميع الدورات</h2>
                     <div class="courses-grid" id="coursesGrid">
-                        <div class="loading-spinner">جاري التحميل...</div>
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
                     </div>
                 </div>
             </div>
@@ -651,7 +785,7 @@
                 <div class="courses-section">
                     <h2>اختبار تحديد المستوى</h2>
                     <div id="levelTestContent">
-                        <div class="loading-spinner">جاري تحميل الاختبار...</div>
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الاختبار...</div>
                     </div>
                 </div>
             </div>
@@ -663,7 +797,7 @@
                 <div class="courses-section">
                     <h2>لوحة التحكم</h2>
                     <div id="dashboardContent">
-                        <div class="loading-spinner">جاري التحميل...</div>
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
                     </div>
                 </div>
             </div>
@@ -674,8 +808,8 @@
             <div class="container">
                 <div class="courses-section">
                     <h2>🏅 الشارات التي حصلت عليها</h2>
-                    <div id="badgesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-                        <div class="loading-spinner">جاري التحميل...</div>
+                    <div id="badgesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem;">
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
                     </div>
                 </div>
             </div>
@@ -687,7 +821,7 @@
                 <div class="courses-section">
                     <h2>الملف الشخصي</h2>
                     <div id="profileContent">
-                        <div class="loading-spinner">جاري التحميل...</div>
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
                     </div>
                 </div>
             </div>
@@ -708,19 +842,19 @@
     </div>
 
     <div id="registerModal" class="modal">
-    <div class="modal-content">
-        <h3>إنشاء حساب جديد</h3>
-        <form id="registerForm">
-            <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
-            <input type="text" id="regFullName" placeholder="الاسم الكامل (كما سيظهر في الشهادة)" required>
-            <input type="password" id="regPassword" placeholder="كلمة المرور" required>
-            <button type="submit" class="btn-primary">تسجيل</button>
-            <button type="button" onclick="closeRegisterModal()" style="background: #e2e8f0;">إلغاء</button>
-        </form>
-        <p style="font-size: 0.75rem; color: #718096; margin-top: 10px; text-align: center;">
-            ⚠️ الاسم الكامل سيظهر على الشهادة ولا يمكن تغييره لاحقاً
-        </p>
-    </div>
+        <div class="modal-content">
+            <h3>إنشاء حساب جديد</h3>
+            <form id="registerForm">
+                <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
+                <input type="text" id="regFullName" placeholder="الاسم الكامل (كما سيظهر في الشهادة)" required>
+                <input type="password" id="regPassword" placeholder="كلمة المرور" required>
+                <button type="submit" class="btn-primary">تسجيل</button>
+                <button type="button" onclick="closeRegisterModal()" style="background: #e2e8f0;">إلغاء</button>
+            </form>
+            <p style="font-size: 0.7rem; color: #718096; margin-top: 10px; text-align: center;">
+                ⚠️ الاسم الكامل سيظهر على الشهادة ولا يمكن تغييره لاحقاً
+            </p>
+        </div>
     </div>
 
     <footer class="footer">
@@ -730,9 +864,8 @@
                     <h3>EnGo</h3>
                     <p>منصتك المثالية لتعلم اللغة الإنجليزية</p>
                 </div>
-                
                 <div class="footer-section">
-                    </h4>تواصل معنا</h4>
+                    <h4>تواصل معنا</h4>
                     <p><i class="fas fa-phone"></i> 773041464</p>
                     <p><i class="fab fa-whatsapp"></i> 737373627</p>
                     <p><i class="fas fa-envelope"></i> engolearningsupport@gmail.com</p>
@@ -766,18 +899,21 @@
         // ==================== Helper Functions ====================
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
             alertDiv.textContent = message;
             alertDiv.style.cssText = `
                 position: fixed;
-                top: 20px;
+                top: 80px;
                 left: 50%;
                 transform: translateX(-50%);
-                padding: 10px 20px;
-                border-radius: 8px;
+                padding: 12px 24px;
+                border-radius: 50px;
                 z-index: 10000;
                 background: ${type === 'success' ? '#48bb78' : '#e53e3e'};
                 color: white;
+                font-family: 'Cairo', sans-serif;
+                font-size: 0.9rem;
+                font-weight: 600;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
                 animation: fadeIn 0.3s ease;
             `;
             document.body.appendChild(alertDiv);
@@ -814,95 +950,48 @@
         }
         
         async function login(username, password) {
-    const res = await fetch(API_URL + '/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-    
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    currentUser = data.user;
-    showAlert(`✅ مرحباً ${data.user.username}!`, 'success');
-    location.reload();
-}
-
-async function register(username, fullName, password) {
-    if (!fullName || fullName.trim().length < 3) {
-        showAlert('❌ الرجاء إدخال الاسم الكامل (3 أحرف على الأقل)', 'error');
-        return;
-    }
-    
-    const res = await fetch(API_URL + '/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, fullName, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-    
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    currentUser = data.user;
-    showAlert(`✅ مرحباً ${data.user.fullName}!`, 'success');
-    location.reload();
-}
+            const res = await fetch(API_URL + '/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+            
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            currentUser = data.user;
+            showAlert(`✅ مرحباً ${data.user.username}!`, 'success');
+            location.reload();
+        }
+        
+        async function register(username, fullName, password) {
+            if (!fullName || fullName.trim().length < 3) {
+                showAlert('❌ الرجاء إدخال الاسم الكامل (3 أحرف على الأقل)', 'error');
+                return;
+            }
+            
+            const res = await fetch(API_URL + '/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, fullName, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+            
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            currentUser = data.user;
+            showAlert(`✅ مرحباً ${data.user.fullName}!`, 'success');
+            location.reload();
+        }
         
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             location.reload();
         }
-
-        // طلب إذن الإشعارات
-async function requestNotificationPermission() {
-    if (!('Notification' in window)) {
-        console.log('المتصفح لا يدعم الإشعارات');
-        return false;
-    }
-    
-    if (Notification.permission === 'granted') {
-        console.log('✅ إذن الإشعارات موجود');
-        return true;
-    }
-    
-    if (Notification.permission !== 'denied') {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            console.log('✅ تم منح إذن الإشعارات');
-            return true;
-        }
-    }
-    return false;
-}
-
-// عرض إشعار
-function showNotification(title, body, link) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    
-    const notification = new Notification(title, {
-        body: body,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge.png',
-        tag: Date.now().toString(),
-        requireInteraction: true,
-        data: { url: link }
-    });
-    
-    notification.onclick = function() {
-        window.focus();
-        if (this.data.url) {
-            window.location.href = this.data.url;
-        }
-        notification.close();
-    };
-    
-    setTimeout(() => notification.close(), 5000);
-}
-
-
+        
         // ==================== User Stats ====================
         async function loadUserStats() {
             try {
@@ -940,7 +1029,7 @@ function showNotification(title, body, link) {
                             badgesPreview.innerHTML += `<div class="badge-icon" title="و${userStats.badges.length - 3} شارات أخرى">+${userStats.badges.length - 3}</div>`;
                         }
                     } else {
-                        badgesPreview.innerHTML = '<span style="font-size:0.75rem; color:#718096;">لا توجد شارات بعد</span>';
+                        badgesPreview.innerHTML = '<span style="font-size:0.7rem; color:#718096;">لا توجد شارات بعد</span>';
                     }
                 }
             } catch(err) {
@@ -955,41 +1044,41 @@ function showNotification(title, body, link) {
             if (!userStats) await loadUserStats();
             
             container.innerHTML = `
-                <div style="background: white; border-radius: 15px; padding: 1.5rem; margin-bottom: 1rem;">
-                    <h3>📊 إحصائياتك</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
-                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 10px;">
+                <div style="background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem;">
+                    <h3 style="margin-bottom: 1rem;">📊 إحصائياتك</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 16px;">
                             <i class="fas fa-star" style="font-size: 2rem; color: #fbbf24;"></i>
-                            <h4>${userStats?.points?.totalXP || 0}</h4>
-                            <p>نقاط الخبرة</p>
+                            <h4 style="margin-top: 0.5rem;">${userStats?.points?.totalXP || 0}</h4>
+                            <p style="font-size: 0.8rem;">نقاط الخبرة</p>
                         </div>
-                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 10px;">
+                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 16px;">
                             <i class="fas fa-trophy" style="font-size: 2rem; color: #667eea;"></i>
-                            <h4>${userStats?.badges?.length || 0}</h4>
-                            <p>الشارات</p>
+                            <h4 style="margin-top: 0.5rem;">${userStats?.badges?.length || 0}</h4>
+                            <p style="font-size: 0.8rem;">الشارات</p>
                         </div>
-                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 10px;">
+                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 16px;">
                             <i class="fas fa-book" style="font-size: 2rem; color: #48bb78;"></i>
-                            <h4>${userStats?.totalLessonsCompleted || 0}</h4>
-                            <p>دروس مكتملة</p>
+                            <h4 style="margin-top: 0.5rem;">${userStats?.totalLessonsCompleted || 0}</h4>
+                            <p style="font-size: 0.8rem;">دروس مكتملة</p>
                         </div>
-                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 10px;">
+                        <div style="text-align: center; padding: 1rem; background: #f7fafc; border-radius: 16px;">
                             <i class="fas fa-graduation-cap" style="font-size: 2rem; color: #ed8936;"></i>
-                            <h4>${userStats?.totalCoursesCompleted || 0}</h4>
-                            <p>دورات مكتملة</p>
+                            <h4 style="margin-top: 0.5rem;">${userStats?.totalCoursesCompleted || 0}</h4>
+                            <p style="font-size: 0.8rem;">دورات مكتملة</p>
                         </div>
                     </div>
                 </div>
-                <div style="background: white; border-radius: 15px; padding: 1.5rem;">
-                    <h3>📈 تقدم المستوى</h3>
+                <div style="background: white; border-radius: 20px; padding: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">📈 تقدم المستوى</h3>
                     <div class="level-info" style="margin-top: 1rem;">
                         <span>المستوى ${userStats?.points?.level || 1}</span>
                         <div class="progress-bar" style="flex: 1;">
-                            <div style="width: ${(userStats?.points?.levelProgress / userStats?.nextLevel?.needed) * 100 || 0}%; height: 100%; background: #667eea; border-radius: 4px;"></div>
+                            <div style="width: ${(userStats?.points?.levelProgress / userStats?.nextLevel?.needed) * 100 || 0}%; height: 100%;"></div>
                         </div>
                         <span>المستوى ${(userStats?.points?.level || 1) + 1}</span>
                     </div>
-                    <p style="margin-top: 1rem; color: #718096;">
+                    <p style="margin-top: 1rem; color: #718096; font-size: 0.85rem;">
                         تحتاج ${userStats?.nextLevel?.needed - userStats?.points?.levelProgress} XP للوصول إلى المستوى التالي
                     </p>
                 </div>
@@ -1008,81 +1097,81 @@ function showNotification(title, body, link) {
             }
             
             container.innerHTML = userStats.badges.map(b => `
-                <div style="background: white; border-radius: 15px; padding: 1.5rem; text-align: center; transition: transform 0.3s;">
-                    <i class="fas ${b.icon}" style="font-size: 3rem; color: #fbbf24;"></i>
-                    <h3 style="margin-top: 0.5rem;">${b.name}</h3>
-                    <p style="color: #718096; font-size: 0.85rem;">${b.description}</p>
-                    <small style="color: #a0aec0;">تم الحصول عليها في ${new Date(b.earnedAt).toLocaleDateString('ar')}</small>
+                <div style="background: white; border-radius: 18px; padding: 1.2rem; text-align: center; transition: transform 0.3s;">
+                    <i class="fas ${b.icon}" style="font-size: 2.5rem; color: #fbbf24;"></i>
+                    <h3 style="margin-top: 0.5rem; font-size: 1rem;">${b.name}</h3>
+                    <p style="color: #718096; font-size: 0.75rem;">${b.description}</p>
+                    <small style="color: #a0aec0; font-size: 0.7rem;">${new Date(b.earnedAt).toLocaleDateString('ar')}</small>
                 </div>
             `).join('');
         }
         
         // ==================== Profile ====================
         async function loadProfile() {
-    const container = document.getElementById('profileContent');
-    if (!container) return;
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!userStats) await loadUserStats();
-    
-    container.innerHTML = `
-        <div style="background: white; border-radius: 15px; padding: 2rem; text-align: center;">
-            <div style="width: 100px; height: 100px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                <i class="fas fa-user fa-3x" style="color: white;"></i>
-            </div>
-            <h2>${user.fullName || user.username}</h2>
-            <p style="color: #718096;">@${user.username}</p>
-            <hr style="margin: 1rem 0;">
-            <div style="text-align: right;">
-                <p><strong>📝 الاسم الكامل:</strong> ${user.fullName || 'غير محدد'}</p>
-                <p><strong>📅 تاريخ التسجيل:</strong> ${new Date(user.createdAt || Date.now()).toLocaleDateString('ar')}</p>
-                <p><strong>🎓 المستوى:</strong> ${user.level === 'beginner' ? 'مبتدئ' : (user.level === 'advanced' ? 'متقدم' : 'غير محدد')}</p>
-                <p><strong>⭐ نقاط الخبرة:</strong> ${userStats?.points?.totalXP || 0} XP</p>
-                <p><strong>🏅 الشارات:</strong> ${userStats?.badges?.length || 0}</p>
-            </div>
-        </div>
-    `;
-        }
-        
-// ==================== Courses ====================
-async function loadCourses() {
-    try {
-        const res = await fetch(API_URL + '/courses');
-        const courses = await res.json();
-        const grid = document.getElementById('coursesGrid');
-        
-        if (!grid) return;
-        
-        if (!courses || courses.length === 0) {
-            grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات متاحة حالياً<br>سيتم إضافة دورات قريباً</div>';
-            return;
-        }
-        
-        grid.innerHTML = courses.map(course => `
-            <div class="course-card" onclick="viewCourse('${course._id}')">
-                <div class="course-image">
-                    ${course.image ? 
-                        `<img src="${course.image}" style="width: 100%; height: 100%; object-fit: cover;">` : 
-                        `<i class="fas fa-book-open"></i>`
-                    }
-                </div>
-                <div class="course-info">
-                    <h3>${escapeHtml(course.title)}</h3>
-                    <p>${escapeHtml(course.description.substring(0, 100))}${course.description.length > 100 ? '...' : ''}</p>
-                    <div class="course-meta">
-                        <span><i class="fas fa-book"></i> ${course.totalLessons || 0} درس</span>
-                        <span><i class="fas fa-chart-line"></i> ${course.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
+            const container = document.getElementById('profileContent');
+            if (!container) return;
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!userStats) await loadUserStats();
+            
+            container.innerHTML = `
+                <div style="background: white; border-radius: 24px; padding: 2rem; text-align: center;">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-user fa-3x" style="color: white;"></i>
                     </div>
-                    <div class="course-price">${course.isPremium ? course.price + ' ريال' : '🎓 مجاني'}</div>
-                    <button class="btn-enroll">عرض الدورة</button>
+                    <h2 style="font-size: 1.4rem;">${user.fullName || user.username}</h2>
+                    <p style="color: #718096;">@${user.username}</p>
+                    <hr style="margin: 1rem 0;">
+                    <div style="text-align: right;">
+                        <p style="margin: 0.5rem 0;"><strong>📝 الاسم الكامل:</strong> ${user.fullName || 'غير محدد'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>📅 تاريخ التسجيل:</strong> ${new Date(user.createdAt || Date.now()).toLocaleDateString('ar')}</p>
+                        <p style="margin: 0.5rem 0;"><strong>🎓 المستوى:</strong> ${user.level === 'beginner' ? 'مبتدئ' : (user.level === 'advanced' ? 'متقدم' : 'غير محدد')}</p>
+                        <p style="margin: 0.5rem 0;"><strong>⭐ نقاط الخبرة:</strong> ${userStats?.points?.totalXP || 0} XP</p>
+                        <p style="margin: 0.5rem 0;"><strong>🏅 الشارات:</strong> ${userStats?.badges?.length || 0}</p>
+                    </div>
                 </div>
-            </div>
-        `).join('');
-    } catch(err) {
-        console.error(err);
-        const grid = document.getElementById('coursesGrid');
-        if (grid) grid.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
-    }
-}
+            `;
+        }
+        
+        // ==================== Courses ====================
+        async function loadCourses() {
+            try {
+                const res = await fetch(API_URL + '/courses');
+                const courses = await res.json();
+                const grid = document.getElementById('coursesGrid');
+                
+                if (!grid) return;
+                
+                if (!courses || courses.length === 0) {
+                    grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات متاحة حالياً<br>سيتم إضافة دورات قريباً</div>';
+                    return;
+                }
+                
+                grid.innerHTML = courses.map(course => `
+                    <div class="course-card" onclick="viewCourse('${course._id}')">
+                        <div class="course-image">
+                            ${course.image ? 
+                                `<img src="${course.image}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                                `<i class="fas fa-book-open"></i>`
+                            }
+                        </div>
+                        <div class="course-info">
+                            <h3>${escapeHtml(course.title)}</h3>
+                            <p>${escapeHtml(course.description.substring(0, 100))}${course.description.length > 100 ? '...' : ''}</p>
+                            <div class="course-meta">
+                                <span><i class="fas fa-book"></i> ${course.totalLessons || 0} درس</span>
+                                <span><i class="fas fa-chart-line"></i> ${course.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
+                            </div>
+                            <div class="course-price">${course.isPremium ? course.price + ' ريال' : '🎓 مجاني'}</div>
+                            <button class="btn-enroll">عرض الدورة</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(err) {
+                console.error(err);
+                const grid = document.getElementById('coursesGrid');
+                if (grid) grid.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+            }
+        }
         
         function viewCourse(courseId) {
             window.location.href = `/course-details.html?id=${courseId}`;
@@ -1093,146 +1182,139 @@ async function loadCourses() {
             return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
         
- // ==================== Level Test ====================
-async function loadLevelTest() {
-    const container = document.getElementById('levelTestContent');
-    if (!container) return;
-    
-    try {
-        console.log('📤 Fetching level test from:', API_URL + '/level-test');
-        
-        const res = await fetch(API_URL + '/level-test');
-        
-        // ✅ التحقق من حالة الاستجابة
-        if (!res.ok) {
-            if (res.status === 404) {
+        // ==================== Level Test ====================
+        async function loadLevelTest() {
+            const container = document.getElementById('levelTestContent');
+            if (!container) return;
+            
+            try {
+                const res = await fetch(API_URL + '/level-test');
+                
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        container.innerHTML = `
+                            <div style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center;">
+                                <i class="fas fa-file-alt" style="font-size: 3rem; color: #a0aec0;"></i>
+                                <h3 style="margin-top: 0.5rem;">لا توجد اختبارات متاحة</h3>
+                                <p style="margin-top: 0.5rem;">سيتم إضافة اختبارات تحديد المستوى قريباً</p>
+                                <button class="btn-primary" onclick="showPage('courses')" style="margin-top: 1rem;">استكشف الدورات</button>
+                            </div>
+                        `;
+                        return;
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                }
+                
+                const test = await res.json();
+                
+                if (!test || !test.questions || test.questions.length === 0) {
+                    container.innerHTML = `
+                        <div style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center;">
+                            <i class="fas fa-file-alt" style="font-size: 3rem; color: #a0aec0;"></i>
+                            <h3 style="margin-top: 0.5rem;">لا توجد أسئلة في هذا الاختبار</h3>
+                            <button class="btn-primary" onclick="showPage('courses')" style="margin-top: 1rem;">استكشف الدورات</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
                 container.innerHTML = `
-                    <div style="background: white; border-radius: 15px; padding: 1.5rem; text-align: center;">
-                        <i class="fas fa-file-alt" style="font-size: 3rem; color: #a0aec0;"></i>
-                        <h3>لا توجد اختبارات متاحة</h3>
-                        <p>سيتم إضافة اختبارات تحديد المستوى قريباً</p>
-                        <button class="btn-primary" onclick="showPage('courses')">استكشف الدورات</button>
+                    <div style="background: white; border-radius: 20px; padding: 1.5rem;">
+                        <h3 style="margin-bottom: 0.5rem;">${test.name || 'اختبار تحديد المستوى'}</h3>
+                        <p style="color: #718096;">${test.description || 'هذا الاختبار سيساعدنا على تحديد مستواك في اللغة الإنجليزية.'}</p>
+                        <div style="display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap;">
+                            <span style="background: #f7fafc; padding: 5px 12px; border-radius: 20px;"><i class="fas fa-clock"></i> ⏱️ ${test.duration || 30} دقيقة</span>
+                            <span style="background: #f7fafc; padding: 5px 12px; border-radius: 20px;"><i class="fas fa-question-circle"></i> 📋 ${test.questions.length} سؤال</span>
+                        </div>
+                        <div id="testQuestions"></div>
+                        <button class="btn-primary" onclick="submitLevelTest()" style="margin-top: 1rem; width: 100%;">
+                            <i class="fas fa-paper-plane"></i> تقديم الاختبار
+                        </button>
                     </div>
                 `;
+                
+                const questionsContainer = document.getElementById('testQuestions');
+                questionsContainer.innerHTML = test.questions.map((q, i) => `
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 16px;">
+                        <p style="font-weight: 600; margin-bottom: 0.8rem;">${i+1}. ${escapeHtml(q.question)}</p>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            ${(q.options || []).map((opt, optIndex) => `
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="radio" name="q${i}" value="${optIndex}"> 
+                                    <span>${escapeHtml(opt)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+                
+                window.currentLevelTest = test;
+                
+            } catch(err) {
+                console.error('Error loading level test:', err);
+                container.innerHTML = `
+                    <div style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #e53e3e;"></i>
+                        <h3 style="margin-top: 0.5rem;">حدث خطأ في تحميل الاختبار</h3>
+                        <button class="btn-primary" onclick="loadLevelTest()" style="margin-top: 1rem;">🔄 إعادة المحاولة</button>
+                    </div>
+                `;
+            }
+        }
+        
+        async function submitLevelTest() {
+            const test = window.currentLevelTest;
+            if (!test) {
+                showAlert('❌ لا يوجد اختبار حالياً', 'error');
                 return;
             }
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            
+            const answers = [];
+            for (let i = 0; i < test.questions.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (!selected) {
+                    showAlert(`❌ يرجى الإجابة على السؤال ${i+1}`, 'error');
+                    return;
+                }
+                answers.push(parseInt(selected.value));
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showAlert('❌ يرجى تسجيل الدخول أولاً', 'error');
+                    showLoginModal();
+                    return;
+                }
+                
+                showAlert('⏳ جاري تقديم الاختبار...', 'success');
+                
+                const res = await fetch(API_URL + '/level-tests/' + test._id + '/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ answers })
+                });
+                
+                const result = await res.json();
+                
+                if (result.passed) {
+                    showAlert(`🎉 تهانينا! حصلت على ${Math.round(result.percentage)}% واجتزت الاختبار`, 'success');
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    user.level = result.level || (result.percentage > 70 ? 'advanced' : 'beginner');
+                    localStorage.setItem('user', JSON.stringify(user));
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showAlert(`📚 حصلت على ${Math.round(result.percentage)}%. حاول مرة أخرى لتحسين مستواك`, 'error');
+                }
+            } catch(err) {
+                console.error('Error submitting test:', err);
+                showAlert('❌ حدث خطأ في تقديم الاختبار', 'error');
+            }
         }
         
-        const test = await res.json();
-        console.log('📥 Level test data:', test);
-        
-        // ✅ التحقق من وجود أسئلة
-        if (!test || !test.questions || test.questions.length === 0) {
-            container.innerHTML = `
-                <div style="background: white; border-radius: 15px; padding: 1.5rem; text-align: center;">
-                    <i class="fas fa-file-alt" style="font-size: 3rem; color: #a0aec0;"></i>
-                    <h3>لا توجد أسئلة في هذا الاختبار</h3>
-                    <p>سيتم إضافة أسئلة قريباً</p>
-                    <button class="btn-primary" onclick="showPage('courses')">استكشف الدورات</button>
-                </div>
-            `;
-            return;
-        }
-        
-        // ✅ عرض الاختبار
-        container.innerHTML = `
-            <div style="background: white; border-radius: 15px; padding: 1.5rem;">
-                <h3>${test.name || 'اختبار تحديد المستوى'}</h3>
-                <p>${test.description || 'هذا الاختبار سيساعدنا على تحديد مستواك في اللغة الإنجليزية.'}</p>
-                <div style="display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap;">
-                    <span><i class="fas fa-clock"></i> ⏱️ المدة: ${test.duration || 30} دقيقة</span>
-                    <span><i class="fas fa-question-circle"></i> 📋 عدد الأسئلة: ${test.questions.length}</span>
-                </div>
-                <div id="testQuestions"></div>
-                <button class="btn-primary" onclick="submitLevelTest()" style="margin-top: 1rem; width: 100%;">
-                    <i class="fas fa-paper-plane"></i> تقديم الاختبار
-                </button>
-            </div>
-        `;
-        
-        const questionsContainer = document.getElementById('testQuestions');
-        questionsContainer.innerHTML = test.questions.map((q, i) => `
-            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 10px;">
-                <p><strong>${i+1}. ${escapeHtml(q.question)}</strong></p>
-                <div style="margin-top: 0.5rem;">
-                    ${(q.options || []).map((opt, optIndex) => `
-                        <label style="display: block; margin: 0.5rem 0; cursor: pointer;">
-                            <input type="radio" name="q${i}" value="${optIndex}"> 
-                            <span>${escapeHtml(opt)}</span>
-                        </label>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-        
-        window.currentLevelTest = test;
-        
-    } catch(err) {
-        console.error('❌ Error loading level test:', err);
-        container.innerHTML = `
-            <div style="background: white; border-radius: 15px; padding: 1.5rem; text-align: center;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #e53e3e;"></i>
-                <h3>حدث خطأ في تحميل الاختبار</h3>
-                <p>${err.message}</p>
-                <button class="btn-primary" onclick="loadLevelTest()">🔄 إعادة المحاولة</button>
-            </div>
-        `;
-    }
-}
-        async function submitLevelTest() {
-    const test = window.currentLevelTest;
-    if (!test) {
-        showAlert('❌ لا يوجد اختبار حالياً', 'error');
-        return;
-    }
-    
-    const answers = [];
-    for (let i = 0; i < test.questions.length; i++) {
-        const selected = document.querySelector(`input[name="q${i}"]:checked`);
-        if (!selected) {
-            showAlert(`❌ يرجى الإجابة على السؤال ${i+1}`, 'error');
-            return;
-        }
-        answers.push(parseInt(selected.value));
-    }
-    
-    try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            showAlert('❌ يرجى تسجيل الدخول أولاً', 'error');
-            showLoginModal();
-            return;
-        }
-        
-        showAlert('⏳ جاري تقديم الاختبار...', 'success');
-        
-        const res = await fetch(API_URL + '/level-tests/' + test._id + '/submit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ answers })
-        });
-        
-        const result = await res.json();
-        
-        if (result.passed) {
-            showAlert(`🎉 تهانينا! حصلت على ${Math.round(result.percentage)}% واجتزت الاختبار`, 'success');
-            // تحديث مستوى المستخدم
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            user.level = result.level || (result.percentage > 70 ? 'advanced' : 'beginner');
-            localStorage.setItem('user', JSON.stringify(user));
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            showAlert(`📚 حصلت على ${Math.round(result.percentage)}%. حاول مرة أخرى لتحسين مستواك`, 'error');
-        }
-    } catch(err) {
-        console.error('Error submitting test:', err);
-        showAlert('❌ حدث خطأ في تقديم الاختبار', 'error');
-    }
-        }
         // ==================== Notifications ====================
         async function loadNotifications() {
             try {
@@ -1256,7 +1338,7 @@ async function loadLevelTest() {
                 const notifList = document.getElementById('notificationsList');
                 if (notifList) {
                     if (notifications.length === 0) {
-                        notifList.innerHTML = '<div style="padding: 10px; text-align: center;">لا توجد إشعارات</div>';
+                        notifList.innerHTML = '<div style="padding: 12px; text-align: center;">لا توجد إشعارات</div>';
                     } else {
                         notifList.innerHTML = notifications.map(n => `
                             <div class="notif-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead('${n.id}')">
@@ -1332,27 +1414,27 @@ async function loadLevelTest() {
             loadLevelTest();
             
             const loginForm = document.getElementById('loginForm');
-if (loginForm) {
-    loginForm.onsubmit = (e) => {
-        e.preventDefault();
-        login(
-            document.getElementById('loginUsername').value,
-            document.getElementById('loginPassword').value
-        );
-    };
-}
-
-const registerForm = document.getElementById('registerForm');
-if (registerForm) {
-    registerForm.onsubmit = (e) => {
-        e.preventDefault();
-        register(
-            document.getElementById('regUsername').value,
-            document.getElementById('regFullName').value,
-            document.getElementById('regPassword').value
-        );
-    };
-}
+            if (loginForm) {
+                loginForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    login(
+                        document.getElementById('loginUsername').value,
+                        document.getElementById('loginPassword').value
+                    );
+                };
+            }
+            
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) {
+                registerForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    register(
+                        document.getElementById('regUsername').value,
+                        document.getElementById('regFullName').value,
+                        document.getElementById('regPassword').value
+                    );
+                };
+            }
             
             window.onclick = (e) => {
                 if (e.target.classList && e.target.classList.contains('modal')) {
@@ -1363,21 +1445,21 @@ if (registerForm) {
         
     </script>
     <script>
-    // تسجيل Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('✅ Service Worker registered'))
-            .catch(err => console.error('❌ Service Worker error:', err));
-    }
-    
-    // طلب إذن الإشعارات
-    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        setTimeout(() => {
-            if (confirm('🔔 هل تريد تفعيل الإشعارات لتلقي تنبيهات الرسائل الجديدة؟')) {
-                Notification.requestPermission();
-            }
-        }, 2000);
-    }
+        // تسجيل Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ Service Worker registered'))
+                .catch(err => console.error('❌ Service Worker error:', err));
+        }
+        
+        // طلب إذن الإشعارات
+        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            setTimeout(() => {
+                if (confirm('🔔 هل تريد تفعيل الإشعارات لتلقي تنبيهات الرسائل الجديدة؟')) {
+                    Notification.requestPermission();
+                }
+            }, 2000);
+        }
     </script>
 </body>
 </html>
