@@ -523,22 +523,116 @@
         }
         
         .notifications-dropdown-content {
-            display: none;
-            position: absolute;
-            left: 0;
-            top: 100%;
-            background: white;
-            min-width: 280px;
-            max-height: 400px;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            border-radius: 16px;
-            z-index: 1000;
-        }
-        
-        .notifications-dropdown:hover .notifications-dropdown-content {
-            display: block;
-        }
+    display: none;
+    position: absolute;
+    left: auto;
+    right: 0;
+    top: 100%;
+    background: white;
+    min-width: 320px;
+    max-width: 90vw;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-radius: 16px;
+    z-index: 1000;
+}
+
+.notifications-dropdown:hover .notifications-dropdown-content {
+    display: block;
+}
+
+/* تحسين عرض الإشعارات على الهواتف */
+@media (max-width: 768px) {
+    .notifications-dropdown-content {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;
+        border-radius: 20px 20px 0 0;
+        max-height: 70vh;
+    }
+    
+    .notifications-dropdown.active .notifications-dropdown-content {
+        display: block;
+        animation: slideUp 0.3s ease;
+    }
+    
+    .notifications-dropdown:hover .notifications-dropdown-content {
+        display: none;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+}
+
+.notif-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notif-item:hover {
+    background: #f7fafc;
+}
+
+.notif-item.unread {
+    background: #ebf4ff;
+    border-right: 3px solid #667eea;
+}
+
+.notif-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+    color: #2d3748;
+}
+
+.notif-message {
+    font-size: 0.75rem;
+    color: #718096;
+    line-height: 1.4;
+}
+
+.notif-time {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    margin-top: 5px;
+    display: block;
+}
+
+/* رأس الإشعارات */
+.notifications-header {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e2e8f0;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+@media (max-width: 768px) {
+    .notifications-header {
+        display: flex;
+    }
+    .close-notifications {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: #718096;
+    }
+}
         
         .notif-item {
             padding: 12px 15px;
@@ -734,15 +828,14 @@
                     <i class="fas fa-crown"></i> لوحة الأدمن
                 </a>
             </div>
-            
             <!-- Notifications Icon -->
-            <div class="notifications-dropdown" id="notificationsIcon" style="display: none;">
-                <i class="fas fa-bell fa-lg"></i>
-                <span id="notifCount" class="notifications-badge" style="display: none;">0</span>
-                <div class="notifications-dropdown-content" id="notificationsList">
-                    <div style="padding: 12px; text-align: center;">لا توجد إشعارات</div>
-                </div>
-            </div>
+<div class="notifications-dropdown" id="notificationsIcon" style="display: none;" onclick="toggleNotifications()">
+    <i class="fas fa-bell fa-lg"></i>
+    <span id="notifCount" class="notifications-badge" style="display: none;">0</span>
+    <div class="notifications-dropdown-content" id="notificationsList" onclick="event.stopPropagation()">
+        <div style="padding: 12px; text-align: center;">جاري التحميل...</div>
+    </div>
+</div>
             
             <div class="auth-buttons" id="authButtons">
                 <button onclick="showLoginModal()" class="btn-outline">تسجيل دخول</button>
@@ -1472,43 +1565,106 @@ function goToSubscribe(courseId) {
         }
         
         // ==================== Notifications ====================
-        async function loadNotifications() {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/notifications', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const notifications = await res.json();
-                
-                const notifCount = notifications.filter(n => !n.read).length;
-                const notifBadge = document.getElementById('notifCount');
-                if (notifBadge) {
-                    if (notifCount > 0) {
-                        notifBadge.style.display = 'flex';
-                        notifBadge.innerText = notifCount;
-                    } else {
-                        notifBadge.style.display = 'none';
-                    }
-                }
-                
-                const notifList = document.getElementById('notificationsList');
-                if (notifList) {
-                    if (notifications.length === 0) {
-                        notifList.innerHTML = '<div style="padding: 12px; text-align: center;">لا توجد إشعارات</div>';
-                    } else {
-                        notifList.innerHTML = notifications.map(n => `
-                            <div class="notif-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead('${n.id}')">
-                                <div class="notif-title">${escapeHtml(n.title)}</div>
-                                <div class="notif-message">${escapeHtml(n.message)}</div>
-                                <small style="color: #a0aec0;">${new Date(n.createdAt).toLocaleString()}</small>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch(err) {
-                console.error('Error loading notifications:', err);
+async function loadNotifications() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/notifications', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const notifications = await res.json();
+        
+        const notifCount = notifications.filter(n => !n.read).length;
+        const notifBadge = document.getElementById('notifCount');
+        if (notifBadge) {
+            if (notifCount > 0) {
+                notifBadge.style.display = 'flex';
+                notifBadge.innerText = notifCount > 99 ? '99+' : notifCount;
+            } else {
+                notifBadge.style.display = 'none';
             }
         }
+        
+        const notifList = document.getElementById('notificationsList');
+        if (notifList) {
+            if (notifications.length === 0) {
+                notifList.innerHTML = `
+                    <div class="notifications-header">
+                        <span>📢 الإشعارات</span>
+                        <button class="close-notifications" onclick="closeNotifications()">✖</button>
+                    </div>
+                    <div style="padding: 20px; text-align: center; color: #718096;">لا توجد إشعارات</div>
+                `;
+            } else {
+                notifList.innerHTML = `
+                    <div class="notifications-header">
+                        <span>📢 الإشعارات (${notifCount} جديدة)</span>
+                        <button class="close-notifications" onclick="closeNotifications()">✖</button>
+                    </div>
+                    ${notifications.map(n => `
+                        <div class="notif-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead('${n.id}')">
+                            <div class="notif-title">${escapeHtml(n.title)}</div>
+                            <div class="notif-message">${escapeHtml(n.message)}</div>
+                            <span class="notif-time">${formatNotificationTime(n.createdAt)}</span>
+                        </div>
+                    `).join('')}
+                    <div style="padding: 10px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <button onclick="markAllNotificationsRead()" style="background: none; border: none; color: #667eea; cursor: pointer; font-size: 0.75rem;">تحديد الكل كمقروء</button>
+                    </div>
+                `;
+            }
+        }
+    } catch(err) {
+        console.error('Error loading notifications:', err);
+    }
+}
+
+// دالة تنسيق وقت الإشعار
+function formatNotificationTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'الآن';
+    if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
+    if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+    return `منذ ${diffDays} يوم`;
+}
+
+// دالة إغلاق الإشعارات على الهاتف
+function closeNotifications() {
+    const dropdown = document.querySelector('.notifications-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('active');
+    }
+}
+
+// دالة فتح الإشعارات على الهاتف
+function toggleNotifications() {
+    const dropdown = document.querySelector('.notifications-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
+}
+
+// دالة تحديد الكل كمقروء
+async function markAllNotificationsRead() {
+    const token = localStorage.getItem('token');
+    try {
+        await fetch(API_URL + '/notifications/read-all', {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadNotifications();
+        const notifBadge = document.getElementById('notifCount');
+        if (notifBadge) notifBadge.style.display = 'none';
+        showAlert('✅ تم تحديد جميع الإشعارات كمقروءة', 'success');
+    } catch(err) {
+        console.error(err);
+    }
+}
         
         async function markNotificationRead(notifId) {
             try {
