@@ -531,13 +531,35 @@ app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
         const { courseId } = req.params;
         const updateData = req.body;
         
-        const course = await Course.findByIdAndUpdate(courseId, updateData, { new: true });
+        console.log('📝 Updating course:', courseId);
+        console.log('📦 Update data:', updateData);
+        
+        // ✅ تأكد من أن freeLessons يتم تحديثه
+        const course = await Course.findByIdAndUpdate(
+            courseId, 
+            { 
+                $set: {
+                    title: updateData.title,
+                    description: updateData.description,
+                    level: updateData.level,
+                    price: updateData.price,
+                    isPremium: updateData.isPremium,
+                    freeLessons: updateData.freeLessons,  // ✅ هذا السطر مهم
+                    image: updateData.image
+                }
+            },
+            { new: true }
+        );
+        
         if (!course) {
             return res.status(404).json({ message: 'الدورة غير موجودة' });
         }
         
+        console.log('✅ Course updated, freeLessons:', course.freeLessons);
+        
         res.json({ message: '✅ تم تحديث الدورة بنجاح', course });
     } catch (error) {
+        console.error('Error updating course:', error);
         res.status(500).json({ message: error.message });
     }
 });
