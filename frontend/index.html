@@ -759,12 +759,18 @@
     <main>
         <!-- الصفحة الرئيسية -->
         <div id="homePage" class="page">
-            <div class="container">
-                <div class="hero">
-                    <h1>تعلم بطريقة تفاعلية وممتعة</h1>
-                    <p>دورات متكاملة مع دروس تفاعلية وواجبات واختبارات</p>
-                    <button class="btn-primary" onclick="showPage('courses')">استكشف الدورات</button>
-                </div>
+    <div class="container">
+        <div class="hero">
+            <h1>تعلم بطريقة تفاعلية وممتعة</h1>
+            <p>دورات متكاملة مع دروس تفاعلية وواجبات واختبارات</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="btn-primary" onclick="showPage('courses')">📚 استكشف الدورات</button>
+                <a href="/subscribe.html" class="btn-premium" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 12px 28px; border-radius: 40px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.3s;">
+                    <i class="fas fa-crown"></i> 💎 اشتراك بالدورات
+                </a>
+            </div>
+        </div>
+        
                 
                 <!-- إحصائيات المستخدم -->
                 <div id="userStatsSection" style="display: none;">
