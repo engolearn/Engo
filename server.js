@@ -1722,6 +1722,27 @@ app.get('/api/admin/users-list', auth, adminAuth, async (req, res) => {
     }
 });
 
+// ==================== جلب قائمة المستخدمين للمحادثات ====================
+app.get('/api/users/chat-list', auth, async (req, res) => {
+    try {
+        const users = await User.find({ _id: { $ne: req.user._id } })
+            .select('_id username fullName avatar level');
+        
+        const formattedUsers = users.map(user => ({
+            id: user._id,
+            username: user.username,
+            name: user.fullName || user.username,
+            avatar: user.avatar || '👤',
+            level: user.level
+        }));
+        
+        res.json(formattedUsers);
+    } catch (error) {
+        console.error('Error fetching users for chat:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // ==================== Course Routes ====================
 // جلب الدورات للواجهة الرئيسية (النشطة فقط)
 app.get('/api/courses', async (req, res) => {
