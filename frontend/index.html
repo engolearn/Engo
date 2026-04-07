@@ -638,7 +638,23 @@
         .dropdown {
             position: relative;
         }
-        
+        .download-app-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #3ddc84; /* اللون الأخضر المميز لأندرويد */
+    color: #1f1f1f;
+    padding: 8px 16px;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.download-app-btn:hover {
+    background: #25c26b;
+    transform: scale(1.02);
+}
         .dropdown-content {
             display: none;
             position: absolute;
@@ -869,6 +885,17 @@
     <a href="/privacy-policy">🔒 سياسة الخصوصية</a>
     <a href="/terms">📜 شروط الاستخدام</a>
                 </div>
+                
+            <div class="footer-section">
+                <h4>📱 حمل التطبيق</h4>
+                <a href="https://mega.nz/file/PqIDELgK#gsnAGU9PSwdRJdIh5SnyFSC59WMxFaeVBUa2Zst-T44" 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   class="download-app-btn">
+                    <i class="fab fa-android"></i> تنزيل APK
+                </a>
+            </div>
+                
                 <div class="footer-section">
                     <h4>تواصل معنا</h4>
                     <p><i class="fas fa-phone"></i> 773041464</p>
