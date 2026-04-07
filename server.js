@@ -618,7 +618,7 @@ app.post('/api/subscription/request', auth, async (req, res) => {
         `;
         
         // رابط واتساب للإشعار
-        const whatsappUrl = `https://wa.me/966773041464?text=${encodeURIComponent(whatsappMessage)}`;
+        const whatsappUrl = `https://wa.me/967773041464?text=${encodeURIComponent(whatsappMessage)}`;
         
         res.json({
             success: true,
