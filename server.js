@@ -1502,6 +1502,206 @@ app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
 app.get('/ai-assistant.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'ai-assistant.html'));
 });
+
+// ==================== Privacy Policy Page ====================
+app.get('/privacy-policy', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+            <title>سياسة الخصوصية - EnGo</title>
+            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: 'Cairo', sans-serif;
+                    background: #f7fafc;
+                    color: #2d3748;
+                    line-height: 1.6;
+                }
+                .navbar {
+                    background: white;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    padding: 1rem 0;
+                    position: sticky;
+                    top: 0;
+                    z-index: 1000;
+                }
+                .navbar .container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    padding: 0 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .logo {
+                    font-size: 1.5rem;
+                    font-weight: bold;
+                    color: #667eea;
+                }
+                .btn-back {
+                    background: #e2e8f0;
+                    color: #4a5568;
+                    padding: 8px 20px;
+                    border: none;
+                    border-radius: 25px;
+                    cursor: pointer;
+                }
+                .container {
+                    max-width: 900px;
+                    margin: 0 auto;
+                    padding: 2rem 20px;
+                }
+                .privacy-card {
+                    background: white;
+                    border-radius: 20px;
+                    padding: 2rem;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                    margin-bottom: 2rem;
+                }
+                h1 {
+                    color: #667eea;
+                    margin-bottom: 1rem;
+                    font-size: 1.8rem;
+                    border-bottom: 2px solid #e2e8f0;
+                    padding-bottom: 0.5rem;
+                }
+                h2 {
+                    color: #764ba2;
+                    margin: 1.5rem 0 1rem 0;
+                    font-size: 1.3rem;
+                }
+                h3 {
+                    color: #4a5568;
+                    margin: 1rem 0 0.5rem 0;
+                    font-size: 1.1rem;
+                }
+                p {
+                    margin-bottom: 1rem;
+                    color: #4a5568;
+                }
+                ul {
+                    margin: 0.5rem 0 1rem 1.5rem;
+                    padding-right: 1rem;
+                }
+                li {
+                    margin-bottom: 0.5rem;
+                    color: #4a5568;
+                }
+                .last-updated {
+                    background: #f7fafc;
+                    padding: 0.75rem;
+                    border-radius: 10px;
+                    text-align: center;
+                    color: #718096;
+                    font-size: 0.85rem;
+                    margin-top: 1rem;
+                }
+                .footer {
+                    text-align: center;
+                    padding: 1.5rem;
+                    background: #2d3748;
+                    color: white;
+                    margin-top: 2rem;
+                }
+                @media (max-width: 768px) {
+                    .privacy-card { padding: 1.2rem; }
+                    h1 { font-size: 1.4rem; }
+                    h2 { font-size: 1.1rem; }
+                }
+            </style>
+        </head>
+        <body>
+            <nav class="navbar">
+                <div class="container">
+                    <div class="logo"><i class="fas fa-language"></i> EnGo</div>
+                    <button class="btn-back" onclick="window.location.href='/'">← العودة للرئيسية</button>
+                </div>
+            </nav>
+
+            <div class="container">
+                <div class="privacy-card">
+                    <h1>🔒 سياسة الخصوصية</h1>
+                    <p>نحن في <strong>EnGo</strong> نلتزم بحماية خصوصيتك وبياناتك الشخصية. توضح هذه السياسة كيفية جمع واستخدام وحماية معلوماتك عند استخدام منصتنا.</p>
+
+                    <div class="last-updated">
+                        📅 آخر تحديث: 1 أبريل 2026
+                    </div>
+
+                    <h2>📋 المعلومات التي نجمعها</h2>
+                    <p>عند استخدام منصة EnGo، قد نقوم بجمع المعلومات التالية:</p>
+                    <ul>
+                        <li><strong>معلومات الحساب:</strong> اسم المستخدم، الاسم الكامل، البريد الإلكتروني، كلمة المرور المشفرة.</li>
+                        <li><strong>بيانات التعلم:</strong> الدروس المكتملة، نتائج الاختبارات، التقدم في الدورات، الشهادات المحصل عليها.</li>
+                        <li><strong>بيانات التفاعل:</strong> الرسائل في غرف الدردشة، التعليقات، المشاركات.</li>
+                        <li><strong>بيانات تقنية:</strong> عنوان IP، نوع المتصفح، نظام التشغيل، مدة الجلسة.</li>
+                    </ul>
+
+                    <h2>🎯 كيف نستخدم معلوماتك</h2>
+                    <ul>
+                        <li>تقديم وتحسين خدمات التعلم في المنصة.</li>
+                        <li>تخصيص تجربة التعلم حسب مستواك وتقدمك.</li>
+                        <li>إصدار الشهادات وإثبات الإنجازات.</li>
+                        <li>تحسين أداء المنصة وحل المشكلات التقنية.</li>
+                        <li>إرسال إشعارات مهمة حول دوراتك واختباراتك.</li>
+                    </ul>
+
+                    <h2>🔐 حماية البيانات</h2>
+                    <p>نتخذ إجراءات أمنية متقدمة لحماية بياناتك:</p>
+                    <ul>
+                        <li>تشفير كلمات المرور باستخدام bcrypt.</li>
+                        <li>استخدام بروتوكول HTTPS لنقل البيانات بشكل آمن.</li>
+                        <li>تقييد الوصول إلى البيانات الشخصية.</li>
+                        <li>مراقبة منتظمة للأنظمة لاكتشاف الثغرات.</li>
+                    </ul>
+
+                    <h2>📤 مشاركة البيانات</h2>
+                    <p>نحن لا نبيع أو نؤجر بياناتك الشخصية لأطراف ثالثة. قد نشارك بياناتك في الحالات التالية فقط:</p>
+                    <ul>
+                        <li>بموافقتك الصريحة.</li>
+                        <li>للأغراض القانونية أو لحماية حقوقنا.</li>
+                        <li>مع مقدمي الخدمات الذين يعملون نيابة عنا (مثل استضافة الخادم).</li>
+                    </ul>
+
+                    <h2>🍪 ملفات تعريف الارتباط (Cookies)</h2>
+                    <p>نستخدم ملفات تعريف الارتباط لتحسين تجربتك:</p>
+                    <ul>
+                        <li>تذكر تفضيلاتك وإعداداتك.</li>
+                        <li>تحليل أداء المنصة وتحسينه.</li>
+                        <li>الحفاظ على حالة تسجيل الدخول الخاصة بك.</li>
+                    </ul>
+                    <p>يمكنك تعطيل ملفات تعريف الارتباط من إعدادات المتصفح، لكن قد يؤثر ذلك على بعض وظائف المنصة.</p>
+
+                    <h2>👦 خصوصية الأطفال</h2>
+                    <p>منصة EnGo غير موجهة للأطفال دون سن 13 عاماً. إذا كان عمرك أقل من 13 عاماً، لا يجوز لك استخدام المنصة دون موافقة ولي الأمر.</p>
+
+                    <h2>📧 التواصل معنا</h2>
+                    <p>إذا كان لديك أي استفسار حول سياسة الخصوصية، يمكنك التواصل معنا عبر:</p>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i> البريد الإلكتروني: engolearningsupport@gmail.com</li>
+                        <li><i class="fab fa-whatsapp"></i> واتساب: 737373627</li>
+                        <li><i class="fas fa-phone"></i> الهاتف: 773041464</li>
+                    </ul>
+
+                    <h2>🔄 التغييرات على سياسة الخصوصية</h2>
+                    <p>قد نقوم بتحديث سياسة الخصوصية من وقت لآخر. سيتم إعلامك بأي تغييرات جوهرية عبر البريد الإلكتروني أو إشعار على المنصة.</p>
+
+                    <div class="last-updated">
+                        باستخدامك لمنصة EnGo، فإنك توافق على هذه السياسة.
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>&copy; 2026 EnGo - جميع الحقوق محفوظة</p>
+            </div>
+        </body>
+        </html>
+    `);
+});
 // ==================== Quiz Routes (متكاملة) ====================
 
 // جلب اختبارات الدورة (نصفي ونهائي)
