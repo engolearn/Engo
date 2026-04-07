@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>الاشتراك في الدورات - EnGo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Cairo', sans-serif; background: #f7fafc; }
+        
+        .navbar { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 1rem 0; }
+        .navbar .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .btn-back { background: #e2e8f0; color: #4a5568; padding: 8px 20px; border: none; border-radius: 25px; cursor: pointer; }
+        
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 20px; }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .page-title h1 {
+            font-size: 2rem;
+            color: #2d3748;
+        }
+        .page-title p {
+            color: #718096;
+        }
+        
+        /* بطاقات الدورات */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .course-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .course-card.selected {
+            border-color: #667eea;
+            box-shadow: 0 10px 25px rgba(102,126,234,0.3);
+        }
+        
+        .course-image {
+            height: 160px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        .course-info { padding: 1.2rem; text-align: center; }
+        .course-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .course-price { font-size: 1.5rem; font-weight: bold; color: #667eea; margin: 0.5rem 0; }
+        
+        /* نموذج الدفع */
+        .payment-section {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .payment-section h3 {
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+        
+        .payment-methods {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .payment-method {
+            flex: 1;
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .payment-method:hover { background: #edf2f7; }
+        .payment-method.selected {
+            border-color: #667eea;
+            background: #ebf4ff;
+        }
+        .payment-method i { font-size: 2rem; margin-bottom: 0.5rem; }
+        .payment-method .name { font-weight: bold; }
+        .payment-method .number { font-size: 0.8rem; color: #718096; margin-top: 0.3rem; }
+        
+        .btn-subscribe {
+            width: 100%;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-subscribe:hover { transform: scale(1.02); }
+        .btn-subscribe:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading-spinner { text-align: center; padding: 2rem; color: #667eea; }
+        .empty-message { text-align: center; padding: 2rem; color: #718096; }
+        
+        @media (max-width: 768px) {
+            .courses-grid { grid-template-columns: 1fr; }
+            .payment-methods { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo"><i class="fas fa-language"></i> EnGo</div>
+            <button class="btn-back" onclick="window.location.href='/'">← العودة للرئيسية</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-title">
+            <h1>💎 الاشتراك في الدورات المدفوعة</h1>
+            <p>اختر الدورة المناسبة لك وقم بالاشتراك</p>
+        </div>
+
+        <div id="coursesGrid" class="courses-grid">
+            <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدورات...</div>
+        </div>
+
+        <div id="paymentSection" class="payment-section" style="display: none;">
+            <h3>💳 تفاصيل الدفع</h3>
+            
+            <div id="selectedCourseInfo" style="background: #f7fafc; border-radius: 15px; padding: 1rem; margin-bottom: 1.5rem;">
+                <p><strong>📚 الدورة المختارة:</strong> <span id="selectedCourseTitle"></span></p>
+                <p><strong>💰 السعر:</strong> <span id="selectedCoursePrice"></span> ريال</p>
+            </div>
+            
+            <h4>اختر طريقة الدفع:</h4>
+            <div class="payment-methods">
+                <div class="payment-method" data-method="jib" onclick="selectPaymentMethod('jib')">
+                    <i class="fas fa-wallet"></i>
+                    <div class="name">محفظة جيب</div>
+                    <div class="number">773041464</div>
+                </div>
+                <div class="payment-method" data-method="cash" onclick="selectPaymentMethod('cash')">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <div class="name">محفظة كاش</div>
+                    <div class="number">773041464</div>
+                </div>
+                <div class="payment-method" data-method="karimi" onclick="selectPaymentMethod('karimi')">
+                    <i class="fas fa-university"></i>
+                    <div class="name">كريمي</div>
+                    <div class="number">3015418876</div>
+                </div>
+            </div>
+            
+            <button id="subscribeBtn" class="btn-subscribe" onclick="requestSubscription()" disabled>
+                تأكيد الاشتراك
+            </button>
+            
+            <p style="font-size: 0.75rem; color: #718096; margin-top: 1rem; text-align: center;">
+                ⏱️ بعد التحويل، سيتم تفعيل الدورة خلال ساعتين. سيتم إرسال إشعار واتساب لتأكيد طلبك.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin + '/api';
+        let selectedCourse = null;
+        let selectedPaymentMethod = null;
+        let currentUser = null;
+
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!token || !user.id) {
+                showAlert('❌ يرجى تسجيل الدخول أولاً', 'error');
+                setTimeout(() => window.location.href = '/', 2000);
+                return false;
+            }
+            currentUser = user;
+            return true;
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.textContent = message;
+            alertDiv.style.cssText = `position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:50px;z-index:10000;background:${type==='success'?'#48bb78':'#e53e3e'};color:white;font-family:Cairo;font-size:0.9rem;box-shadow:0 4px 15px rgba(0,0,0,0.2);`;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        async function loadCourses() {
+            try {
+                const res = await fetch(API_URL + '/premium-courses');
+                const courses = await res.json();
+                const grid = document.getElementById('coursesGrid');
+                
+                if (!courses.length) {
+                    grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات مدفوعة حالياً</div>';
+                    return;
+                }
+                
+                grid.innerHTML = courses.map(course => `
+                    <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${course.price})">
+                        <div class="course-image"><i class="fas fa-crown"></i></div>
+                        <div class="course-info">
+                            <div class="course-title">${escapeHtml(course.title)}</div>
+                            <div class="course-price">${course.price} ريال</div>
+                            <div class="course-desc" style="font-size:0.8rem; color:#718096;">${escapeHtml(course.description.substring(0, 80))}...</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                document.getElementById('coursesGrid').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+            }
+        }
+
+        function selectCourse(id, title, price) {
+            selectedCourse = { id, title, price };
+            document.getElementById('selectedCourseTitle').innerText = title;
+            document.getElementById('selectedCoursePrice').innerText = price;
+            document.getElementById('paymentSection').style.display = 'block';
+            
+            // تحديث واجهة البطاقات
+            document.querySelectorAll('.course-card').forEach(card => card.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            
+            // التحقق من زر التأكيد
+            updateSubscribeButton();
+        }
+
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`.payment-method[data-method="${method}"]`).classList.add('selected');
+            updateSubscribeButton();
+        }
+
+        function updateSubscribeButton() {
+            const btn = document.getElementById('subscribeBtn');
+            btn.disabled = !selectedCourse || !selectedPaymentMethod;
+        }
+
+        async function requestSubscription() {
+            if (!selectedCourse || !selectedPaymentMethod) {
+                showAlert('❌ اختر الدورة وطريقة الدفع أولاً', 'error');
+                return;
+            }
+            
+            const token = localStorage.getItem('token');
+            const btn = document.getElementById('subscribeBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ جاري إرسال الطلب...';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch(API_URL + '/subscription/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        courseId: selectedCourse.id,
+                        paymentMethod: selectedPaymentMethod,
+                        amount: selectedCourse.price
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    showAlert('✅ تم إرسال طلب الاشتراك بنجاح! سيتم تحويلك إلى واتساب لتأكيد الدفع.', 'success');
+                    
+                    // فتح واتساب لإرسال إشعار التحويل
+                    setTimeout(() => {
+                        window.open(data.whatsappUrl, '_blank');
+                    }, 1500);
+                    
+                    // إعادة تعيين النموذج
+                    selectedCourse = null;
+                    selectedPaymentMethod = null;
+                    document.getElementById('paymentSection').style.display = 'none';
+                    document.querySelectorAll('.course-card').forEach(card => card.classList.remove('selected'));
+                    updateSubscribeButton();
+                } else {
+                    showAlert('❌ ' + (data.message || 'حدث خطأ'), 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ خطأ في الاتصال', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+
+        async function init() {
+            if (await checkAuth()) {
+                await loadCourses();
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>
