@@ -447,6 +447,7 @@
             <button class="tab-btn" onclick="showTab('quizzes')">📝 الاختبارات</button>
             <button class="tab-btn" onclick="showTab('notifications')">🔔 الإشعارات</button>
             <button class="tab-btn" onclick="showTab('bots')">🤖 إدارة البوتات</button>
+            <button class="tab-btn" onclick="showTab('subscriptions')">💎 طلبات الاشتراك</button>
             <button class="tab-btn" onclick="showTab('users')">👥 المستخدمين</button>
             <button class="tab-btn" onclick="showTab('payments')">💰 طلبات الدفع</button>
         </div>
@@ -951,6 +952,17 @@
         </div>
     </div>
 </div>
+        <!-- تبويب طلبات الاشتراك -->
+<div id="subscriptionsTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-shopping-cart"></i> طلبات الاشتراك في الدورات المدفوعة</h2>
+        <p>هنا يمكنك مراجعة طلبات الاشتراك والموافقة عليها أو رفضها.</p>
+        
+        <div id="subscriptionsList">
+            <div class="loading">جاري تحميل الطلبات...</div>
+        </div>
+    </div>
+</div>
         
         <!-- تبويب المستخدمين -->
         <div id="usersTab" class="tab-content">
@@ -1186,6 +1198,175 @@ window.deleteCourse = async (id) => {
         }
     } 
 };
+        // ==================== إدارة طلبات الاشتراك ====================
+
+// تحميل طلبات الاشتراك
+async function loadSubscriptions() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/subscriptions', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const requests = await res.json();
+        
+        const container = document.getElementById('subscriptionsList');
+        
+        if (!requests.length) {
+            container.innerHTML = '<div class="empty-message">📭 لا توجد طلبات اشتراك حالياً</div>';
+            return;
+        }
+        
+        // تصفية الطلبات المعلقة فقط
+        const pendingRequests = requests.filter(r => r.status === 'pending');
+        const completedRequests = requests.filter(r => r.status === 'completed');
+        const rejectedRequests = requests.filter(r => r.status === 'rejected');
+        
+        let html = '';
+        
+        // الطلبات المعلقة
+        if (pendingRequests.length > 0) {
+            html += `
+                <h3 style="margin: 1rem 0 0.5rem; color: #ed8936;">⏳ طلبات معلقة (${pendingRequests.length})</h3>
+                <div style="margin-bottom: 2rem;">
+                    ${pendingRequests.map(req => renderSubscriptionCard(req, 'pending')).join('')}
+                </div>
+            `;
+        }
+        
+        // الطلبات المكتملة
+        if (completedRequests.length > 0) {
+            html += `
+                <h3 style="margin: 1rem 0 0.5rem; color: #48bb78;">✅ طلبات مكتملة (${completedRequests.length})</h3>
+                <div style="margin-bottom: 2rem;">
+                    ${completedRequests.map(req => renderSubscriptionCard(req, 'completed')).join('')}
+                </div>
+            `;
+        }
+        
+        // الطلبات المرفوضة
+        if (rejectedRequests.length > 0) {
+            html += `
+                <h3 style="margin: 1rem 0 0.5rem; color: #e53e3e;">❌ طلبات مرفوضة (${rejectedRequests.length})</h3>
+                <div>
+                    ${rejectedRequests.map(req => renderSubscriptionCard(req, 'rejected')).join('')}
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading subscriptions:', error);
+        document.getElementById('subscriptionsList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الطلبات</div>';
+    }
+}
+
+// عرض بطاقة طلب الاشتراك
+function renderSubscriptionCard(request, status) {
+    const statusColors = {
+        pending: { bg: '#fef3c7', text: '#92400e', icon: 'fa-clock' },
+        completed: { bg: '#c6f6d5', text: '#22543d', icon: 'fa-check-circle' },
+        rejected: { bg: '#fed7d7', text: '#742a2a', icon: 'fa-times-circle' }
+    };
+    const colors = statusColors[status] || statusColors.pending;
+    
+    return `
+        <div class="subscription-card" style="background: white; border-radius: 15px; padding: 1rem; margin-bottom: 1rem; border-right: 4px solid ${status === 'pending' ? '#ed8936' : (status === 'completed' ? '#48bb78' : '#e53e3e')}; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                <div style="flex: 2;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span style="background: ${colors.bg}; color: ${colors.text}; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem;">
+                            <i class="fas ${colors.icon}"></i> ${status === 'pending' ? 'قيد المراجعة' : (status === 'completed' ? 'تم التفعيل' : 'مرفوض')}
+                        </span>
+                        <span style="background: #e2e8f0; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem;">
+                            <i class="fas fa-hashtag"></i> ${request.id}
+                        </span>
+                    </div>
+                    <p><strong>👤 المستخدم:</strong> ${escapeHtml(request.user?.fullName || request.userName)} (@${escapeHtml(request.user?.username || 'غير معروف')})</p>
+                    <p><strong>📚 الدورة:</strong> ${escapeHtml(request.courseTitle)}</p>
+                    <p><strong>💰 المبلغ:</strong> ${request.amount} ريال</p>
+                    <p><strong>💳 طريقة الدفع:</strong> ${request.paymentMethod === 'jib' ? 'محفظة جيب' : (request.paymentMethod === 'cash' ? 'محفظة كاش' : 'كريمي')}</p>
+                    <p><strong>📅 تاريخ الطلب:</strong> ${new Date(request.requestedAt).toLocaleString('ar')}</p>
+                    ${request.expiresAt ? `<p><strong>⏱️ ينتهي في:</strong> ${new Date(request.expiresAt).toLocaleString('ar')}</p>` : ''}
+                    ${request.completedAt ? `<p><strong>✅ تم التفعيل في:</strong> ${new Date(request.completedAt).toLocaleString('ar')}</p>` : ''}
+                    ${request.rejectedAt ? `<p><strong>❌ تم الرفض في:</strong> ${new Date(request.rejectedAt).toLocaleString('ar')}</p>` : ''}
+                    ${request.rejectionReason ? `<p><strong>📝 سبب الرفض:</strong> ${escapeHtml(request.rejectionReason)}</p>` : ''}
+                </div>
+                ${status === 'pending' ? `
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn-success" onclick="approveSubscription('${request.id}', '${request.userId}', '${request.courseId}')" style="background: #48bb78; color: white; padding: 8px 20px; border: none; border-radius: 25px; cursor: pointer;">
+                            <i class="fas fa-check"></i> قبول وتفعيل
+                        </button>
+                        <button class="btn-danger" onclick="rejectSubscription('${request.id}', '${request.userId}')" style="background: #e53e3e; color: white; padding: 8px 20px; border: none; border-radius: 25px; cursor: pointer;">
+                            <i class="fas fa-times"></i> رفض
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// الموافقة على طلب الاشتراك
+async function approveSubscription(requestId, userId, courseId) {
+    if (!confirm('⚠️ هل أنت متأكد من الموافقة على هذا الطلب وتفعيل الدورة للمستخدم؟')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/subscription/approve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ requestId })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            showAlert('✅ تم تفعيل الدورة للمستخدم بنجاح', 'success');
+            loadSubscriptions();
+        } else {
+            showAlert('❌ ' + (data.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// رفض طلب الاشتراك
+async function rejectSubscription(requestId, userId) {
+    const reason = prompt('📝 الرجاء إدخال سبب الرفض (سيتم إرساله للمستخدم):');
+    if (reason === null) return;
+    if (!reason.trim()) {
+        showAlert('❌ الرجاء إدخال سبب الرفض', 'error');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/subscription/reject', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ requestId, reason: reason.trim() })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            showAlert('✅ تم رفض الطلب وإشعار المستخدم', 'success');
+            loadSubscriptions();
+        } else {
+            showAlert('❌ ' + (data.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
 // ==================== إدارة البوتات ====================
 // في دالة loadBots - تنسيق عرض المدة
 function formatInterval(ms) {
@@ -2231,6 +2412,8 @@ function saveNotificationToHistory(notification) {
     event.target.classList.add('active');
     
     if(tabName === 'courses') loadCourses();
+     if(tabName === 'subscriptions') loadSubscriptions();
+            
     if(tabName === 'users') loadUsers();
     if(tabName === 'payments') loadPayments();
     if(tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
