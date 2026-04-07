@@ -1398,17 +1398,15 @@ document.getElementById('isPrivate').onchange = function() {
         
         // ==================== Room Functions ====================
         function showCreateRoomModal() { document.getElementById('createRoomModal').style.display='flex'; }
-        function closeCreateRoomModal() { document.getElementById('createRoomModal').style.display='none'; document.getElementById('roomName').value=''; document.getElementById('isPrivate').checked=false; document.getElementById('inviteEmailsField').style.display='none'; }
-        document.getElementById('isPrivate').onchange=function(){ document.getElementById('inviteEmailsField').style.display=this.checked?'block':'none'; };
-        
-        let currentInviteRoomId=null;
-        function inviteToRoom(){ if(!currentChat || currentChatType !== 'room') return showAlert('❌ اختر مجموعة أولاً','error'); currentInviteRoomId=currentChat; document.getElementById('inviteModal').style.display='flex'; }
-        function closeInviteModal(){ document.getElementById('inviteModal').style.display='none'; }
-        function sendInvite(){
-            const email=document.getElementById('inviteEmail').value.trim();
-            if(!email) return showAlert('❌ أدخل البريد','error');
-            socket.emit('invite_by_email',{email,roomId:currentInviteRoomId,roomName:document.getElementById('chatName').innerText,message:document.getElementById('inviteMessage').value},(res)=>{if(res?.success){showAlert(`✅ تم الإرسال إلى ${email}`,'success');closeInviteModal();}});
+        function closeCreateRoomModal() { 
+    document.getElementById('createRoomModal').style.display='none'; 
+    document.getElementById('roomName').value = ''; 
+    document.getElementById('isPrivate').checked = false;
+    document.getElementById('inviteUsersSection').style.display = 'none';
+    selectedInviteUsers = [];
+    renderSelectedUsersList();
         }
+        
         
         // ==================== Init ====================
         async function init() {
