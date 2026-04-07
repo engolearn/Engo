@@ -1122,6 +1122,20 @@ app.post('/api/terms/accept', auth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// 1. جلب جميع الدورات (للعرض)
+app.get('/api/courses/all', async (req, res) => {
+    const courses = await Course.find({ isActive: true }).sort({ createdAt: -1 });
+    res.json(courses);
+});
+
+// 2. جلب الدورات المشترك فيها المستخدم
+app.get('/api/user/subscribed-courses', auth, async (req, res) => {
+    const purchased = req.user.purchasedCourses || [];
+    const allowedCourses = await Course.find({ allowedUsers: req.user._id }).select('_id');
+    const allowedIds = allowedCourses.map(c => c._id.toString());
+    const allSubscribed = [...new Set([...purchased, ...allowedIds])];
+    res.json(allSubscribed);
+});
                         
                              // ==================== التحقق من صحة الشهادة ====================
 // صفحة التحقق من الشهادة (تعرض HTML)
