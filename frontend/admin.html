@@ -1587,7 +1587,7 @@ async function editCourse(courseId) {
         document.getElementById('editCourseLevel').value = course.level;
         document.getElementById('editCoursePrice').value = course.price;
         document.getElementById('editCoursePremium').checked = course.isPremium;
-        document.getElementById('editFreeLessons').value = course.freeLessons || 5;
+        document.getElementById('editFreeLessons').value = course.freeLessons || 0;
         
         // معالجة الصورة
         if (course.image) {
