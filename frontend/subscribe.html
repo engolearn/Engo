@@ -131,6 +131,14 @@
             .courses-grid { grid-template-columns: 1fr; }
             .payment-methods { flex-direction: column; }
         }
+        .course-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.course-image {
+    overflow: hidden;
+}
     </style>
 </head>
 <body>
@@ -237,7 +245,9 @@ async function loadCourses() {
         grid.innerHTML = courses.map(course => `
             <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${course.price}, this)"
                  ${selectedCourseId === course._id ? 'id="selectedCourseCard"' : ''}>
-                <div class="course-image"><i class="fas fa-crown"></i></div>
+                <div class="course-image">
+    ${course.image ? `<img src="${course.image}" style="width:100%;height:100%;object-fit:cover;">` : '<i class="fas fa-crown"></i>'}
+</div>
                 <div class="course-info">
                     <div class="course-title">${escapeHtml(course.title)}</div>
                     <div class="course-price">${course.price} ريال</div>
