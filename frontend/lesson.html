@@ -454,138 +454,205 @@
     console.log('⚠️ Could not extract YouTube ID from:', url);
     return '';
         }
+        // دالة للتشخيص - تظهر الخطأ بشكل أوضح
+function showErrorDebug(message, error) {
+    console.error('🔴 ERROR:', message, error);
+    const container = document.getElementById('paragraphsContainer');
+    if (container) {
+        container.innerHTML = `
+            <div style="background: #fed7d7; color: #742a2a; padding: 2rem; border-radius: 20px; text-align: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <h3>حدث خطأ في تحميل الدرس</h3>
+                <p>${message}</p>
+                <details style="margin-top: 1rem; text-align: left;">
+                    <summary>تفاصيل الخطأ</summary>
+                    <pre style="background: #f1f5f9; padding: 1rem; border-radius: 10px; overflow-x: auto;">${error?.stack || error}</pre>
+                </details>
+                <button class="btn-primary" onclick="location.reload()" style="margin-top: 1rem;">🔄 إعادة المحاولة</button>
+            </div>
+        `;
+    }
+}
 
         async function loadLesson() {
-            const { lessonId } = getUrlParams();
-            if (!lessonId) {
-                document.getElementById('paragraphsContainer').innerHTML = '<div class="loading-spinner">❌ لم يتم تحديد الدرس</div>';
-                return;
-            }
+    const { lessonId } = getUrlParams();
+    if (!lessonId) {
+        showErrorDebug('لم يتم تحديد الدرس', 'No lessonId in URL');
+        return;
+    }
 
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/lessons/' + lessonId, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                
-                if (!res.ok) throw new Error('فشل تحميل الدرس');
-                
-                lessonData = await res.json();
-                
-                document.getElementById('lessonTitle').innerText = lessonData.title;
-                document.getElementById('lessonNumber').innerHTML = `<i class="fas fa-book"></i> الدرس ${lessonData.lessonNumber}`;
-                
-                if (lessonData.content && Array.isArray(lessonData.content) && lessonData.content.length > 0) {
-                    totalParagraphs = lessonData.content.length;
-                    document.getElementById('progressIndicator').style.display = 'block';
-                    document.getElementById('navButtons').style.display = 'flex';
-                    document.getElementById('totalParas').innerText = totalParagraphs;
-                    
-                    currentParagraphIndex = 0;
-                    renderCurrentParagraph();
-                } else {
-                    totalParagraphs = 1;
-                    document.getElementById('progressIndicator').style.display = 'none';
-                    document.getElementById('navButtons').style.display = 'flex';
-                    document.getElementById('prevBtn').disabled = true;
-                    document.getElementById('nextBtn').disabled = true;
-                    renderLegacyContent();
-                }
-                
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('paragraphsContainer').innerHTML = '<div class="loading-spinner">❌ حدث خطأ في تحميل الدرس</div>';
+    try {
+        const token = localStorage.getItem('token');
+        console.log('🔍 Fetching lesson:', lessonId);
+        
+        const res = await fetch(API_URL + '/lessons/' + lessonId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        console.log('📡 Response status:', res.status);
+        
+        if (!res.ok) {
+            if (res.status === 404) {
+                throw new Error('الدرس غير موجود');
+            } else if (res.status === 401) {
+                throw new Error('يرجى تسجيل الدخول أولاً');
+            } else {
+                throw new Error(`فشل تحميل الدرس (${res.status})`);
             }
+        }
+        
+        lessonData = await res.json();
+        console.log('📥 Lesson data loaded:', lessonData);
+        
+        if (!lessonData) {
+            throw new Error('بيانات الدرس فارغة');
+        }
+        
+        document.getElementById('lessonTitle').innerText = lessonData.title || 'بدون عنوان';
+        document.getElementById('lessonNumber').innerHTML = `<i class="fas fa-book"></i> الدرس ${lessonData.lessonNumber || '?'}`;
+        
+        // التحقق من وجود محتوى
+        if (lessonData.content && Array.isArray(lessonData.content) && lessonData.content.length > 0) {
+            totalParagraphs = lessonData.content.length;
+            document.getElementById('progressIndicator').style.display = 'block';
+            document.getElementById('navButtons').style.display = 'flex';
+            document.getElementById('totalParas').innerText = totalParagraphs;
+            
+            currentParagraphIndex = 0;
+            renderCurrentParagraph();
+        } else {
+            // إذا كان المحتوى فارغاً، اعرض رسالة
+            document.getElementById('paragraphsContainer').innerHTML = `
+                <div class="paragraph-card">
+                    <div class="paragraph-content" style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-file-alt" style="font-size: 3rem; color: #a0aec0;"></i>
+                        <p style="margin-top: 1rem;">لا يوجد محتوى لهذا الدرس حالياً</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('progressIndicator').style.display = 'none';
+            document.getElementById('navButtons').style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading lesson:', error);
+        showErrorDebug(error.message, error);
+    }
         }
 
         function renderCurrentParagraph() {
-            if (!lessonData.content || !lessonData.content[currentParagraphIndex]) return;
-            
-            const para = lessonData.content[currentParagraphIndex];
-            
-
-// استخدمها في العرض:
-const displayContent = escapeHtml(cleanText(para.content || ''));
-
-            
-            document.getElementById('currentParaNum').innerText = currentParagraphIndex + 1;
-            const progressPercent = ((currentParagraphIndex + 1) / totalParagraphs) * 100;
-            document.getElementById('progressBar').style.width = progressPercent + '%';
-            
-            document.getElementById('prevBtn').disabled = currentParagraphIndex === 0;
-            document.getElementById('nextBtn').disabled = false;
-            
-            const nextBtn = document.getElementById('nextBtn');
-            if (currentParagraphIndex === totalParagraphs - 1) {
-                nextBtn.innerHTML = 'إكمال الدرس <i class="fas fa-check"></i>';
-            } else {
-                nextBtn.innerHTML = 'التالي <i class="fas fa-arrow-left"></i>';
-            }
-            
-            let typeClass = '';
-            let typeIcon = '';
-            let typeName = '';
-            let mediaHtml = '';
-            
-            switch(para.type) {
-                case 'text':
-                    typeClass = 'type-text';
-                    typeIcon = 'fa-file-alt';
-                    typeName = 'نص';
-                    break;
-                // داخل دالة renderCurrentParagraph، عند معالجة نوع video
-case 'video':
-    typeClass = 'type-video';
-    typeIcon = 'fa-video';
-    typeName = 'فيديو';
-    if (para.mediaUrl) {
-        const videoId = extractYouTubeId(para.mediaUrl);
-        if (videoId) {
-            mediaHtml = `<div class="paragraph-media"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+    try {
+        // التحقق من صحة البيانات
+        if (!lessonData) {
+            throw new Error('lessonData is null');
+        }
+        if (!lessonData.content) {
+            throw new Error('lessonData.content is null');
+        }
+        if (!lessonData.content[currentParagraphIndex]) {
+            throw new Error(`Paragraph ${currentParagraphIndex} not found`);
+        }
+        
+        const para = lessonData.content[currentParagraphIndex];
+        
+        // تحديث مؤشر التقدم
+        document.getElementById('currentParaNum').innerText = currentParagraphIndex + 1;
+        const progressPercent = ((currentParagraphIndex + 1) / totalParagraphs) * 100;
+        document.getElementById('progressBar').style.width = progressPercent + '%';
+        
+        // تحديث أزرار التنقل
+        document.getElementById('prevBtn').disabled = currentParagraphIndex === 0;
+        document.getElementById('nextBtn').disabled = false;
+        
+        const nextBtn = document.getElementById('nextBtn');
+        if (currentParagraphIndex === totalParagraphs - 1) {
+            nextBtn.innerHTML = 'إكمال الدرس <i class="fas fa-check"></i>';
         } else {
-            // إذا لم يتم التعرف على الرابط، عرض رسالة خطأ
-            mediaHtml = `<div class="paragraph-media" style="color: red; padding: 1rem; background: #fee; border-radius: 12px;">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            رابط الفيديو غير صالح: ${escapeHtml(para.mediaUrl)}
-                         </div>`;
+            nextBtn.innerHTML = 'التالي <i class="fas fa-arrow-left"></i>';
         }
-    }
-    break;
-                case 'audio':
-                    typeClass = 'type-audio';
-                    typeIcon = 'fa-headphones';
-                    typeName = 'صوت';
-                    if (para.mediaUrl) {
-                        mediaHtml = `<div class="paragraph-media"><audio controls src="${para.mediaUrl}"></audio></div>`;
+        
+        // تحديد نوع الفقرة
+        let typeClass = '';
+        let typeIcon = '';
+        let typeName = '';
+        let mediaHtml = '';
+        
+        switch(para.type) {
+            case 'text':
+                typeClass = 'type-text';
+                typeIcon = 'fa-file-alt';
+                typeName = 'نص';
+                break;
+            case 'video':
+                typeClass = 'type-video';
+                typeIcon = 'fa-video';
+                typeName = 'فيديو';
+                if (para.mediaUrl) {
+                    const videoId = extractYouTubeId(para.mediaUrl);
+                    if (videoId) {
+                        mediaHtml = `<div class="paragraph-media"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                    } else {
+                        mediaHtml = `<div class="paragraph-media" style="background: #fee; padding: 1rem; border-radius: 12px; color: #e53e3e;">
+                                        <i class="fas fa-exclamation-triangle"></i> رابط الفيديو غير صالح
+                                    </div>`;
                     }
-                    break;
-                case 'image':
-                    typeClass = 'type-image';
-                    typeIcon = 'fa-image';
-                    typeName = 'صورة';
-                    if (para.mediaUrl) {
-                        mediaHtml = `<div class="paragraph-media"><img src="${para.mediaUrl}" onerror="this.src='https://placehold.co/600x400/667eea/white?text=صورة'"></div>`;
-                    }
-                    break;
-            }
-            
-            document.getElementById('paragraphsContainer').innerHTML = `
-    <div class="paragraph-card">
-        <div class="paragraph-header">
-            <div class="paragraph-number">${currentParagraphIndex + 1}</div>
-            <div class="paragraph-type-badge ${typeClass}">
-                <i class="fas ${typeIcon}"></i> ${typeName}
+                }
+                break;
+            case 'audio':
+                typeClass = 'type-audio';
+                typeIcon = 'fa-headphones';
+                typeName = 'صوت';
+                if (para.mediaUrl) {
+                    mediaHtml = `<div class="paragraph-media"><audio controls src="${para.mediaUrl}"></audio></div>`;
+                }
+                break;
+            case 'image':
+                typeClass = 'type-image';
+                typeIcon = 'fa-image';
+                typeName = 'صورة';
+                if (para.mediaUrl) {
+                    mediaHtml = `<div class="paragraph-media"><img src="${para.mediaUrl}" onerror="this.src='https://placehold.co/600x400/667eea/white?text=صورة'"></div>`;
+                }
+                break;
+            default:
+                typeClass = 'type-text';
+                typeIcon = 'fa-file-alt';
+                typeName = 'نص';
+        }
+        
+        // عرض المحتوى مع تحويل الأسطر إلى <br>
+        const displayContent = (para.content || '').replace(/\n/g, '<br>');
+        
+        document.getElementById('paragraphsContainer').innerHTML = `
+            <div class="paragraph-card">
+                <div class="paragraph-header">
+                    <div class="paragraph-number">${currentParagraphIndex + 1}</div>
+                    <div class="paragraph-type-badge ${typeClass}">
+                        <i class="fas ${typeIcon}"></i> ${typeName}
+                    </div>
+                </div>
+                <div class="paragraph-content">
+                    ${displayContent}
+                </div>
+                ${mediaHtml}
             </div>
-        </div>
-        <div class="paragraph-content">
-            ${formatText(para.content || '')}
-        </div>
-        ${mediaHtml}
-    </div>
-`;
-            
-            document.getElementById('assignmentContainer').style.display = 'none';
+        `;
+        
+        document.getElementById('assignmentContainer').style.display = 'none';
+        
+    } catch (error) {
+        console.error('❌ Error in renderCurrentParagraph:', error);
+        document.getElementById('paragraphsContainer').innerHTML = `
+            <div class="paragraph-card">
+                <div class="paragraph-content" style="color: red; padding: 1rem;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    خطأ في عرض الفقرة: ${error.message}
+                </div>
+            </div>
+        `;
+    }
         }
+                    
 
         function renderLegacyContent() {
             document.getElementById('paragraphsContainer').innerHTML = `
