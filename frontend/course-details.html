@@ -226,44 +226,60 @@ async function getCertificate() {
     }
 }
         // تحميل تفاصيل الدورة
-        async function loadCourseDetails() {
-            const courseId = getCourseId();
-            if (!courseId) {
-                document.getElementById('courseHeader').innerHTML = '<h1>خطأ: لم يتم تحديد الدورة</h1>';
-                return;
-            }
+async function loadCourseDetails() {
+    const courseId = getCourseId();
+    if (!courseId) {
+        document.getElementById('courseHeader').innerHTML = '<h1>خطأ: لم يتم تحديد الدورة</h1>';
+        return;
+    }
 
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_URL + '/courses/' + courseId, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                
-                if (!res.ok) throw new Error('فشل تحميل الدورة');
-                
-                courseData = await res.json();
-                
-                // تحميل تقدم المستخدم
-                await loadUserProgress(courseData._id);
-                
-                // عرض معلومات الدورة
-                document.getElementById('courseTitle').innerText = courseData.title;
-                document.getElementById('courseDescription').innerText = courseData.description;
-                document.getElementById('courseMeta').innerHTML = `
-                    <span><i class="fas fa-book"></i> ${courseData.totalLessons || 0} درس</span>
-                    <span><i class="fas fa-chart-line"></i> ${courseData.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
-                    ${courseData.isPremium ? `<span><i class="fas fa-tag"></i> ${courseData.price} ريال</span>` : '<span><i class="fas fa-gift"></i> مجاني</span>'}
-                    <span><i class="fas fa-check-circle"></i> ${completedLessons.length} دروس مكتملة</span>
-                `;
-                
-                // عرض قائمة الدروس
-                renderLessonsList();
-                
-            } catch (error) {
-                console.error('Error loading course:', error);
-                document.getElementById('courseHeader').innerHTML = '<h1>خطأ في تحميل الدورة</h1>';
-            }
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/courses/' + courseId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        // ✅ معالجة حالة عدم السماح
+        if (res.status === 403) {
+            const error = await res.json();
+            document.getElementById('coursesList').innerHTML = `
+                <div class="empty-message" style="background: #fed7d7; color: #742a2a; padding: 2rem; border-radius: 20px;">
+                    <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h3>⛔ وصول مقيد</h3>
+                    <p>${error.message || 'غير مصرح لك بالوصول إلى هذه الدورة'}</p>
+                    <button class="btn-primary" onclick="window.location.href='/subscribe.html'" style="margin-top: 1rem;">
+                        <i class="fas fa-crown"></i> اشتراك مميز
+                    </button>
+                </div>
+            `;
+            return;
         }
+        
+        if (!res.ok) throw new Error('فشل تحميل الدورة');
+        
+        courseData = await res.json();
+        
+        // تحميل تقدم المستخدم
+        await loadUserProgress(courseData._id);
+        
+        // عرض معلومات الدورة
+        document.getElementById('courseTitle').innerText = courseData.title;
+        document.getElementById('courseDescription').innerText = courseData.description;
+        document.getElementById('courseMeta').innerHTML = `
+            <span><i class="fas fa-book"></i> ${courseData.totalLessons || 0} درس</span>
+            <span><i class="fas fa-chart-line"></i> ${courseData.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
+            ${courseData.isPremium ? `<span><i class="fas fa-tag"></i> ${courseData.price} ريال</span>` : '<span><i class="fas fa-gift"></i> مجاني</span>'}
+            <span><i class="fas fa-check-circle"></i> ${completedLessons.length} دروس مكتملة</span>
+        `;
+        
+        // عرض قائمة الدروس
+        renderLessonsList();
+        
+    } catch (error) {
+        console.error('Error loading course:', error);
+        document.getElementById('courseHeader').innerHTML = '<h1>خطأ في تحميل الدورة</h1>';
+    }
+}
 
         // التحقق مما إذا كان الدرس مكتملاً
         function isLessonCompleted(lessonId) {
