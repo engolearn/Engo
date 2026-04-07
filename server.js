@@ -526,27 +526,25 @@ app.get('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
 });
 
 // تحديث دورة
+// تحديث دورة
 app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
     try {
         const { courseId } = req.params;
-        const updateData = req.body;
+        const { title, description, level, price, isPremium, freeLessons, image } = req.body;
         
         console.log('📝 Updating course:', courseId);
-        console.log('📦 Update data:', updateData);
+        console.log('📦 freeLessons value received:', freeLessons);
         
-        // ✅ تأكد من أن freeLessons يتم تحديثه
         const course = await Course.findByIdAndUpdate(
-            courseId, 
-            { 
-                $set: {
-                    title: updateData.title,
-                    description: updateData.description,
-                    level: updateData.level,
-                    price: updateData.price,
-                    isPremium: updateData.isPremium,
-                    freeLessons: updateData.freeLessons,  // ✅ هذا السطر مهم
-                    image: updateData.image
-                }
+            courseId,
+            {
+                title,
+                description,
+                level,
+                price,
+                isPremium,
+                freeLessons: freeLessons,  // ✅ تأكد من وجود هذا السطر
+                image
             },
             { new: true }
         );
@@ -555,7 +553,7 @@ app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
             return res.status(404).json({ message: 'الدورة غير موجودة' });
         }
         
-        console.log('✅ Course updated, freeLessons:', course.freeLessons);
+        console.log('✅ Updated course, freeLessons:', course.freeLessons);
         
         res.json({ message: '✅ تم تحديث الدورة بنجاح', course });
     } catch (error) {
