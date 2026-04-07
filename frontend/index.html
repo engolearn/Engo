@@ -105,6 +105,22 @@
                 font-size: 16px !important;
             }
         }
+        .btn-premium-enroll {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    transition: transform 0.3s;
+}
+
+.btn-premium-enroll:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
         
         /* ========== Navbar ========== */
         .navbar {
@@ -1223,45 +1239,95 @@ async function register(username, fullName, password) {
         }
         
         // ==================== Courses ====================
-        async function loadCourses() {
+async function loadCourses() {
+    try {
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // جلب جميع الدورات
+        const res = await fetch(API_URL + '/courses/all');
+        const allCourses = await res.json();
+        
+        const grid = document.getElementById('coursesGrid');
+        
+        if (!grid) return;
+        
+        if (!allCourses || allCourses.length === 0) {
+            grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات متاحة حالياً<br>سيتم إضافة دورات قريباً</div>';
+            return;
+        }
+        
+        // ✅ جلب قائمة الدورات التي اشترك فيها المستخدم (إذا كان مسجل دخول)
+        let subscribedCourses = [];
+        if (token && user.id) {
             try {
-                const res = await fetch(API_URL + '/courses');
-                const courses = await res.json();
-                const grid = document.getElementById('coursesGrid');
-                
-                if (!grid) return;
-                
-                if (!courses || courses.length === 0) {
-                    grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات متاحة حالياً<br>سيتم إضافة دورات قريباً</div>';
-                    return;
+                const subscribedRes = await fetch(API_URL + '/user/subscribed-courses', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (subscribedRes.ok) {
+                    subscribedCourses = await subscribedRes.json();
                 }
-                
-                grid.innerHTML = courses.map(course => `
-                    <div class="course-card" onclick="viewCourse('${course._id}')">
-                        <div class="course-image">
-                            ${course.image ? 
-                                `<img src="${course.image}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">` : 
-                                `<i class="fas fa-book-open"></i>`
-                            }
-                        </div>
-                        <div class="course-info">
-                            <h3>${escapeHtml(course.title)}</h3>
-                            <p>${escapeHtml(course.description.substring(0, 100))}${course.description.length > 100 ? '...' : ''}</p>
-                            <div class="course-meta">
-                                <span><i class="fas fa-book"></i> ${course.totalLessons || 0} درس</span>
-                                <span><i class="fas fa-chart-line"></i> ${course.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
-                            </div>
-                            <div class="course-price">${course.isPremium ? course.price + ' ريال' : '🎓 مجاني'}</div>
-                            <button class="btn-enroll">عرض الدورة</button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch(err) {
-                console.error(err);
-                const grid = document.getElementById('coursesGrid');
-                if (grid) grid.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+            } catch (err) {
+                console.log('Could not fetch subscribed courses:', err);
             }
         }
+        
+        // ✅ عرض جميع الدورات مع أزرار مختلفة حسب الحالة
+        grid.innerHTML = allCourses.map(course => {
+            const isSubscribed = subscribedCourses.includes(course._id);
+            
+            let buttonHtml = '';
+            let priceHtml = '';
+            
+            if (course.isPremium) {
+                // دورة مدفوعة
+                priceHtml = `<div class="course-price">💰 ${course.price} ريال</div>`;
+                if (isSubscribed) {
+                    buttonHtml = `<button class="btn-enroll" onclick="viewCourse('${course._id}')">📖 متابعة الدورة</button>`;
+                } else {
+                    buttonHtml = `<button class="btn-premium-enroll" onclick="goToSubscribe('${course._id}')" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 10px; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; width: 100%;">
+                                    <i class="fas fa-crown"></i> اشتراك
+                                </button>`;
+                }
+            } else {
+                // دورة مجانية
+                priceHtml = `<div class="course-price">🎓 مجاني</div>`;
+                buttonHtml = `<button class="btn-enroll" onclick="viewCourse('${course._id}')">📖 عرض الدورة</button>`;
+            }
+            
+            return `
+                <div class="course-card">
+                    <div class="course-image">
+                        ${course.image ? 
+                            `<img src="${course.image}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                            `<i class="fas fa-book-open"></i>`
+                        }
+                    </div>
+                    <div class="course-info">
+                        <h3>${escapeHtml(course.title)}</h3>
+                        <p>${escapeHtml(course.description.substring(0, 100))}${course.description.length > 100 ? '...' : ''}</p>
+                        <div class="course-meta">
+                            <span><i class="fas fa-book"></i> ${course.totalLessons || 0} درس</span>
+                            <span><i class="fas fa-chart-line"></i> ${course.level === 'beginner' ? 'مبتدئ' : 'متقدم'}</span>
+                        </div>
+                        ${priceHtml}
+                        ${buttonHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch(err) {
+        console.error(err);
+        const grid = document.getElementById('coursesGrid');
+        if (grid) grid.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+    }
+}
+
+// دالة الانتقال إلى صفحة الاشتراك مع تحديد الدورة
+function goToSubscribe(courseId) {
+    window.location.href = `/subscribe.html?course=${courseId}`;
+}
         
         function viewCourse(courseId) {
             window.location.href = `/course-details.html?id=${courseId}`;
