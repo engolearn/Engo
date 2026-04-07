@@ -952,6 +952,55 @@
         </div>
     </div>
 </div>
+        <!-- مودال تعديل الدرس -->
+<div id="editLessonModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; max-height: 85vh; overflow-y: auto;">
+        <h3><i class="fas fa-edit"></i> تعديل الدرس</h3>
+        <input type="hidden" id="editLessonId">
+        
+        <div class="form-group">
+            <label>رقم الدرس</label>
+            <input type="number" id="editLessonNumber" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>عنوان الدرس</label>
+            <input type="text" id="editLessonTitle" class="form-control">
+        </div>
+        
+        <h4>📚 محتوى الدرس (فقرات متسلسلة)</h4>
+        <div id="editLessonParagraphs" style="margin-bottom: 1rem; max-height: 400px; overflow-y: auto;">
+            <div class="loading">جاري التحميل...</div>
+        </div>
+        <button type="button" class="btn-primary" onclick="addEditParagraph()" style="margin-bottom: 1rem;">
+            <i class="fas fa-plus-circle"></i> إضافة فقرة جديدة
+        </button>
+        
+        <h4>📝 إعدادات الواجب</h4>
+        <div class="form-group">
+            <label>عنوان الواجب</label>
+            <input type="text" id="editAssignmentTitle" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>وصف الواجب</label>
+            <textarea id="editAssignmentDescription" rows="2" class="form-control"></textarea>
+        </div>
+        <div class="form-group">
+            <label>نسبة النجاح (%)</label>
+            <input type="number" id="editPassingScore" class="form-control">
+        </div>
+        
+        <h4>❓ أسئلة الواجب</h4>
+        <div id="editQuestionsList" style="margin-bottom: 1rem;"></div>
+        <button type="button" class="btn-primary" onclick="addEditQuestion()">
+            <i class="fas fa-plus-circle"></i> إضافة سؤال
+        </button>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button class="btn-primary" onclick="saveLessonEdit()" style="flex: 1;">💾 حفظ التغييرات</button>
+            <button class="btn-danger" onclick="closeEditLessonModal()" style="flex: 1;">إلغاء</button>
+        </div>
+    </div>
+</div>
         <!-- تبويب طلبات الاشتراك -->
 <div id="subscriptionsTab" class="tab-content">
     <div class="admin-section">
@@ -1198,6 +1247,247 @@ window.deleteCourse = async (id) => {
         }
     } 
 };
+        // ==================== تعديل الدرس ====================
+
+let editLessonParagraphs = [];
+let editQuestions = [];
+let editQuestionCounter = 0;
+
+// فتح نافذة تعديل الدرس
+async function editLesson(lessonId) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/lessons/' + lessonId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const lesson = await res.json();
+        
+        document.getElementById('editLessonId').value = lesson._id;
+        document.getElementById('editLessonNumber').value = lesson.lessonNumber;
+        document.getElementById('editLessonTitle').value = lesson.title;
+        
+        // تحميل الفقرات
+        editLessonParagraphs = lesson.content || [];
+        renderEditParagraphs();
+        
+        // تحميل الواجب
+        if (lesson.assignment) {
+            document.getElementById('editAssignmentTitle').value = lesson.assignment.title || '';
+            document.getElementById('editAssignmentDescription').value = lesson.assignment.description || '';
+            document.getElementById('editPassingScore').value = lesson.assignment.passingScore || 70;
+            editQuestions = lesson.assignment.questions || [];
+        } else {
+            document.getElementById('editAssignmentTitle').value = 'واجب الدرس';
+            document.getElementById('editAssignmentDescription').value = '';
+            document.getElementById('editPassingScore').value = 70;
+            editQuestions = [];
+        }
+        renderEditQuestions();
+        
+        document.getElementById('editLessonModal').style.display = 'flex';
+    } catch (error) {
+        showAlert('❌ خطأ في تحميل الدرس', 'error');
+    }
+}
+
+function closeEditLessonModal() {
+    document.getElementById('editLessonModal').style.display = 'none';
+    editLessonParagraphs = [];
+    editQuestions = [];
+}
+
+// عرض فقرات الدرس في نافذة التعديل
+function renderEditParagraphs() {
+    const container = document.getElementById('editLessonParagraphs');
+    if (!editLessonParagraphs.length) {
+        container.innerHTML = '<div class="empty-message">لا توجد فقرات</div>';
+        return;
+    }
+    
+    container.innerHTML = editLessonParagraphs.map((para, idx) => `
+        <div class="paragraph-card" style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <strong>الفقرة ${idx + 1} - نوع: ${para.type === 'text' ? 'نص' : para.type === 'video' ? 'فيديو' : para.type === 'audio' ? 'صوت' : 'صورة'}</strong>
+                <button class="btn-danger btn-sm" onclick="removeEditParagraph(${idx})">✖ حذف</button>
+            </div>
+            <div class="form-group">
+                <label>المحتوى النصي</label>
+                <textarea rows="2" class="form-control" onchange="updateEditParagraph(${idx}, 'content', this.value)">${escapeHtml(para.content || '')}</textarea>
+            </div>
+            ${para.type !== 'text' ? `
+                <div class="form-group">
+                    <label>${para.type === 'video' ? 'رابط الفيديو' : para.type === 'audio' ? 'رابط الصوت' : 'رابط الصورة'}</label>
+                    <input type="text" class="form-control" value="${escapeHtml(para.mediaUrl || '')}" onchange="updateEditParagraph(${idx}, 'mediaUrl', this.value)">
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+function updateEditParagraph(index, field, value) {
+    if (editLessonParagraphs[index]) {
+        editLessonParagraphs[index][field] = value;
+    }
+}
+
+function removeEditParagraph(index) {
+    editLessonParagraphs.splice(index, 1);
+    renderEditParagraphs();
+}
+
+function addEditParagraph() {
+    editLessonParagraphs.push({
+        type: 'text',
+        content: '',
+        mediaUrl: null
+    });
+    renderEditParagraphs();
+}
+
+// عرض أسئلة الواجب في نافذة التعديل
+function renderEditQuestions() {
+    const container = document.getElementById('editQuestionsList');
+    if (!editQuestions.length) {
+        container.innerHTML = '<div class="empty-message">لا توجد أسئلة</div>';
+        return;
+    }
+    
+    container.innerHTML = editQuestions.map((q, idx) => `
+        <div class="prof-question-card" style="margin-bottom: 1rem;">
+            <div class="prof-question-header">
+                <span class="prof-question-type">${getQuestionTypeName(q.type)}</span>
+                <button class="btn-danger btn-sm" onclick="removeEditQuestion(${idx})">✖ حذف</button>
+            </div>
+            <div class="prof-question-body">
+                <div class="prof-question-field">
+                    <label>نص السؤال</label>
+                    <textarea rows="2" onchange="updateEditQuestion(${idx}, 'questionText', this.value)">${escapeHtml(q.questionText || '')}</textarea>
+                </div>
+                <div class="prof-question-field">
+                    <label>النقاط</label>
+                    <input type="number" value="${q.points || 10}" onchange="updateEditQuestion(${idx}, 'points', parseInt(this.value))">
+                </div>
+                ${q.type === 'multiple_choice' ? `
+                    <div class="prof-question-field">
+                        <label>الخيارات</label>
+                        ${(q.options || []).map((opt, optIdx) => `
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <input type="text" value="${escapeHtml(opt)}" placeholder="خيار ${optIdx+1}" style="flex:1"
+                                    onchange="updateEditQuestionOption(${idx}, ${optIdx}, this.value)">
+                                <button class="btn-danger btn-sm" onclick="removeEditOption(${idx}, ${optIdx})">✖</button>
+                            </div>
+                        `).join('')}
+                        <button class="btn-sm btn-primary" onclick="addEditOption(${idx})">+ إضافة خيار</button>
+                    </div>
+                    <div class="prof-question-field">
+                        <label>الإجابة الصحيحة</label>
+                        <select onchange="updateEditQuestion(${idx}, 'correctOption', parseInt(this.value))">
+                            ${(q.options || []).map((opt, optIdx) => `
+                                <option value="${optIdx}" ${q.correctOption === optIdx ? 'selected' : ''}>${String.fromCharCode(65+optIdx)}. ${escapeHtml(opt)}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                ` : q.type === 'true_false' ? `
+                    <div class="prof-question-field">
+                        <label>الإجابة الصحيحة</label>
+                        <select onchange="updateEditQuestion(${idx}, 'correctAnswer', this.value === 'true')">
+                            <option value="true" ${q.correctAnswer === true ? 'selected' : ''}>✅ صح</option>
+                            <option value="false" ${q.correctAnswer === false ? 'selected' : ''}>❌ خطأ</option>
+                        </select>
+                    </div>
+                ` : q.type === 'fill_blank' ? `
+                    <div class="prof-question-field">
+                        <label>الإجابة الصحيحة</label>
+                        <input type="text" value="${escapeHtml(q.correctAnswer || '')}" onchange="updateEditQuestion(${idx}, 'correctAnswer', this.value)">
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateEditQuestion(index, field, value) {
+    if (editQuestions[index]) {
+        editQuestions[index][field] = value;
+    }
+}
+
+function updateEditQuestionOption(qIndex, optIndex, value) {
+    if (editQuestions[qIndex] && editQuestions[qIndex].options) {
+        editQuestions[qIndex].options[optIndex] = value;
+    }
+}
+
+function addEditOption(qIndex) {
+    if (editQuestions[qIndex] && editQuestions[qIndex].options) {
+        editQuestions[qIndex].options.push('');
+        renderEditQuestions();
+    }
+}
+
+function removeEditOption(qIndex, optIndex) {
+    if (editQuestions[qIndex] && editQuestions[qIndex].options && editQuestions[qIndex].options.length > 2) {
+        editQuestions[qIndex].options.splice(optIndex, 1);
+        renderEditQuestions();
+    }
+}
+
+function removeEditQuestion(index) {
+    editQuestions.splice(index, 1);
+    renderEditQuestions();
+}
+
+function addEditQuestion() {
+    editQuestions.push({
+        id: 'edit_q_' + Date.now() + '_' + (++editQuestionCounter),
+        type: 'multiple_choice',
+        questionText: '',
+        points: 10,
+        options: ['', '', ''],
+        correctOption: 0
+    });
+    renderEditQuestions();
+}
+
+// حفظ تعديلات الدرس
+async function saveLessonEdit() {
+    const token = localStorage.getItem('token');
+    const lessonId = document.getElementById('editLessonId').value;
+    
+    const lessonData = {
+        title: document.getElementById('editLessonTitle').value,
+        content: editLessonParagraphs,
+        lessonNumber: parseInt(document.getElementById('editLessonNumber').value),
+        assignment: {
+            title: document.getElementById('editAssignmentTitle').value,
+            description: document.getElementById('editAssignmentDescription').value,
+            passingScore: parseInt(document.getElementById('editPassingScore').value),
+            questions: editQuestions
+        }
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/lessons/' + lessonId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(lessonData)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم تحديث الدرس بنجاح', 'success');
+            closeEditLessonModal();
+            loadLessonsForCourse();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
         // ==================== إدارة طلبات الاشتراك ====================
 
 // تحميل طلبات الاشتراك
@@ -2451,15 +2741,24 @@ function saveNotificationToHistory(notification) {
         async function loadCoursesForSelect2() { await loadCoursesForSelect(); }
         
         async function loadLessonsForCourse() {
-            const courseId = document.getElementById('courseForLessons').value;
-            if(!courseId) return;
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_URL + '/admin/courses/' + courseId + '/lessons', { headers: { 'Authorization': 'Bearer ' + token } });
-            const lessons = await res.json();
-            const container = document.getElementById('lessonsList');
-            if(!lessons.length) { container.innerHTML = '<div class="empty-message">لا توجد دروس</div>'; return; }
-            container.innerHTML = lessons.map(l => `<div class="lesson-item"><span><strong>${l.lessonNumber}. ${l.title}</strong></span><button class="btn-danger" onclick="deleteLesson('${l._id}')">حذف</button></div>`).join('');
+    const courseId = document.getElementById('courseForLessons').value;
+    if(!courseId) return;
+    const token = localStorage.getItem('token');
+    const res = await fetch(API_URL + '/admin/courses/' + courseId + '/lessons', { headers: { 'Authorization': 'Bearer ' + token } });
+    const lessons = await res.json();
+    const container = document.getElementById('lessonsList');
+    if(!lessons.length) { container.innerHTML = '<div class="empty-message">لا توجد دروس</div>'; return; }
+    container.innerHTML = lessons.map(l => `
+        <div class="lesson-item">
+            <span><strong>${l.lessonNumber}. ${l.title}</strong></span>
+            <div class="inline-buttons">
+                <button class="btn-warning btn-sm" onclick="editLesson('${l._id}')">✏️ تعديل</button>
+                <button class="btn-danger btn-sm" onclick="deleteLesson('${l._id}')">🗑️ حذف</button>
+            </div>
+        </div>
+    `).join('');
         }
+        
         
         window.deleteLesson = async (id) => { if(confirm('حذف الدرس؟')) { const token = localStorage.getItem('token'); await fetch(API_URL + '/admin/lessons/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } }); showAlert('✅ تم الحذف','success'); loadLessonsForCourse(); } };
 
