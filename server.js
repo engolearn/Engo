@@ -480,6 +480,136 @@ function stopAllBotsInRoom(roomId) {
     return count;
 }
 
+// ==================== Subscription System ====================
+
+// جلب الدورات المدفوعة
+app.get('/api/premium-courses', async (req, res) => {
+    try {
+        const courses = await Course.find({ isPremium: true, isActive: true }).sort({ price: 1 });
+        res.json(courses);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// طلب اشتراك جديد
+app.post('/api/subscription/request', auth, async (req, res) => {
+    try {
+        const { courseId, paymentMethod, transactionId, amount } = req.body;
+        
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        
+        // إنشاء طلب اشتراك جديد
+        const subscriptionRequest = {
+            id: Date.now().toString(),
+            userId: req.user._id,
+            userName: req.user.fullName || req.user.username,
+            userPhone: req.body.phone || 'غير محدد',
+            courseId: courseId,
+            courseTitle: course.title,
+            amount: amount || course.price,
+            paymentMethod: paymentMethod,
+            transactionId: transactionId || 'انتظار',
+            status: 'pending',
+            requestedAt: new Date(),
+            expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000) // بعد ساعتين
+        };
+        
+        // حفظ الطلب (يمكن تخزينه في قاعدة بيانات منفصلة أو في ذاكرة مؤقتة)
+        if (!global.subscriptionRequests) global.subscriptionRequests = [];
+        global.subscriptionRequests.push(subscriptionRequest);
+        
+        // إرسال إشعار إلى واتساب الأدمن
+        const whatsappMessage = `
+🆕 *طلب اشتراك جديد* 🆕
+
+👤 المستخدم: ${subscriptionRequest.userName}
+📚 الدورة: ${subscriptionRequest.courseTitle}
+💰 المبلغ: ${subscriptionRequest.amount} ريال
+💳 طريقة الدفع: ${subscriptionRequest.paymentMethod === 'jib' ? 'محفظة جيب' : subscriptionRequest.paymentMethod === 'cash' ? 'محفظة كاش' : 'كريمي'}
+🆔 رقم الطلب: ${subscriptionRequest.id}
+📅 التاريخ: ${new Date().toLocaleString('ar')}
+
+✅ بعد التحويل، سيتم تفعيل الدورة خلال ساعتين
+        `;
+        
+        // رابط واتساب للإشعار
+        const whatsappUrl = `https://wa.me/966773041464?text=${encodeURIComponent(whatsappMessage)}`;
+        
+        res.json({
+            success: true,
+            message: 'تم إرسال طلب الاشتراك بنجاح',
+            requestId: subscriptionRequest.id,
+            whatsappUrl: whatsappUrl
+        });
+        
+    } catch (error) {
+        console.error('Subscription error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// التحقق من حالة الطلب
+app.get('/api/subscription/status/:requestId', auth, async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const request = global.subscriptionRequests?.find(r => r.id === requestId);
+        
+        if (!request) {
+            return res.json({ status: 'not_found', message: 'الطلب غير موجود' });
+        }
+        
+        // التحقق من انتهاء الوقت
+        const isExpired = new Date() > new Date(request.expiresAt);
+        
+        res.json({
+            status: request.status,
+            isExpired: isExpired,
+            requestedAt: request.requestedAt,
+            expiresAt: request.expiresAt,
+            courseTitle: request.courseTitle
+        });
+        
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تأكيد الدفع وتفعيل الدورة (للأدمن)
+app.post('/api/admin/subscription/confirm', auth, adminAuth, async (req, res) => {
+    try {
+        const { requestId, userId, courseId } = req.body;
+        
+        // تفعيل الدورة للمستخدم
+        await User.findByIdAndUpdate(userId, {
+            $addToSet: { purchasedCourses: courseId }
+        });
+        
+        // تحديث حالة الطلب
+        const request = global.subscriptionRequests?.find(r => r.id === requestId);
+        if (request) {
+            request.status = 'completed';
+            request.completedAt = new Date();
+        }
+        
+        // إرسال إشعار للمستخدم
+        await addNotification(userId, {
+            title: '✅ تم تفعيل الدورة',
+            message: `تم تفعيل الدورة التي اشتركت بها بنجاح. يمكنك الآن الوصول إلى جميع دروسها.`,
+            type: 'success',
+            link: `/course-details.html?id=${courseId}`
+        });
+        
+        res.json({ success: true, message: 'تم تفعيل الدورة بنجاح' });
+        
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // ==================== Terms of Service API & Page ====================
 
 // API لجلب شروط الاستخدام (للواجهة)
