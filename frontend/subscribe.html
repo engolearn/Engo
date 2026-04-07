@@ -235,7 +235,7 @@ async function loadCourses() {
         }
         
         grid.innerHTML = courses.map(course => `
-            <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${course.price})" 
+            <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${course.price}, this)"
                  ${selectedCourseId === course._id ? 'id="selectedCourseCard"' : ''}>
                 <div class="course-image"><i class="fas fa-crown"></i></div>
                 <div class="course-info">
@@ -260,18 +260,20 @@ async function loadCourses() {
         document.getElementById('coursesGrid').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
     }
 }
-        function selectCourse(id, title, price) {
-            selectedCourse = { id, title, price };
-            document.getElementById('selectedCourseTitle').innerText = title;
-            document.getElementById('selectedCoursePrice').innerText = price;
-            document.getElementById('paymentSection').style.display = 'block';
-            
-            // تحديث واجهة البطاقات
-            document.querySelectorAll('.course-card').forEach(card => card.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
-            
-            // التحقق من زر التأكيد
-            updateSubscribeButton();
+        function selectCourse(id, title, price, element) {
+    selectedCourse = { id, title, price };
+    document.getElementById('selectedCourseTitle').innerText = title;
+    document.getElementById('selectedCoursePrice').innerText = price;
+    document.getElementById('paymentSection').style.display = 'block';
+    
+    // تحديث واجهة البطاقات
+    document.querySelectorAll('.course-card').forEach(card => card.classList.remove('selected'));
+    if (element) {
+        element.classList.add('selected');
+    }
+    
+    // التحقق من زر التأكيد
+    updateSubscribeButton();
         }
 
         function selectPaymentMethod(method) {
