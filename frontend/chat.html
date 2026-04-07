@@ -765,6 +765,7 @@
             </div>
         </div>
         
+        
         <button onclick="createRoom()" style="background: #25D366; color: white;">إنشاء</button>
         <button onclick="closeCreateRoomModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
     </div>
@@ -789,6 +790,8 @@
         <button onclick="closeInviteModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
     </div>
     </div>
+    <div id="connectionStatus" class="connection-status disconnected" style="display: none;"></div>
+        
 
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
     <script>
@@ -1162,7 +1165,7 @@ document.getElementById('isPrivate').onchange = function() {
         return;
     }
     
-    console.log('🟡 Connecting to socket with token:', token.substring(0, 30) + '...');
+    console.log('🟡 Connecting to socket...');
     
     socket = io(API_URL, { 
         auth: { token },
@@ -1173,49 +1176,56 @@ document.getElementById('isPrivate').onchange = function() {
     });
     
     socket.on('connect', () => {
-        console.log('✅ Socket connected successfully!');
-        document.getElementById('connectionStatus').innerHTML = '✅ متصل';
-        document.getElementById('connectionStatus').className = 'connection-status connected';
+        console.log('✅ Socket connected!');
         
-        // تحميل البيانات بعد الاتصال مباشرة
-        setTimeout(() => {
-            console.log('🔄 Loading rooms and chats...');
-            loadRooms();
-            loadPrivateChats();
-            loadAllUsers();
+        // تجنب استخدام العنصر إذا كان موجوداً
+        const statusEl = document.getElementById('connectionStatus');
+        if (statusEl) {
+            statusEl.innerHTML = '✅ متصل';
+            statusEl.className = 'connection-status connected';
+        }
+        
+        // تحميل البيانات
+        loadRooms();
+        loadPrivateChats();
+        loadAllUsers();
+        if (typeof loadAllUsersList === 'function') {
             loadAllUsersList();
-        }, 500);
+        }
     });
     
     socket.on('connect_error', (error) => {
-        console.error('❌ Socket connection error:', error);
-        document.getElementById('connectionStatus').innerHTML = '⚠️ خطأ في الاتصال';
-        document.getElementById('connectionStatus').className = 'connection-status disconnected';
-        showAlert('⚠️ مشكلة في الاتصال بالخادم', 'error');
+        console.error('❌ Socket error:', error.message);
+        const statusEl = document.getElementById('connectionStatus');
+        if (statusEl) {
+            statusEl.innerHTML = '⚠️ خطأ';
+            statusEl.className = 'connection-status disconnected';
+        }
     });
     
-    socket.on('disconnect', (reason) => {
-        console.log('🔴 Socket disconnected:', reason);
-        document.getElementById('connectionStatus').innerHTML = '⛔ غير متصل';
-        document.getElementById('connectionStatus').className = 'connection-status disconnected';
+    socket.on('disconnect', () => {
+        console.log('🔴 Disconnected');
+        const statusEl = document.getElementById('connectionStatus');
+        if (statusEl) {
+            statusEl.innerHTML = '⛔ غير متصل';
+            statusEl.className = 'connection-status disconnected';
+        }
     });
     
-    // استقبال قائمة الغرف
-    socket.on('rooms_list', (rooms) => { 
-        console.log('📋 Received rooms_list:', rooms);
-        roomsList = rooms; 
-        renderRoomsList(); 
+    // أحداث الاستقبال
+    socket.on('rooms_list', (rooms) => {
+        console.log('📋 Rooms:', rooms);
+        roomsList = rooms || [];
+        renderRoomsList();
     });
     
-    // استقبال المحادثات الخاصة
-    socket.on('private_conversations_list', (chats) => { 
-        console.log('💬 Received private_conversations_list:', chats);
-        privateChats = chats; 
-        renderPrivateList(); 
+    socket.on('private_conversations_list', (chats) => {
+        console.log('💬 Private chats:', chats);
+        privateChats = chats || [];
+        renderPrivateList();
     });
     
     socket.on('new_message', (msg) => {
-        console.log('📨 New message:', msg);
         if (currentChatType === 'room' && currentChat === msg.roomId) {
             appendMessage(msg);
         }
@@ -1223,7 +1233,6 @@ document.getElementById('isPrivate').onchange = function() {
     });
     
     socket.on('private_message_received', (msg) => {
-        console.log('💌 Private message:', msg);
         if (currentChatType === 'private' && currentPrivateUserId === msg.from) {
             currentPrivateMessages.push(msg);
             renderPrivateMessages();
@@ -1232,26 +1241,23 @@ document.getElementById('isPrivate').onchange = function() {
             }
         }
         loadPrivateChats();
-        showAlert(`💬 رسالة من ${msg.fromName}`, 'success');
+        showAlert(`💬 رسالة من ${msg.fromName || 'مستخدم'}`, 'success');
     });
     
     socket.on('room_invite', (data) => {
-        console.log('📢 Room invite:', data);
         if (confirm(`📨 ${data.invitedBy} دعاك للانضمام إلى "${data.roomName}"`)) {
             joinRoom(data.roomId, data.roomName);
         }
     });
     
-    socket.on('user_joined', (user) => { 
-        console.log('👤 User joined:', user);
-        addSystemMessage(`${user.name} انضم`); 
-        loadRooms(); 
+    socket.on('user_joined', (user) => {
+        addSystemMessage(`${user.name || 'مستخدم'} انضم`);
+        loadRooms();
     });
     
-    socket.on('user_left', (user) => { 
-        console.log('👋 User left:', user);
-        addSystemMessage(`${user.name} غادر`); 
-        loadRooms(); 
+    socket.on('user_left', (user) => {
+        addSystemMessage(`${user.name || 'مستخدم'} غادر`);
+        loadRooms();
     });
         }
         
