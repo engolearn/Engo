@@ -427,10 +427,32 @@
 
         
         function extractYouTubeId(url) {
-            if (!url) return '';
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : '';
+    if (!url) return '';
+    
+    // قائمة بأنماط روابط يوتيوب المختلفة
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=)([^&]+)/i,
+        /(?:youtube\.com\/embed\/)([^?]+)/i,
+        /(?:youtu\.be\/)([^?]+)/i,
+        /(?:youtube\.com\/shorts\/)([^?]+)/i,
+        /(?:youtube\.com\/live\/)([^?]+)/i,
+        /(?:youtube\.com\/v\/)([^?]+)/i
+    ];
+    
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    
+    // إذا كان الرابط يحتوي على معرف مباشر
+    if (url.match(/^[a-zA-Z0-9_-]{11}$/)) {
+        return url;
+    }
+    
+    console.log('⚠️ Could not extract YouTube ID from:', url);
+    return '';
         }
 
         async function loadLesson() {
@@ -511,17 +533,24 @@ const displayContent = escapeHtml(cleanText(para.content || ''));
                     typeIcon = 'fa-file-alt';
                     typeName = 'نص';
                     break;
-                case 'video':
-                    typeClass = 'type-video';
-                    typeIcon = 'fa-video';
-                    typeName = 'فيديو';
-                    if (para.mediaUrl) {
-                        const videoId = extractYouTubeId(para.mediaUrl);
-                        if (videoId) {
-                            mediaHtml = `<div class="paragraph-media"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
-                        }
-                    }
-                    break;
+                // داخل دالة renderCurrentParagraph، عند معالجة نوع video
+case 'video':
+    typeClass = 'type-video';
+    typeIcon = 'fa-video';
+    typeName = 'فيديو';
+    if (para.mediaUrl) {
+        const videoId = extractYouTubeId(para.mediaUrl);
+        if (videoId) {
+            mediaHtml = `<div class="paragraph-media"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+        } else {
+            // إذا لم يتم التعرف على الرابط، عرض رسالة خطأ
+            mediaHtml = `<div class="paragraph-media" style="color: red; padding: 1rem; background: #fee; border-radius: 12px;">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            رابط الفيديو غير صالح: ${escapeHtml(para.mediaUrl)}
+                         </div>`;
+        }
+    }
+    break;
                 case 'audio':
                     typeClass = 'type-audio';
                     typeIcon = 'fa-headphones';
