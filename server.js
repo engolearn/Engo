@@ -61,7 +61,11 @@ const userSchema = new mongoose.Schema({
         read: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now }
     }],
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    // في userSchema، أضف هذه الحقول
+termsAccepted: { type: Boolean, default: false },
+termsAcceptedAt: { type: Date, default: null },
+termsVersion: { type: String, default: null }
 });
 const User = mongoose.model('User', userSchema);
 
@@ -476,7 +480,321 @@ function stopAllBotsInRoom(roomId) {
     return count;
 }
 
+// ==================== Terms of Service API & Page ====================
 
+// API لجلب شروط الاستخدام (للواجهة)
+app.get('/api/terms', (req, res) => {
+    res.json({
+        success: true,
+        terms: {
+            version: "2.0",
+            lastUpdated: "2026-04-07",
+            sections: [
+                {
+                    title: "🎂 متطلبات العمر",
+                    content: "يجب أن يكون عمر المستخدم 11 سنة على الأقل لاستخدام منصة EnGo. إذا كان عمرك أقل من 11 عاماً، فيجب استخدام المنصة تحت إشراف ولي الأمر."
+                },
+                {
+                    title: "🔒 الموافقة على سياسة الخصوصية",
+                    content: "باستخدامك للمنصة، فإنك توافق على سياسة الخصوصية الخاصة بنا والتي توضح كيفية جمع واستخدام وحماية بياناتك الشخصية."
+                },
+                {
+                    title: "📚 الالتزام بالتعلم",
+                    content: "يجب أن يكون لدى المستخدم الرغبة الحقيقية في تعلم اللغة الإنجليزية والالتزام بإكمال الدروس والواجبات المطلوبة."
+                },
+                {
+                    title: "👥 السلوك في المنصة",
+                    content: "يجب على جميع المستخدمين احترام الآخرين في غرف الدردشة والمنتديات. يمنع استخدام لغة مسيئة أو التنمر أو التحرش."
+                },
+                {
+                    title: "📖 حقوق الملكية الفكرية",
+                    content: "جميع محتويات المنصة (دروس، فيديوهات، اختبارات) هي ملك لـ EnGo ولا يجوز نسخها أو توزيعها أو بيعها دون إذن خطي."
+                },
+                {
+                    title: "🎓 الشهادات والإنجازات",
+                    content: "يتم منح الشهادات فقط للمستخدمين الذين أكملوا جميع متطلبات الدورة بنجاح. EnGo تحتفظ بالحق في سحب أي شهادة في حالة اكتشاف غش أو انتهاك للشروط."
+                },
+                {
+                    title: "💳 المدفوعات والاشتراكات",
+                    content: "بعض الدورات قد تكون مدفوعة. جميع المدفوعات غير قابلة للاسترداد إلا في حالات استثنائية تحددها إدارة المنصة."
+                },
+                {
+                    title: "⚠️ إنهاء الحساب",
+                    content: "EnGo تحتفظ بالحق في تعليق أو إنهاء حساب أي مستخدم ينتهك شروط الاستخدام دون إنذار مسبق."
+                },
+                {
+                    title: "📝 تعديل الشروط",
+                    content: "قد يتم تحديث شروط الاستخدام من وقت لآخر. سيتم إعلام المستخدمين بالتغييرات الهامة عبر البريد الإلكتروني أو إشعار داخل المنصة."
+                },
+                {
+                    title: "📞 التواصل",
+                    content: "للاستفسارات حول شروط الاستخدام، يمكنك التواصل معنا على: engolearningsupport@gmail.com أو واتساب: 737373627"
+                }
+            ],
+            acceptanceStatement: "باستخدامك لمنصة EnGo، فإنك تقر بأنك قرأت وفهمت ووافقت على جميع الشروط والأحكام المذكورة أعلاه."
+        }
+    });
+});
+
+// صفحة عرض شروط الاستخدام (HTML)
+app.get('/terms', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+            <title>شروط الاستخدام - EnGo</title>
+            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: 'Cairo', sans-serif;
+                    background: #f7fafc;
+                    color: #2d3748;
+                    line-height: 1.6;
+                }
+                .navbar {
+                    background: white;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    padding: 1rem 0;
+                    position: sticky;
+                    top: 0;
+                    z-index: 1000;
+                }
+                .navbar .container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    padding: 0 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .logo {
+                    font-size: 1.5rem;
+                    font-weight: bold;
+                    color: #667eea;
+                }
+                .btn-back {
+                    background: #e2e8f0;
+                    color: #4a5568;
+                    padding: 8px 20px;
+                    border: none;
+                    border-radius: 25px;
+                    cursor: pointer;
+                }
+                .container {
+                    max-width: 900px;
+                    margin: 0 auto;
+                    padding: 2rem 20px;
+                }
+                .terms-card {
+                    background: white;
+                    border-radius: 20px;
+                    padding: 2rem;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                    margin-bottom: 2rem;
+                }
+                h1 {
+                    color: #667eea;
+                    margin-bottom: 1rem;
+                    font-size: 1.8rem;
+                    border-bottom: 2px solid #e2e8f0;
+                    padding-bottom: 0.5rem;
+                }
+                h2 {
+                    color: #764ba2;
+                    margin: 1.5rem 0 0.8rem 0;
+                    font-size: 1.2rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                p {
+                    margin-bottom: 1rem;
+                    color: #4a5568;
+                }
+                ul {
+                    margin: 0.5rem 0 1rem 1.5rem;
+                    padding-right: 1rem;
+                }
+                li {
+                    margin-bottom: 0.5rem;
+                    color: #4a5568;
+                }
+                .acceptance-box {
+                    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+                    border-radius: 15px;
+                    padding: 1rem;
+                    text-align: center;
+                    margin-top: 1.5rem;
+                    border-right: 3px solid #667eea;
+                }
+                .last-updated {
+                    background: #f7fafc;
+                    padding: 0.75rem;
+                    border-radius: 10px;
+                    text-align: center;
+                    color: #718096;
+                    font-size: 0.85rem;
+                    margin-top: 1rem;
+                }
+                .footer {
+                    text-align: center;
+                    padding: 1.5rem;
+                    background: #2d3748;
+                    color: white;
+                    margin-top: 2rem;
+                }
+                @media (max-width: 768px) {
+                    .terms-card { padding: 1.2rem; }
+                    h1 { font-size: 1.4rem; }
+                    h2 { font-size: 1rem; }
+                }
+            </style>
+        </head>
+        <body>
+            <nav class="navbar">
+                <div class="container">
+                    <div class="logo"><i class="fas fa-language"></i> EnGo</div>
+                    <button class="btn-back" onclick="window.location.href='/'">← العودة للرئيسية</button>
+                </div>
+            </nav>
+
+            <div class="container">
+                <div class="terms-card">
+                    <h1>📜 شروط الاستخدام</h1>
+                    <p>مرحباً بك في منصة <strong>EnGo</strong>! باستخدامك للمنصة، فإنك توافق على الالتزام بالشروط والأحكام التالية.</p>
+
+                    <div class="last-updated">
+                        📅 آخر تحديث: 7 أبريل 2026 | الإصدار 2.0
+                    </div>
+
+                    <h2>🎂 <span>1. متطلبات العمر</span></h2>
+                    <p>يجب أن يكون عمر المستخدم <strong>11 سنة على الأقل</strong> لاستخدام منصة EnGo بشكل مستقل. إذا كان عمرك أقل من 11 عاماً، فيجب استخدام المنصة تحت إشراف ولي الأمر الذي يوافق على هذه الشروط نيابة عنك.</p>
+
+                    <h2>🔒 <span>2. الموافقة على سياسة الخصوصية</span></h2>
+                    <p>باستخدامك للمنصة، فإنك توافق على <a href="/privacy-policy">سياسة الخصوصية</a> الخاصة بنا. هذه السياسة توضح كيفية جمع واستخدام وحماية بياناتك الشخصية، بما في ذلك:</p>
+                    <ul>
+                        <li>جمع معلومات الحساب (اسم المستخدم، الاسم الكامل، البريد الإلكتروني).</li>
+                        <li>تتبع تقدمك في التعلم ونتائج الاختبارات.</li>
+                        <li>استخدام ملفات تعريف الارتباط لتحسين تجربتك.</li>
+                    </ul>
+
+                    <h2>📚 <span>3. الالتزام بالتعلم</span></h2>
+                    <p>يجب أن يكون لدى المستخدم <strong>الرغبة الحقيقية في تعلم اللغة الإنجليزية</strong>. نحن نشجعك على:</p>
+                    <ul>
+                        <li>إكمال الدروس والواجبات في الوقت المحدد.</li>
+                        <li>المشاركة الإيجابية في الاختبارات والأنشطة التفاعلية.</li>
+                        <li>الاستفادة القصوى من موارد المنصة التعليمية.</li>
+                    </ul>
+
+                    <h2>👥 <span>4. السلوك في المنصة</span></h2>
+                    <p>يجب على جميع المستخدمين الالتزام بالسلوك الحسن والأخلاقي:</p>
+                    <ul>
+                        <li>احترام الآخرين في غرف الدردشة والمنتديات.</li>
+                        <li>يمنع منعاً باتاً استخدام لغة مسيئة أو عنصرية أو التحرش.</li>
+                        <li>يمنع نشر روابط غير مصرح بها أو محتوى غير لائق.</li>
+                        <li>الإبلاغ عن أي سلوك غير لائق لإدارة المنصة.</li>
+                    </ul>
+
+                    <h2>📖 <span>5. حقوق الملكية الفكرية</span></h2>
+                    <p>جميع محتويات المنصة (دروس، فيديوهات، اختبارات، تصاميم) هي ملك حصري لـ EnGo:</p>
+                    <ul>
+                        <li>لا يجوز نسخ أو توزيع أو بيع أي محتوى دون إذن خطي من الإدارة.</li>
+                        <li>لا يجوز استخدام المحتوى لأغراض تجارية خارج المنصة.</li>
+                        <li>الاقتباس المسموح به مع الإشارة إلى المصدر.</li>
+                    </ul>
+
+                    <h2>🎓 <span>6. الشهادات والإنجازات</span></h2>
+                    <p>نظام الشهادات في EnGo يهدف لتقدير جهود المتعلمين:</p>
+                    <ul>
+                        <li>يتم منح الشهادات فقط للمستخدمين الذين أكملوا جميع متطلبات الدورة بنجاح.</li>
+                        <li>الشهادات تكون قابلة للتحقق عبر رابط فريد (مقاومة للتزوير).</li>
+                        <li>EnGo تحتفظ بالحق في سحب أي شهادة في حالة اكتشاف غش أو انتهاك للشروط.</li>
+                    </ul>
+
+                    <h2>💳 <span>7. المدفوعات والاشتراكات</span></h2>
+                    <p>بعض الدورات قد تكون مدفوعة:</p>
+                    <ul>
+                        <li>جميع المدفوعات غير قابلة للاسترداد إلا في حالات استثنائية تحددها الإدارة.</li>
+                        <li>الأسعار محددة عند كل دورة وقد تتغير مع مرور الوقت.</li>
+                        <li>نوفر وسائل دفع آمنة لحماية معلوماتك المالية.</li>
+                    </ul>
+
+                    <h2>⚠️ <span>8. إنهاء الحساب</span></h2>
+                    <p>EnGo تحتفظ بالحق في اتخاذ الإجراءات التالية:</p>
+                    <ul>
+                        <li>تعليق أو إنهاء حساب أي مستخدم ينتهك شروط الاستخدام دون إنذار مسبق.</li>
+                        <li>حظر الوصول إلى المنصة في حالة الانتهاكات المتكررة.</li>
+                        <li>إخطار المستخدم بسبب الإنهاء كلما أمكن ذلك.</li>
+                    </ul>
+
+                    <h2>📝 <span>9. تعديل الشروط</span></h2>
+                    <p>قد يتم تحديث شروط الاستخدام من وقت لآخر:</p>
+                    <ul>
+                        <li>سيتم إعلام المستخدمين بالتغييرات الهامة عبر البريد الإلكتروني أو إشعار داخل المنصة.</li>
+                        <li>استمرار استخدام المنصة بعد التعديل يعني قبولك للشروط الجديدة.</li>
+                        <li>آخر تاريخ تحديث موضح في أعلى هذه الصفحة.</li>
+                    </ul>
+
+                    <h2>📞 <span>10. التواصل</span></h2>
+                    <p>للاستفسارات حول شروط الاستخدام، يمكنك التواصل معنا عبر:</p>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i> البريد الإلكتروني: engolearningsupport@gmail.com</li>
+                        <li><i class="fab fa-whatsapp"></i> واتساب: 737373627</li>
+                        <li><i class="fas fa-phone"></i> الهاتف: 773041464</li>
+                    </ul>
+
+                    <div class="acceptance-box">
+                        <p>✅ <strong>باستخدامك لمنصة EnGo، فإنك تقر بأنك قرأت وفهمت ووافقت على جميع الشروط والأحكام المذكورة أعلاه.</strong></p>
+                        <p style="margin-top: 8px; font-size: 0.85rem;">يجب أن يكون عمرك 11 سنة على الأقل للموافقة على هذه الشروط بشكل مستقل.</p>
+                    </div>
+
+                    <div class="last-updated">
+                        🎓 استمر في التعلم واستمتع برحلتك مع EnGo!
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>&copy; 2026 EnGo - جميع الحقوق محفوظة</p>
+            </div>
+        </body>
+        </html>
+    `);
+});
+
+// مسار لقبول الشروط (للواجهة)
+app.post('/api/terms/accept', auth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { accepted, ageConfirmed, privacyAccepted, learningCommitment } = req.body;
+        
+        if (!accepted || !ageConfirmed || !privacyAccepted || !learningCommitment) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'يجب الموافقة على جميع الشروط' 
+            });
+        }
+        
+        // تحديث المستخدم بقبول الشروط
+        await User.findByIdAndUpdate(userId, {
+            termsAccepted: true,
+            termsAcceptedAt: new Date(),
+            termsVersion: "2.0"
+        });
+        
+        res.json({ 
+            success: true, 
+            message: 'تم قبول الشروط بنجاح' 
+        });
+        
+    } catch (error) {
+        console.error('Error accepting terms:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
                         
                              // ==================== التحقق من صحة الشهادة ====================
 // صفحة التحقق من الشهادة (تعرض HTML)
