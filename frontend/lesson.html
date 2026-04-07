@@ -50,6 +50,22 @@
             color: #4a5568;
             font-size: 0.85rem;
         }
+        .paragraph-content {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    white-space: pre-wrap;    /* ✅ يحافظ على الأسطر الجديدة */
+    word-wrap: break-word;
+    font-family: 'Cairo', sans-serif;
+}
+
+/* إزالة أي مسافات بادئة */
+.paragraph-content p {
+    margin: 0;
+    padding: 0;
+    text-indent: 0;
+}
         
         /* ========== أنماط الفقرات المتسلسلة (مثل صفحة الأدمن) ========== */
         .paragraphs-container {
@@ -533,7 +549,7 @@ const displayContent = escapeHtml(cleanText(para.content || ''));
             </div>
         </div>
         <div class="paragraph-content">
-            ${escapeHtml(para.content || '')}  <!-- ✅ تأكد من استخدام escapeHtml -->
+            ${formatText(para.content || '')}
         </div>
         ${mediaHtml}
     </div>
