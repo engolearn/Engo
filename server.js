@@ -41,7 +41,6 @@ app.use((req, res, next) => {
 // User Model (محدث لاستخدام username)
 const userSchema = new mongoose.Schema({
     username: { type: String, unique: true, required: true },
-    email: { type: String, default: null },
     password: { type: String, required: true },
     fullName: { type: String, required: true }, // ✅ الاسم الكامل - إلزامي للشهادة
     role: { type: String, default: 'user', enum: ['user', 'admin'] },
@@ -283,7 +282,7 @@ async function addNotification(userId, notifData) {
             global.io.to(socketId).emit('new_notification', notification);
         }
         
-        console.log(`📢 Notification sent to ${user.name}: ${notifData.title}`);
+        console.log(`📢 Notification sent to ${user.username}: ${notifData.title}`);
         return true;
     } catch (error) {
         console.error('Error adding notification:', error);
@@ -704,7 +703,7 @@ app.get('/api/admin/subscriptions', auth, adminAuth, async (req, res) => {
         const requestsWithUser = await Promise.all(sortedRequests.map(async (req) => {
             let user = null;
             if (req.userId) {
-                user = await User.findById(req.userId).select('username fullName email phone');
+                user = await User.findById(req.userId).select('username fullName phone');
             }
             return {
                 ...req,
@@ -1462,11 +1461,12 @@ app.put('/api/admin/bots/:botId', auth, adminAuth, async (req, res) => {
             isActive
         }, { new: true });
         
-        // تحديث المستخدم المرتبط
-        await User.findOneAndUpdate({ email: bot.email }, {
-            name: name,
-            level: level
-        });
+// تحديث المستخدم المرتبط
+await User.findOneAndUpdate({ username: bot.username }, {
+    fullName: name,
+    level: level,
+    avatar: avatar
+});
         
         res.json({ success: true, bot });
     } catch (error) {
@@ -1479,7 +1479,7 @@ app.delete('/api/admin/bots/:botId', auth, adminAuth, async (req, res) => {
     try {
         const bot = await Bot.findById(req.params.botId);
         if (bot) {
-            await User.deleteOne({ email: bot.email });
+            await User.deleteOne({ username: bot.username });
             await Bot.findByIdAndDelete(req.params.botId);
             await BotMessageLog.deleteMany({ botId: req.params.botId });
         }
@@ -1715,7 +1715,7 @@ app.delete('/api/admin/courses/:courseId/remove-user/:userId', auth, adminAuth, 
 // جلب قائمة المستخدمين (للعرض في واجهة الإدارة)
 app.get('/api/admin/users-list', auth, adminAuth, async (req, res) => {
     try {
-        const users = await User.find({ role: 'user' }).select('_id username fullName email');
+        const users = await User.find({ role: 'user' }).select('_id username fullName');
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -2194,7 +2194,7 @@ app.delete('/api/admin/lessons/:lessonId', auth, adminAuth, async (req, res) => 
 // جلب جميع المستخدمين (للوحة الأدمن) - بدون إظهار البريد
 app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
     try {
-        const users = await User.find().select('-password -email'); // ✅ إخفاء البريد
+        const users = await User.find().select('-password');
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -3744,10 +3744,10 @@ socket.on('create_room', async (data, callback) => {
                 conversation: {
                     id: conversation.conversationId,
                     participant: {
-                        id: targetUser._id,
-                        name: targetUser.name,
-                        email: targetUser.email
-                    },
+    id: targetUser._id,
+    name: targetUser.fullName || targetUser.username,
+    username: targetUser.username
+},
                     messages: conversation.messages
                 }
             });
@@ -3851,7 +3851,7 @@ socket.on('create_room', async (data, callback) => {
             const myConversations = [];
             for (const conv of conversations) {
                 const otherUserId = conv.participants.find(p => p.toString() !== socket.user._id.toString());
-                const otherUser = await User.findById(otherUserId).select('name email');
+                const otherUser = await User.findById(otherUserId).select('username fullName');
                 const isOnline = onlineUsers.has(otherUserId);
                 const unreadCount = conv.messages.filter(m => 
                     m.from.toString() !== socket.user._id.toString() && !m.read
@@ -3860,11 +3860,11 @@ socket.on('create_room', async (data, callback) => {
                 myConversations.push({
                     id: conv.conversationId,
                     participant: { 
-                        id: otherUser._id, 
-                        name: otherUser.name, 
-                        email: otherUser.email,
-                        isOnline: isOnline
-                    },
+    id: otherUser._id, 
+    name: otherUser.fullName || otherUser.username, 
+    username: otherUser.username,
+    isOnline: isOnline
+},
                     lastMessage: conv.messages[conv.messages.length - 1],
                     unreadCount: unreadCount,
                     createdAt: conv.createdAt
