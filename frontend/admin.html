@@ -1305,7 +1305,6 @@ let editQuestions = [];
 let editQuestionCounter = 0;
 
 // فتح نافذة تعديل الدرس
-// فتح نافذة تعديل الدرس
 async function editLesson(lessonId) {
     const token = localStorage.getItem('token');
     try {
@@ -1314,15 +1313,28 @@ async function editLesson(lessonId) {
         });
         const lesson = await res.json();
         
+        console.log('📝 Lesson data:', lesson); // للتشخيص
+        
         document.getElementById('editLessonId').value = lesson._id;
         document.getElementById('editLessonNumber').value = lesson.lessonNumber;
         document.getElementById('editLessonTitle').value = lesson.title;
         
-        // ✅ تحميل الفقرات وتحويل <br> إلى \n للعرض
-        editLessonParagraphs = (lesson.content || []).map(para => ({
-            ...para,
-            content: para.content ? para.content.replace(/<br>/g, '\n') : ''
-        }));
+        // ✅ تحميل الفقرات وتحويل <br> إلى \n للعرض في textarea
+        editLessonParagraphs = (lesson.content || []).map(para => {
+            let cleanedContent = para.content || '';
+            // تحويل جميع أنواع <br> إلى \n
+            cleanedContent = cleanedContent.replace(/<br\s*\/?>/gi, '\n');
+            cleanedContent = cleanedContent.replace(/&lt;br&gt;/gi, '\n');
+            cleanedContent = cleanedContent.replace(/&lt;br\/&gt;/gi, '\n');
+            
+            return {
+                ...para,
+                content: cleanedContent
+            };
+        });
+        
+        console.log('📝 Processed paragraphs:', editLessonParagraphs); // للتشخيص
+        
         renderEditParagraphs();
         
         // تحميل الواجب
@@ -1341,6 +1353,7 @@ async function editLesson(lessonId) {
         
         document.getElementById('editLessonModal').style.display = 'flex';
     } catch (error) {
+        console.error('Error loading lesson:', error);
         showAlert('❌ خطأ في تحميل الدرس', 'error');
     }
 }
@@ -1351,7 +1364,7 @@ function closeEditLessonModal() {
     editQuestions = [];
 }
 
-// عرض فقرات الدرس في نافذة التعديل (مع تحويل <br> إلى أسطر جديدة)
+// عرض فقرات الدرس في نافذة التعديل
 function renderEditParagraphs() {
     const container = document.getElementById('editLessonParagraphs');
     if (!editLessonParagraphs.length) {
@@ -1360,10 +1373,8 @@ function renderEditParagraphs() {
     }
     
     container.innerHTML = editLessonParagraphs.map((para, idx) => {
-        // ✅ تحويل <br> إلى \n للعرض في textarea
-        let displayContent = para.content || '';
-        displayContent = displayContent.replace(/<br>/g, '\n');
-        displayContent = displayContent.replace(/&lt;br&gt;/g, '\n');
+        // ✅ لا نستخدم escapeHtml هنا لأننا نريد عرض النص كما هو في textarea
+        const displayContent = para.content || '';
         
         return `
             <div class="paragraph-card" style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px;">
@@ -1373,7 +1384,7 @@ function renderEditParagraphs() {
                 </div>
                 <div class="form-group">
                     <label>المحتوى النصي</label>
-                    <textarea rows="5" class="form-control" onchange="updateEditParagraph(${idx}, 'content', this.value)">${escapeHtml(displayContent)}</textarea>
+                    <textarea rows="6" class="form-control" onchange="updateEditParagraph(${idx}, 'content', this.value)">${displayContent}</textarea>
                 </div>
                 ${para.type !== 'text' ? `
                     <div class="form-group">
@@ -1534,6 +1545,8 @@ async function saveLessonEdit() {
         }
     };
     
+    console.log('📤 Saving lesson data:', lessonData);
+    
     try {
         const res = await fetch(API_URL + '/admin/lessons/' + lessonId, {
             method: 'PUT',
@@ -1553,9 +1566,10 @@ async function saveLessonEdit() {
             showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
         }
     } catch (error) {
+        console.error('Error saving lesson:', error);
         showAlert('❌ خطأ في الاتصال', 'error');
     }
-        }
+}
         // ==================== تعديل الدورة ====================
 
 // فتح نافذة تعديل الدورة
