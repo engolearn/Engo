@@ -479,7 +479,37 @@ function stopAllBotsInRoom(roomId) {
     }
     return count;
 }
+// ==================== Update Lesson Routes ====================
 
+// جلب درس محدد للتعديل
+app.get('/api/admin/lessons/:lessonId', auth, adminAuth, async (req, res) => {
+    try {
+        const lesson = await Lesson.findById(req.params.lessonId);
+        if (!lesson) {
+            return res.status(404).json({ message: 'الدرس غير موجود' });
+        }
+        res.json(lesson);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تحديث درس
+app.put('/api/admin/lessons/:lessonId', auth, adminAuth, async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+        const updateData = req.body;
+        
+        const lesson = await Lesson.findByIdAndUpdate(lessonId, updateData, { new: true });
+        if (!lesson) {
+            return res.status(404).json({ message: 'الدرس غير موجود' });
+        }
+        
+        res.json({ message: '✅ تم تحديث الدرس بنجاح', lesson });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 // ==================== Subscription System ====================
 
 // جلب الدورات المدفوعة
