@@ -879,6 +879,25 @@
                 </a>
             </div>
         </div>
+        <!-- قسم مميزات EnGo -->
+<div class="features-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 24px; padding: 2rem; margin: 2rem 0; text-align: center; box-shadow: 0 10px 30px rgba(102,126,234,0.3);">
+    <h2 style="color: white; margin-bottom: 1rem; font-size: 1.8rem;">
+        <i class="fas fa-gem"></i> مميزات EnGo
+    </h2>
+    <div id="featureSlider" style="min-height: 100px; display: flex; align-items: center; justify-content: center;">
+        <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 20px; padding: 1.5rem; max-width: 90%; margin: 0 auto;">
+            <i class="fas fa-quote-right" style="color: rgba(255,255,255,0.5); font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+            <p id="featureText" style="color: white; font-size: 1.1rem; line-height: 1.6; margin: 0;">
+                اول موقع وتطبيق يمني اونلاين لتعلم اللغه الانجليزيه
+            </p>
+            <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
+                <span class="dot" style="width: 8px; height: 8px; background: rgba(255,255,255,0.5); border-radius: 50%; display: inline-block;"></span>
+                <span class="dot" style="width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; display: inline-block;"></span>
+                <span class="dot" style="width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; display: inline-block;"></span>
+            </div>
+        </div>
+    </div>
+</div>
         
                 
                 <!-- إحصائيات المستخدم -->
@@ -1831,6 +1850,60 @@ async function markAllNotificationsRead() {
                 }
             };
         });
+        // ==================== مميزات EnGo المتغيرة ====================
+const featuresList = [
+    "🏆 اول موقع وتطبيق يمني اونلاين لتعلم اللغة الانجليزية",
+    "📚 امكانية الرجوع للدروس ومراجعتها في اي وقت",
+    "⏰ تعلم بالوقت الذي يناسبك بدون دوام ثابت",
+    "💰 رسوم رمزية مقارنة بالمعاهد الاخرى",
+    "📖 يتم شرح منهج American File الذي يتم شرحه في المعاهد",
+    "✅ اذا اجتزت اي دوره هنا يمكنك اختبار الدوره في اي معهد للتحقق من مصداقية المنهج",
+    "🎬 اسلوب شرح ممتع مع مقاطع فيديوهات",
+    "📝 اختبارات نصفيه ونهائيه للدورات",
+    "📋 واجبات في نهاية الدروس التي تتطلب ذلك",
+    "💬 محادثات بين كل طلاب Engo لممارسة اللغة الإنجليزية",
+    "🛜 خدمة عملاء على مدار الساعه للرد عليكم",
+    "💡 نستمع الى ارائكم في تطوير Engo",
+    "🚀 اصعد الى القمه في الانجليزية مع Engo",
+    "🔴 قريبا سنقوم بعمل بث مباشر اسبوعي للرد عليكم وللرد على اقتراحاتكم",
+    "🤖 يتم تطوير محادثه مباشرة مع Engo AI للرد عليكم خلال ثوان",
+    "🔄 تطوير واضافة الدورات يتم باستمرار",
+    "✨ والكثير من المميزات القادمه"
+];
+
+let currentFeatureIndex = 0;
+const featureTextElement = document.getElementById('featureText');
+const dots = document.querySelectorAll('.dot');
+
+function updateFeatureText() {
+    if (featureTextElement) {
+        // تأثير تلاشي بسيط
+        featureTextElement.style.opacity = '0';
+        setTimeout(() => {
+            featureTextElement.innerHTML = featuresList[currentFeatureIndex];
+            featureTextElement.style.opacity = '1';
+            
+            // تحديث النقاط
+            dots.forEach((dot, index) => {
+                if (index === currentFeatureIndex % dots.length) {
+                    dot.style.background = 'rgba(255,255,255,1)';
+                    dot.style.transform = 'scale(1.2)';
+                } else {
+                    dot.style.background = 'rgba(255,255,255,0.3)';
+                    dot.style.transform = 'scale(1)';
+                }
+            });
+            
+            currentFeatureIndex = (currentFeatureIndex + 1) % featuresList.length;
+        }, 200);
+    }
+}
+
+// تغيير النص كل 3 ثواني
+if (featureTextElement) {
+    featureTextElement.style.transition = 'opacity 0.2s ease';
+    setInterval(updateFeatureText, 3000);
+}
         
     </script>
     <script>
