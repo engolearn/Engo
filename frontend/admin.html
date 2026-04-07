@@ -344,6 +344,7 @@
     align-items: center;
     gap: 0.5rem;
 }
+ 
         
         /* ========== أنماط الإشعارات ========== */
 .notification-card {
@@ -3292,11 +3293,23 @@ function renderQuestions() {
           function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/'; }
         function escapeHtml(str) {
     if (!str) return '';
-    return str
-        .replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]))
-        .replace(/\n/g, '<br>')  // ✅ تحويل الأسطر الجديدة إلى <br>
-        .replace(/\s/g, ' ')      // ✅ الحفاظ على المسافات
-        .replace(/  /g, ' &nbsp;'); // ✅ تحويل مسافتين إلى &nbsp;
+    // أولاً: ترميز الأحرف الخاصة (باستثناء <br>)
+    let encoded = str.replace(/[&<>]/g, function(m) {
+        if (m === '<' && (str.includes('<br>') || str.includes('<br'))) return '<';
+        if (m === '>' && (str.includes('<br>') || str.includes('br>'))) return '>';
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
+    });
+    // تحويل الأسطر الجديدة إلى <br>
+    encoded = encoded.replace(/\n/g, '<br>');
+    return encoded;
+        }
+        function formatText(text) {
+    if (!text) return '';
+    // ترميز الأحرف الخاصة
+    let encoded = text.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    // تحويل الأسطر الجديدة إلى <br>
+    encoded = encoded.replace(/\n/g, '<br>');
+    return encoded;
         }
         // ==================== Assignment Questions Functions ====================
 
