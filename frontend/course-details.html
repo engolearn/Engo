@@ -225,7 +225,7 @@ async function getCertificate() {
         }
     }
 }
-        // تحميل تفاصيل الدورة
+// تحميل تفاصيل الدورة
 async function loadCourseDetails() {
     const courseId = getCourseId();
     if (!courseId) {
@@ -239,16 +239,28 @@ async function loadCourseDetails() {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         
-        // ✅ معالجة حالة عدم السماح
+        // ✅ معالجة حالة عدم الاشتراك (403)
         if (res.status === 403) {
             const error = await res.json();
-            document.getElementById('coursesList').innerHTML = `
-                <div class="empty-message" style="background: #fed7d7; color: #742a2a; padding: 2rem; border-radius: 20px;">
-                    <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                    <h3>⛔ وصول مقيد</h3>
-                    <p>${error.message || 'غير مصرح لك بالوصول إلى هذه الدورة'}</p>
-                    <button class="btn-primary" onclick="window.location.href='/subscribe.html'" style="margin-top: 1rem;">
-                        <i class="fas fa-crown"></i> اشتراك مميز
+            
+            // إخفاء قائمة الدروس
+            document.getElementById('lessonsList').innerHTML = '';
+            document.getElementById('lessonsContainer').style.display = 'none';
+            
+            // عرض رسالة الدورة المدفوعة مع زر الاشتراك
+            document.getElementById('courseHeader').innerHTML = `
+                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; padding: 2rem; border-radius: 20px; text-align: center;">
+                    <i class="fas fa-crown" style="font-size: 4rem; margin-bottom: 1rem; color: #f59e0b;"></i>
+                    <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">${escapeHtml(error.courseTitle || 'دورة مدفوعة')}</h1>
+                    <p style="margin-bottom: 1rem;">هذه الدورة تتطلب اشتراكاً مدفوعاً للوصول إلى محتواها.</p>
+                    <div style="background: white; border-radius: 15px; padding: 1rem; margin: 1rem auto; max-width: 250px;">
+                        <span style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">${error.coursePrice || 0} ريال</span>
+                    </div>
+                    <button class="btn-subscribe" onclick="goToSubscribe('${error.courseId}')" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 12px 30px; border-radius: 40px; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; transition: transform 0.3s;">
+                        <i class="fas fa-shopping-cart"></i> اشترك الآن
+                    </button>
+                    <button class="btn-outline" onclick="window.location.href='/'" style="background: transparent; border: 2px solid #f59e0b; color: #f59e0b; padding: 10px 25px; border-radius: 40px; margin-right: 10px; cursor: pointer;">
+                        <i class="fas fa-home"></i> العودة للرئيسية
                     </button>
                 </div>
             `;
@@ -259,10 +271,8 @@ async function loadCourseDetails() {
         
         courseData = await res.json();
         
-        // تحميل تقدم المستخدم
-        await loadUserProgress(courseData._id);
-        
-        // عرض معلومات الدورة
+        // عرض معلومات الدورة بشكل طبيعي
+        document.getElementById('lessonsContainer').style.display = 'block';
         document.getElementById('courseTitle').innerText = courseData.title;
         document.getElementById('courseDescription').innerText = courseData.description;
         document.getElementById('courseMeta').innerHTML = `
@@ -275,10 +285,18 @@ async function loadCourseDetails() {
         // عرض قائمة الدروس
         renderLessonsList();
         
+        // التحقق من أهلية الشهادة
+        await checkCertificateEligibility();
+        
     } catch (error) {
         console.error('Error loading course:', error);
         document.getElementById('courseHeader').innerHTML = '<h1>خطأ في تحميل الدورة</h1>';
     }
+}
+
+// دالة الانتقال إلى صفحة الاشتراك مع تحديد الدورة
+function goToSubscribe(courseId) {
+    window.location.href = `/subscribe.html?course=${courseId}`;
 }
 
         // التحقق مما إذا كان الدرس مكتملاً
