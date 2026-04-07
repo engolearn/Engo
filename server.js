@@ -2989,6 +2989,32 @@ app.delete('/api/admin/quizzes/:quizId', auth, adminAuth, async (req, res) => {
     }
 });
 
+// دعوة مستخدمين عبر اسم المستخدم
+app.post('/api/chat/invite-by-username', auth, async (req, res) => {
+    try {
+        const { roomId, roomName, usernames, message } = req.body;
+        const inviterName = req.user.username;
+        
+        const users = await User.find({ username: { $in: usernames } });
+        
+        let sentCount = 0;
+        for (const user of users) {
+            await addNotification(user._id, {
+                title: '📢 دعوة إلى مجموعة',
+                message: `${inviterName} دعاك للانضمام إلى مجموعة "${roomName}"\n${message}`,
+                type: 'room_invite',
+                link: `/chat?room=${roomId}`
+            });
+            sentCount++;
+        }
+        
+        res.json({ success: true, sentCount: sentCount });
+    } catch (error) {
+        console.error('Error sending invites:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // ==================== Lesson Routes ====================
 app.get('/api/lessons/:lessonId', auth, async (req, res) => {
     try {
@@ -3540,60 +3566,59 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('create_room', async (data, callback) => {
-        try {
-            const roomId = Date.now().toString();
-            const newRoom = new Room({
-                roomId: roomId,
-                name: data.name,
-                createdBy: socket.user._id,
-                creatorName: socket.user.username,
-                members: [socket.user._id],
-                messages: [],
-                isPrivate: data.private || false,
-                allowedUsers: data.allowedUsers || [],
-                createdAt: new Date(),
-                lastActivity: new Date()
+socket.on('create_room', async (data, callback) => {
+    try {
+        const roomId = Date.now().toString();
+        const invitedUsernames = data.invitedUsernames || [];
+        
+        // جلب معرفات المستخدمين المدعوين
+        const invitedUsers = await User.find({ 
+            username: { $in: invitedUsernames } 
+        });
+        const invitedUserIds = invitedUsers.map(u => u._id);
+        
+        const newRoom = new Room({
+            roomId: roomId,
+            name: data.name,
+            createdBy: socket.user._id,
+            creatorName: socket.user.username,
+            members: [socket.user._id, ...invitedUserIds],
+            messages: [],
+            isPrivate: data.private || false,
+            allowedUsers: invitedUserIds,
+            createdAt: new Date(),
+            lastActivity: new Date()
+        });
+        
+        await newRoom.save();
+        socket.join(roomId);
+        
+        // إرسال إشعارات للمستخدمين المدعوين
+        for (const user of invitedUsers) {
+            await addNotification(user._id, {
+                title: '📢 دعوة إلى مجموعة',
+                message: `${socket.user.username} دعاك للانضمام إلى مجموعة "${data.name}"`,
+                type: 'room_invite',
+                link: `/chat?room=${roomId}`
             });
             
-            await newRoom.save();
-            socket.join(roomId);
-            
-            const roomData = {
-                id: newRoom.roomId,
-                name: newRoom.name,
-                members: newRoom.members,
-                private: newRoom.isPrivate,
-                messages: []
-            };
-            
-            if (callback && typeof callback === 'function') {
-                callback({ success: true, room: roomData });
-            }
-            
-            if (data.allowedUsers && data.allowedUsers.length) {
-                data.allowedUsers.forEach(async (userId) => {
-                    const targetSocket = onlineUsers.get(userId);
-                    if (targetSocket) {
-                        io.to(targetSocket).emit('room_invite', {
-                            roomId,
-                            roomName: data.name,
-                            invitedBy: socket.user.name
-                        });
-                    }
-                    await addNotification(userId, {
-                        title: '📢 دعوة لغرفة',
-                        message: `${socket.user.name} دعاك للانضمام إلى غرفة "${data.name}"`,
-                        type: 'room_invite',
-                        link: `/chat?room=${roomId}`
-                    });
+            const targetSocket = onlineUsers.get(user._id.toString());
+            if (targetSocket) {
+                io.to(targetSocket).emit('room_invite', {
+                    roomId: roomId,
+                    roomName: data.name,
+                    invitedBy: socket.user.username
                 });
             }
-        } catch (error) {
-            console.error('Error creating room:', error);
-            if (callback) callback({ success: false, error: error.message });
         }
-    });
+        
+        callback({ success: true, room: { id: roomId, name: data.name } });
+        
+    } catch (error) {
+        console.error('Error creating room:', error);
+        callback({ success: false, error: error.message });
+    }
+});
 
     socket.on('join_room', async (roomId, callback) => {
         try {
