@@ -1117,8 +1117,16 @@ document.getElementById('isPrivate').onchange = function() {
         }
         
         // ==================== Rooms ====================
-        function loadRooms() { if(socket?.connected) socket.emit('get_rooms'); }
-        
+        function loadRooms() { 
+    if(socket?.connected) {
+        socket.emit('get_rooms', (rooms) => {
+            if(rooms) {
+                roomsList = rooms;
+                renderRoomsList();
+            }
+        });
+    }
+        }
         function renderRoomsList() {
             const container = document.getElementById('roomsList');
             if(!roomsList?.length) {
@@ -1159,32 +1167,21 @@ document.getElementById('isPrivate').onchange = function() {
             });
         }
         
-        function createRoom() {
-            const name = document.getElementById('roomName').value.trim();
-            if(!name) return showAlert('❌ أدخل اسم المجموعة','error');
-            const isPrivate = document.getElementById('isPrivate').checked;
-            const allowedUsers = isPrivate ? document.getElementById('inviteEmails').value.split(',').map(e=>e.trim()).filter(e=>e) : [];
-            
-            socket.emit('create_room', { name, private: isPrivate, allowedUsers }, (res) => {
-                if(res?.success) {
-                    closeCreateRoomModal();
-                    showAlert(`✅ تم إنشاء "${name}"`,'success');
-                    loadRooms();
-                    setTimeout(() => joinRoom(res.room.id, res.room.name), 500);
-                }
-            });
-        }
+        
         
         // ==================== Private Chats ====================
         function loadPrivateChats() { 
-            if(socket?.connected) {
-                socket.emit('get_my_conversations', (response) => {
-                    if(response?.success) {
-                        privateChats = response.conversations;
-                        renderPrivateList();
-                    }
-                });
+    if(socket?.connected) {
+        socket.emit('get_my_conversations', (response) => {
+            if(response?.success) {
+                privateChats = response.conversations;
+                renderPrivateList();
+            } else if(response?.conversations) {
+                privateChats = response.conversations;
+                renderPrivateList();
             }
+        });
+    }
         }
         
         function renderPrivateList() {
