@@ -1700,7 +1700,6 @@ async function loadSubscriptions() {
     }
 }
 
-// عرض بطاقة طلب الاشتراك
 function renderSubscriptionCard(request, status) {
     const statusColors = {
         pending: { bg: '#fef3c7', text: '#92400e', icon: 'fa-clock' },
@@ -1728,6 +1727,7 @@ function renderSubscriptionCard(request, status) {
                     <p><strong>📅 تاريخ الطلب:</strong> ${new Date(request.requestedAt).toLocaleString('ar')}</p>
                     ${request.expiresAt ? `<p><strong>⏱️ ينتهي في:</strong> ${new Date(request.expiresAt).toLocaleString('ar')}</p>` : ''}
                     ${request.completedAt ? `<p><strong>✅ تم التفعيل في:</strong> ${new Date(request.completedAt).toLocaleString('ar')}</p>` : ''}
+                    ${status === 'completed' ? `<p><strong>👥 تمت إضافة المستخدم إلى قائمة المسموح لهم بالدورة</strong> ✅</p>` : ''}
                     ${request.rejectedAt ? `<p><strong>❌ تم الرفض في:</strong> ${new Date(request.rejectedAt).toLocaleString('ar')}</p>` : ''}
                     ${request.rejectionReason ? `<p><strong>📝 سبب الرفض:</strong> ${escapeHtml(request.rejectionReason)}</p>` : ''}
                 </div>
@@ -1764,8 +1764,15 @@ async function approveSubscription(requestId, userId, courseId) {
         const data = await res.json();
         
         if (res.ok) {
-            showAlert('✅ تم تفعيل الدورة للمستخدم بنجاح', 'success');
+            showAlert('✅ تم تفعيل الدورة للمستخدم وإضافته إلى قائمة المسموح لهم', 'success');
+            
+            // ✅ تحديث قائمة الطلبات وقائمة المستخدمين المسموح لهم
             loadSubscriptions();
+            
+            // إذا كانت نافذة الصلاحيات مفتوحة للدورة نفسها، قم بتحديثها
+            if (currentCourseForPermissions === courseId) {
+                await loadAllowedUsers(courseId);
+            }
         } else {
             showAlert('❌ ' + (data.message || 'حدث خطأ'), 'error');
         }
@@ -2401,6 +2408,7 @@ async function loadAllowedUsers(courseId) {
                 <div>
                     <strong>${escapeHtml(user.username)}</strong><br>
                     <small style="color: #718096;">${escapeHtml(user.fullName || user.email)}</small>
+                    ${user.purchasedCourses?.includes(courseId) ? '<span style="color: #48bb78; font-size: 0.7rem;"> (مشترك عبر الدفع)</span>' : ''}
                 </div>
                 <button class="btn-danger btn-sm" onclick="removeUserPermission('${courseId}', '${user._id}')">
                     <i class="fas fa-trash"></i> إزالة
