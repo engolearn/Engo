@@ -83,7 +83,24 @@
                 text-align: center;
             }
         }
-        
+        /* تأكد من ظهور القائمة عند الضغط */
+.notifications-dropdown.active .notifications-dropdown-content {
+    display: block !important;
+}
+
+/* للهواتف */
+@media (max-width: 768px) {
+    .notifications-dropdown.active .notifications-dropdown-content {
+        display: block !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+    }
+}
         /* ========== تحسينات اللمس للأجهزة المحمولة ========== */
         @media (max-width: 768px) {
             button, 
@@ -1655,14 +1672,18 @@ function formatNotificationTime(dateString) {
 
 // دالة فتح الإشعارات (تظهر فوراً)
 function toggleNotifications() {
+    console.log('🔔 Toggle notifications called'); // للتشخيص
     const dropdown = document.querySelector('.notifications-dropdown');
-    if (!dropdown) return;
+    if (!dropdown) {
+        console.log('❌ Dropdown not found');
+        return;
+    }
     
     dropdown.classList.toggle('active');
+    console.log('Active class:', dropdown.classList.contains('active'));
     
     if (dropdown.classList.contains('active')) {
-        // تحميل الإشعارات فوراً عند الفتح
-        loadNotifications(true); // force refresh
+        loadNotifications(true);
     }
 }
 
