@@ -609,6 +609,118 @@ app.post('/api/admin/subscription/confirm', auth, adminAuth, async (req, res) =>
         res.status(500).json({ message: error.message });
     }
 });
+// ==================== Admin Subscription Management ====================
+
+// جلب جميع طلبات الاشتراك (للأدمن)
+app.get('/api/admin/subscriptions', auth, adminAuth, async (req, res) => {
+    try {
+        const requests = global.subscriptionRequests || [];
+        
+        // ترتيب الطلبات من الأحدث إلى الأقدم
+        const sortedRequests = requests.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+        
+        // إضافة معلومات المستخدم لكل طلب
+        const requestsWithUser = await Promise.all(sortedRequests.map(async (req) => {
+            let user = null;
+            if (req.userId) {
+                user = await User.findById(req.userId).select('username fullName email phone');
+            }
+            return {
+                ...req,
+                user: user || { username: req.userName, fullName: req.userName }
+            };
+        }));
+        
+        res.json(requestsWithUser);
+    } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// الموافقة على طلب اشتراك
+app.post('/api/admin/subscription/approve', auth, adminAuth, async (req, res) => {
+    try {
+        const { requestId } = req.body;
+        
+        const request = global.subscriptionRequests?.find(r => r.id === requestId);
+        if (!request) {
+            return res.status(404).json({ message: 'الطلب غير موجود' });
+        }
+        
+        if (request.status === 'completed') {
+            return res.status(400).json({ message: 'تمت الموافقة على هذا الطلب مسبقاً' });
+        }
+        
+        // تفعيل الدورة للمستخدم
+        await User.findByIdAndUpdate(request.userId, {
+            $addToSet: { purchasedCourses: request.courseId }
+        });
+        
+        // تحديث حالة الطلب
+        request.status = 'completed';
+        request.completedAt = new Date();
+        request.approvedBy = req.user.username;
+        
+        // إرسال إشعار للمستخدم
+        await addNotification(request.userId, {
+            title: '✅ تم تفعيل اشتراكك',
+            message: `تم تفعيل اشتراكك في دورة "${request.courseTitle}" بنجاح. يمكنك الآن الوصول إلى جميع دروس الدورة.`,
+            type: 'success',
+            link: `/course-details.html?id=${request.courseId}`
+        });
+        
+        res.json({ 
+            success: true, 
+            message: 'تم تفعيل الدورة للمستخدم بنجاح',
+            request: request
+        });
+        
+    } catch (error) {
+        console.error('Error approving subscription:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// رفض طلب اشتراك
+app.post('/api/admin/subscription/reject', auth, adminAuth, async (req, res) => {
+    try {
+        const { requestId, reason } = req.body;
+        
+        const request = global.subscriptionRequests?.find(r => r.id === requestId);
+        if (!request) {
+            return res.status(404).json({ message: 'الطلب غير موجود' });
+        }
+        
+        if (request.status === 'rejected') {
+            return res.status(400).json({ message: 'تم رفض هذا الطلب مسبقاً' });
+        }
+        
+        // تحديث حالة الطلب
+        request.status = 'rejected';
+        request.rejectedAt = new Date();
+        request.rejectedBy = req.user.username;
+        request.rejectionReason = reason || 'لم يتم تحديد سبب';
+        
+        // إرسال إشعار للمستخدم بالرفض
+        await addNotification(request.userId, {
+            title: '❌ تم رفض طلب الاشتراك',
+            message: `عذراً، تم رفض طلب اشتراكك في دورة "${request.courseTitle}". السبب: ${reason || 'يرجى التواصل مع الدعم'}`,
+            type: 'warning',
+            link: '/subscribe.html'
+        });
+        
+        res.json({ 
+            success: true, 
+            message: 'تم رفض الطلب وإشعار المستخدم',
+            request: request
+        });
+        
+    } catch (error) {
+        console.error('Error rejecting subscription:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
 
 // ==================== Terms of Service API & Page ====================
 
