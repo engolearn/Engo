@@ -214,33 +214,52 @@
             setTimeout(() => alertDiv.remove(), 3000);
         }
 
-        async function loadCourses() {
-            try {
-                const res = await fetch(API_URL + '/premium-courses');
-                const courses = await res.json();
-                const grid = document.getElementById('coursesGrid');
-                
-                if (!courses.length) {
-                    grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات مدفوعة حالياً</div>';
-                    return;
-                }
-                
-                grid.innerHTML = courses.map(course => `
-                    <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${course.price})">
-                        <div class="course-image"><i class="fas fa-crown"></i></div>
-                        <div class="course-info">
-                            <div class="course-title">${escapeHtml(course.title)}</div>
-                            <div class="course-price">${course.price} ريال</div>
-                            <div class="course-desc" style="font-size:0.8rem; color:#718096;">${escapeHtml(course.description.substring(0, 80))}...</div>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading courses:', error);
-                document.getElementById('coursesGrid').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+        // الحصول على معرف الدورة من الرابط
+function getSelectedCourseFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('course');
+}
+
+// في دالة loadCourses، قم بتحديد الدورة تلقائياً إذا كان هناك معرف
+async function loadCourses() {
+    try {
+        const res = await fetch(API_URL + '/premium-courses');
+        const courses = await res.json();
+        const grid = document.getElementById('coursesGrid');
+        
+        const selectedCourseId = getSelectedCourseFromUrl();
+        
+        if (!courses.length) {
+            grid.innerHTML = '<div class="empty-message">📚 لا توجد دورات مدفوعة حالياً</div>';
+            return;
+        }
+        
+        grid.innerHTML = courses.map(course => `
+            <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${course.price})" 
+                 ${selectedCourseId === course._id ? 'id="selectedCourseCard"' : ''}>
+                <div class="course-image"><i class="fas fa-crown"></i></div>
+                <div class="course-info">
+                    <div class="course-title">${escapeHtml(course.title)}</div>
+                    <div class="course-price">${course.price} ريال</div>
+                    <div class="course-desc" style="font-size:0.8rem; color:#718096;">${escapeHtml(course.description.substring(0, 80))}...</div>
+                </div>
+            </div>
+        `).join('');
+        
+        // إذا كان هناك دورة محددة في الرابط، قم بتحديدها تلقائياً
+        if (selectedCourseId) {
+            const selectedCourse = courses.find(c => c._id === selectedCourseId);
+            if (selectedCourse) {
+                selectCourse(selectedCourse._id, selectedCourse.title, selectedCourse.price);
+                document.getElementById('selectedCourseCard')?.scrollIntoView({ behavior: 'smooth' });
             }
         }
-
+        
+    } catch (error) {
+        console.error('Error loading courses:', error);
+        document.getElementById('coursesGrid').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+    }
+}
         function selectCourse(id, title, price) {
             selectedCourse = { id, title, price };
             document.getElementById('selectedCourseTitle').innerText = title;
