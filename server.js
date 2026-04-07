@@ -1721,30 +1721,48 @@ app.get('/api/courses', async (req, res) => {
 
 
 
+// جلب تفاصيل الدورة مع التحقق من الاشتراك
 app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId).populate('lessons');
-        if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
         
-        // ✅ التحقق من صلاحية المستخدم
-        const isAllowed = course.isActive === true; // الدورة مفعلة للجميع
-        const isSpecificAllowed = course.allowedUsers?.includes(req.user._id); // مستخدم محدد مسموح له
+        const userId = req.user._id;
         
-        if (!isAllowed && !isSpecificAllowed) {
+        // ✅ التحقق من أن المستخدم مشترك في الدورة
+        const isSubscribed = course.allowedUsers?.some(id => id.toString() === userId.toString()) ||
+                             req.user.purchasedCourses?.includes(course._id.toString());
+        
+        // ✅ إذا كانت الدورة مدفوعة والمستخدم غير مشترك
+        if (course.isPremium && !isSubscribed) {
             return res.status(403).json({ 
-                message: 'غير مصرح لك بالوصول إلى هذه الدورة. يرجى الاشتراك أولاً.',
-                code: 'NOT_ALLOWED'
+                message: 'هذه الدورة مدفوعة. يرجى الاشتراك أولاً للوصول إلى محتوى الدورة.',
+                code: 'NOT_SUBSCRIBED',
+                courseId: course._id,
+                courseTitle: course.title,
+                coursePrice: course.price,
+                isPremium: true
             });
         }
         
+        // ✅ إذا كانت الدورة مجانية أو المستخدم مشترك
         const isPurchased = req.user.purchasedCourses?.includes(course._id.toString());
         const lessonsWithStatus = course.lessons.map((lesson, index) => ({
             ...lesson.toObject(),
             isLocked: !isPurchased && index >= course.freeLessons
         }));
         
-        res.json({ ...course.toObject(), lessons: lessonsWithStatus, isPurchased });
+        res.json({ 
+            ...course.toObject(), 
+            lessons: lessonsWithStatus, 
+            isPurchased,
+            isSubscribed
+        });
+        
     } catch (error) {
+        console.error('Error fetching course:', error);
         res.status(500).json({ message: error.message });
     }
 });
