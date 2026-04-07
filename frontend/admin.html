@@ -1305,6 +1305,7 @@ let editQuestions = [];
 let editQuestionCounter = 0;
 
 // فتح نافذة تعديل الدرس
+// فتح نافذة تعديل الدرس
 async function editLesson(lessonId) {
     const token = localStorage.getItem('token');
     try {
@@ -1317,8 +1318,11 @@ async function editLesson(lessonId) {
         document.getElementById('editLessonNumber').value = lesson.lessonNumber;
         document.getElementById('editLessonTitle').value = lesson.title;
         
-        // تحميل الفقرات
-        editLessonParagraphs = lesson.content || [];
+        // ✅ تحميل الفقرات وتحويل <br> إلى \n للعرض
+        editLessonParagraphs = (lesson.content || []).map(para => ({
+            ...para,
+            content: para.content ? para.content.replace(/<br>/g, '\n') : ''
+        }));
         renderEditParagraphs();
         
         // تحميل الواجب
@@ -1347,7 +1351,7 @@ function closeEditLessonModal() {
     editQuestions = [];
 }
 
-// عرض فقرات الدرس في نافذة التعديل
+// عرض فقرات الدرس في نافذة التعديل (مع تحويل <br> إلى أسطر جديدة)
 function renderEditParagraphs() {
     const container = document.getElementById('editLessonParagraphs');
     if (!editLessonParagraphs.length) {
@@ -1355,25 +1359,32 @@ function renderEditParagraphs() {
         return;
     }
     
-    container.innerHTML = editLessonParagraphs.map((para, idx) => `
-        <div class="paragraph-card" style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                <strong>الفقرة ${idx + 1} - نوع: ${para.type === 'text' ? 'نص' : para.type === 'video' ? 'فيديو' : para.type === 'audio' ? 'صوت' : 'صورة'}</strong>
-                <button class="btn-danger btn-sm" onclick="removeEditParagraph(${idx})">✖ حذف</button>
-            </div>
-            <div class="form-group">
-                <label>المحتوى النصي</label>
-                <textarea rows="2" class="form-control" onchange="updateEditParagraph(${idx}, 'content', this.value)">${escapeHtml(para.content || '')}</textarea>
-            </div>
-            ${para.type !== 'text' ? `
-                <div class="form-group">
-                    <label>${para.type === 'video' ? 'رابط الفيديو' : para.type === 'audio' ? 'رابط الصوت' : 'رابط الصورة'}</label>
-                    <input type="text" class="form-control" value="${escapeHtml(para.mediaUrl || '')}" onchange="updateEditParagraph(${idx}, 'mediaUrl', this.value)">
+    container.innerHTML = editLessonParagraphs.map((para, idx) => {
+        // ✅ تحويل <br> إلى \n للعرض في textarea
+        let displayContent = para.content || '';
+        displayContent = displayContent.replace(/<br>/g, '\n');
+        displayContent = displayContent.replace(/&lt;br&gt;/g, '\n');
+        
+        return `
+            <div class="paragraph-card" style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <strong>الفقرة ${idx + 1} - نوع: ${para.type === 'text' ? 'نص' : para.type === 'video' ? 'فيديو' : para.type === 'audio' ? 'صوت' : 'صورة'}</strong>
+                    <button class="btn-danger btn-sm" onclick="removeEditParagraph(${idx})">✖ حذف</button>
                 </div>
-            ` : ''}
-        </div>
-    `).join('');
-}
+                <div class="form-group">
+                    <label>المحتوى النصي</label>
+                    <textarea rows="5" class="form-control" onchange="updateEditParagraph(${idx}, 'content', this.value)">${escapeHtml(displayContent)}</textarea>
+                </div>
+                ${para.type !== 'text' ? `
+                    <div class="form-group">
+                        <label>${para.type === 'video' ? 'رابط الفيديو' : para.type === 'audio' ? 'رابط الصوت' : 'رابط الصورة'}</label>
+                        <input type="text" class="form-control" value="${escapeHtml(para.mediaUrl || '')}" onchange="updateEditParagraph(${idx}, 'mediaUrl', this.value)">
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+        }
 
 function updateEditParagraph(index, field, value) {
     if (editLessonParagraphs[index]) {
@@ -1505,9 +1516,15 @@ async function saveLessonEdit() {
     const token = localStorage.getItem('token');
     const lessonId = document.getElementById('editLessonId').value;
     
+    // ✅ تحويل المحتوى: تحويل الأسطر الجديدة إلى <br> للحفظ
+    const processedParagraphs = editLessonParagraphs.map(para => ({
+        ...para,
+        content: para.content ? para.content.replace(/\n/g, '<br>') : ''
+    }));
+    
     const lessonData = {
         title: document.getElementById('editLessonTitle').value,
-        content: editLessonParagraphs,
+        content: processedParagraphs,
         lessonNumber: parseInt(document.getElementById('editLessonNumber').value),
         assignment: {
             title: document.getElementById('editAssignmentTitle').value,
@@ -1538,7 +1555,7 @@ async function saveLessonEdit() {
     } catch (error) {
         showAlert('❌ خطأ في الاتصال', 'error');
     }
-}
+        }
         // ==================== تعديل الدورة ====================
 
 // فتح نافذة تعديل الدورة
