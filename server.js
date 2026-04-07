@@ -1704,16 +1704,20 @@ app.get('/api/courses', async (req, res) => {
 app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId).populate('lessons');
-        if (!course) return res.status(404).json({ message: 'Course not found' });
+        if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
         
         // ✅ التحقق من صلاحية المستخدم
-        const isAllowed = course.allowedUsers.includes(req.user._id) || course.isActive;
+        const isAllowed = course.isActive === true; // الدورة مفعلة للجميع
+        const isSpecificAllowed = course.allowedUsers?.includes(req.user._id); // مستخدم محدد مسموح له
         
-        if (!isAllowed) {
-            return res.status(403).json({ message: 'غير مصرح لك بالوصول إلى هذه الدورة' });
+        if (!isAllowed && !isSpecificAllowed) {
+            return res.status(403).json({ 
+                message: 'غير مصرح لك بالوصول إلى هذه الدورة. يرجى الاشتراك أولاً.',
+                code: 'NOT_ALLOWED'
+            });
         }
         
-        const isPurchased = req.user.purchasedCourses.includes(course._id.toString());
+        const isPurchased = req.user.purchasedCourses?.includes(course._id.toString());
         const lessonsWithStatus = course.lessons.map((lesson, index) => ({
             ...lesson.toObject(),
             isLocked: !isPurchased && index >= course.freeLessons
