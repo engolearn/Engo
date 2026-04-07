@@ -510,6 +510,37 @@ app.put('/api/admin/lessons/:lessonId', auth, adminAuth, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+// ==================== Update Course Routes ====================
+
+// جلب دورة محددة للتعديل
+app.get('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        res.json(course);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// تحديث دورة
+app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const updateData = req.body;
+        
+        const course = await Course.findByIdAndUpdate(courseId, updateData, { new: true });
+        if (!course) {
+            return res.status(404).json({ message: 'الدورة غير موجودة' });
+        }
+        
+        res.json({ message: '✅ تم تحديث الدورة بنجاح', course });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 // ==================== Subscription System ====================
 
 // جلب الدورات المدفوعة
