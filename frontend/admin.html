@@ -1001,6 +1001,56 @@
         </div>
     </div>
 </div>
+        <!-- مودال تعديل الدورة -->
+<div id="editCourseModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <h3><i class="fas fa-edit"></i> تعديل الدورة</h3>
+        <input type="hidden" id="editCourseId">
+        
+        <div class="form-group">
+            <label>عنوان الدورة</label>
+            <input type="text" id="editCourseTitle" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>وصف الدورة</label>
+            <textarea id="editCourseDescription" rows="3" class="form-control"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label><i class="fas fa-image"></i> صورة الدورة</label>
+            <input type="file" id="editCourseImage" accept="image/*" onchange="previewEditCourseImage(event)">
+            <input type="hidden" id="editCourseImageUrl">
+            <div id="editImagePreviewContainer" style="margin-top: 10px; display: none;">
+                <img id="editImagePreview" style="max-width: 150px; max-height: 150px; border-radius: 10px;">
+                <button type="button" onclick="clearEditImagePreview()" style="background: #e53e3e; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-top: 5px;">✖ إزالة</button>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>المستوى</label>
+            <select id="editCourseLevel" class="form-control">
+                <option value="beginner">مبتدئ</option>
+                <option value="advanced">متقدم</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>السعر (ريال)</label>
+            <input type="number" id="editCoursePrice" class="form-control">
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" id="editCoursePremium"> دورة مدفوعة</label>
+        </div>
+        <div class="form-group">
+            <label>عدد الدروس المجانية</label>
+            <input type="number" id="editFreeLessons" class="form-control">
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button class="btn-primary" onclick="saveCourseEdit()" style="flex: 1;">💾 حفظ التغييرات</button>
+            <button class="btn-danger" onclick="closeEditCourseModal()" style="flex: 1;">إلغاء</button>
+        </div>
+    </div>
+</div>
         <!-- تبويب طلبات الاشتراك -->
 <div id="subscriptionsTab" class="tab-content">
     <div class="admin-section">
@@ -1480,6 +1530,105 @@ async function saveLessonEdit() {
             showAlert('✅ تم تحديث الدرس بنجاح', 'success');
             closeEditLessonModal();
             loadLessonsForCourse();
+        } else {
+            const err = await res.json();
+            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+        // ==================== تعديل الدورة ====================
+
+// فتح نافذة تعديل الدورة
+async function editCourse(courseId) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/courses/' + courseId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const course = await res.json();
+        
+        document.getElementById('editCourseId').value = course._id;
+        document.getElementById('editCourseTitle').value = course.title;
+        document.getElementById('editCourseDescription').value = course.description;
+        document.getElementById('editCourseLevel').value = course.level;
+        document.getElementById('editCoursePrice').value = course.price;
+        document.getElementById('editCoursePremium').checked = course.isPremium;
+        document.getElementById('editFreeLessons').value = course.freeLessons || 5;
+        
+        // معالجة الصورة
+        if (course.image) {
+            document.getElementById('editImagePreview').src = course.image;
+            document.getElementById('editImagePreviewContainer').style.display = 'block';
+            document.getElementById('editCourseImageUrl').value = course.image;
+        } else {
+            document.getElementById('editImagePreviewContainer').style.display = 'none';
+            document.getElementById('editCourseImageUrl').value = '';
+        }
+        
+        document.getElementById('editCourseModal').style.display = 'flex';
+    } catch (error) {
+        showAlert('❌ خطأ في تحميل الدورة', 'error');
+    }
+}
+
+function closeEditCourseModal() {
+    document.getElementById('editCourseModal').style.display = 'none';
+}
+
+// معاينة صورة الدورة في نافذة التعديل
+function previewEditCourseImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('editImagePreview').src = e.target.result;
+            document.getElementById('editImagePreviewContainer').style.display = 'block';
+            document.getElementById('editCourseImageUrl').value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function clearEditImagePreview() {
+    document.getElementById('editImagePreviewContainer').style.display = 'none';
+    document.getElementById('editCourseImage').value = '';
+    document.getElementById('editCourseImageUrl').value = '';
+    document.getElementById('editImagePreview').src = '';
+}
+
+// حفظ تعديلات الدورة
+async function saveCourseEdit() {
+    const token = localStorage.getItem('token');
+    const courseId = document.getElementById('editCourseId').value;
+    
+    const courseData = {
+        title: document.getElementById('editCourseTitle').value,
+        description: document.getElementById('editCourseDescription').value,
+        level: document.getElementById('editCourseLevel').value,
+        price: parseInt(document.getElementById('editCoursePrice').value) || 0,
+        isPremium: document.getElementById('editCoursePremium').checked,
+        freeLessons: parseInt(document.getElementById('editFreeLessons').value) || 5,
+        image: document.getElementById('editCourseImageUrl').value || ''
+    };
+    
+    try {
+        const res = await fetch(API_URL + '/admin/courses/' + courseId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(courseData)
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم تحديث الدورة بنجاح', 'success');
+            closeEditCourseModal();
+            loadCourses();
+            loadCoursesForSelect();
+            loadCoursesForSelect2();
         } else {
             const err = await res.json();
             showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
@@ -2099,6 +2248,9 @@ async function loadCourses() {
                         }
                     </td>
                     <td class="inline-buttons">
+                        <button class="btn-primary btn-sm" onclick="editCourse('${c._id}')" style="background: #667eea; color: white; padding: 5px 12px; border-radius: 8px; margin: 2px;">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
                         <button class="btn-warning btn-sm" onclick="manageCoursePermissions('${c._id}', '${escapeHtml(c.title)}')" style="background: #ed8936; color: white; padding: 5px 12px; border-radius: 8px; margin: 2px;">
                             <i class="fas fa-users"></i> صلاحيات
                         </button>
