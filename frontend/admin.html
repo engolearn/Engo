@@ -1635,15 +1635,24 @@ async function saveCourseEdit() {
     const token = localStorage.getItem('token');
     const courseId = document.getElementById('editCourseId').value;
     
+    // ✅ جلب القيمة بشكل صحيح
+    const freeLessonsInput = document.getElementById('editFreeLessons');
+    const freeLessonsValue = parseInt(freeLessonsInput.value);
+    
+    console.log('🔍 Free lessons input value:', freeLessonsInput.value);
+    console.log('🔍 Parsed free lessons value:', freeLessonsValue);
+    
     const courseData = {
         title: document.getElementById('editCourseTitle').value,
         description: document.getElementById('editCourseDescription').value,
         level: document.getElementById('editCourseLevel').value,
         price: parseInt(document.getElementById('editCoursePrice').value) || 0,
         isPremium: document.getElementById('editCoursePremium').checked,
-        freeLessons: parseInt(document.getElementById('editFreeLessons').value) || 5,
+        freeLessons: isNaN(freeLessonsValue) ? 0 : freeLessonsValue,
         image: document.getElementById('editCourseImageUrl').value || ''
     };
+    
+    console.log('📤 Sending course data:', courseData);
     
     try {
         const res = await fetch(API_URL + '/admin/courses/' + courseId, {
@@ -1655,6 +1664,9 @@ async function saveCourseEdit() {
             body: JSON.stringify(courseData)
         });
         
+        const result = await res.json();
+        console.log('📥 Response:', result);
+        
         if (res.ok) {
             showAlert('✅ تم تحديث الدورة بنجاح', 'success');
             closeEditCourseModal();
@@ -1662,10 +1674,10 @@ async function saveCourseEdit() {
             loadCoursesForSelect();
             loadCoursesForSelect2();
         } else {
-            const err = await res.json();
-            showAlert('❌ ' + (err.message || 'حدث خطأ'), 'error');
+            showAlert('❌ ' + (result.message || 'حدث خطأ'), 'error');
         }
     } catch (error) {
+        console.error('Error saving course:', error);
         showAlert('❌ خطأ في الاتصال', 'error');
     }
 }
