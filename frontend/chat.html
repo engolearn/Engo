@@ -2,18 +2,17 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- منع التخزين المؤقت -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>المحادثات - EnGo</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-top: env(safe-area-inset-top, 0px);
         }
         * {
             margin: 0;
@@ -49,7 +48,6 @@
             z-index: 20;
         }
         
-        /* للهواتف - القائمة تظهر افتراضياً */
         @media (max-width: 768px) {
             .conversations-list {
                 position: absolute;
@@ -60,11 +58,9 @@
                 transform: translateX(0);
                 z-index: 10;
             }
-            
             .conversations-list.hide {
                 transform: translateX(-100%);
             }
-            
             .chat-area {
                 width: 100%;
                 position: absolute;
@@ -74,7 +70,6 @@
                 z-index: 5;
                 background: #0e0e0e;
             }
-            
             .chat-area.show {
                 z-index: 15;
             }
@@ -85,60 +80,42 @@
                 display: flex;
                 position: relative;
             }
-            
             .chat-area {
                 flex: 1;
                 position: relative;
             }
-            
             .back-to-list {
                 display: none !important;
             }
         }
-        /* إضافة مسافة أمان من أسفل الشاشة للأجهزة الحديثة */
-.safe-bottom {
-    padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
-}
-
-/* منطقة الإدخال - الحل النهائي لمشكلة تغطية الأزرار */
-.input-area {
-    background: #1f1f1f;
-    padding: 0.8rem 0.8rem calc(0.8rem + env(safe-area-inset-bottom, 20px));
-    display: flex;
-    gap: 0.8rem;
-    align-items: center;
-    border-top: 1px solid #2a2a2a;
-    position: relative;
-    z-index: 20;
-}
-
-/* تعديل القائمة السفلية */
-.conversations-list {
-    padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* تعديل شريط الحالة */
-.connection-status {
-    position: fixed;
-    bottom: calc(10px + var(--safe-bottom));
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    z-index: 100;
-    pointer-events: none;
-}
-        /* Header القائمة */
+        
+        .safe-bottom {
+            padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
+        }
+        
+        .input-area {
+            background: #1f1f1f;
+            padding: 0.8rem 0.8rem calc(0.8rem + env(safe-area-inset-bottom, 20px));
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            border-top: 1px solid #2a2a2a;
+            position: relative;
+            z-index: 20;
+        }
+        
+        .conversations-list {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
         .conversations-header {
-    background: #1f1f1f;
-    padding: 1rem;
-    padding-top: calc(1rem + var(--safe-top));
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #2a2a2a;
+            background: #1f1f1f;
+            padding: 1rem;
+            padding-top: calc(1rem + var(--safe-top));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a2a;
         }
         
         .conversations-header h2 {
@@ -152,7 +129,8 @@
             gap: 1rem;
         }
         
-        .header-actions button {
+        .header-actions button,
+        .header-actions a {
             background: none;
             border: none;
             color: #25D366;
@@ -162,13 +140,17 @@
             border-radius: 50%;
             width: 40px;
             height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
         }
         
-        .header-actions button:active {
+        .header-actions button:active,
+        .header-actions a:active {
             background: #2a2a2a;
         }
         
-        /* Search Bar */
         .search-bar {
             background: #1f1f1f;
             padding: 0.8rem;
@@ -189,7 +171,6 @@
             color: #888;
         }
         
-        /* Tabs */
         .chat-tabs {
             display: flex;
             background: #1f1f1f;
@@ -211,7 +192,6 @@
             border-bottom: 2px solid #25D366;
         }
         
-        /* قائمة المحادثات */
         .conversations-scroll {
             flex: 1;
             overflow-y: auto;
@@ -298,7 +278,6 @@
             box-shadow: 0 0 5px #25D366;
         }
         
-        /* ==================== منطقة المحادثة ==================== */
         .chat-area {
             display: flex;
             flex-direction: column;
@@ -307,13 +286,13 @@
         }
         
         .chat-header {
-    background: #1f1f1f;
-    padding: 0.8rem 1rem;
-    padding-top: calc(0.8rem + var(--safe-top));
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    border-bottom: 1px solid #2a2a2a;
+            background: #1f1f1f;
+            padding: 0.8rem 1rem;
+            padding-top: calc(0.8rem + var(--safe-top));
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            border-bottom: 1px solid #2a2a2a;
         }
         
         .back-to-list {
@@ -328,10 +307,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        
-        .back-to-list:active {
-            background: #2a2a2a;
         }
         
         .chat-header .avatar {
@@ -367,7 +342,6 @@
             height: 40px;
         }
         
-        /* منطقة الرسائل */
         .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -427,82 +401,6 @@
             justify-content: flex-end;
         }
         
-        /* Input Area - الكود البديل */
-.input-area {
-    background: #1f1f1f;
-    padding: 0.8rem;
-    display: flex;
-    gap: 0.8rem;
-    align-items: center;
-    border-top: 1px solid #2a2a2a;
-    position: relative;
-    z-index: 20;
-}
-
-/* دعم خاص للأجهزة الحديثة */
-.input-area {
-    padding-bottom: calc(0.8rem + constant(safe-area-inset-bottom, 0px));
-    padding-bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
-}
-
-.input-area input {
-    flex: 1;
-    padding: 0.8rem 1rem;
-    background: #2a2a2a;
-    border: none;
-    border-radius: 25px;
-    color: white;
-    font-family: 'Cairo', sans-serif;
-    font-size: 0.9rem;
-}
-
-.input-area input:focus {
-    outline: none;
-    background: #333;
-}
-
-.send-btn {
-    background: #25D366;
-    color: white;
-    border: none;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.send-btn:active {
-    transform: scale(0.95);
-}
-        
-        /* Connection Status */
-        .connection-status {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            z-index: 100;
-            pointer-events: none;
-        }
-        
-        .connection-status.connected {
-            background: #25D366;
-            color: white;
-        }
-        
-        .connection-status.disconnected {
-            background: #e53e3e;
-            color: white;
-        }
-        
-        /* Empty State */
         .empty-state {
             text-align: center;
             color: #888;
@@ -515,7 +413,6 @@
             display: block;
         }
         
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -573,12 +470,30 @@
             gap: 1rem;
         }
         
+        .search-user-item {
+            padding: 0.8rem;
+            background: #2a2a2a;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .search-user-item button {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -591,44 +506,85 @@
             background: #25D366;
             border-radius: 4px;
         }
-        /* رفع المحتوى من الأسفل */
-.input-area {
-    padding-bottom: 25px !important;
-}
-        .chat-container {
-    height: var(--app-height);
-    display: flex;
-    flex-direction: column;
+        
+        .connection-status {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            z-index: 100;
+            pointer-events: none;
         }
-        .header-actions a,
-.header-actions button {
-    background: none;
+        
+        .connection-status.connected {
+            background: #25D366;
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background: #e53e3e;
+            color: white;
+        }
+        /* أنماط البحث عن المستخدمين للدعوة */
+.search-user-invite {
+    padding: 0.8rem;
+    background: #2a2a2a;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-user-invite button {
+    background: #25D366;
+    color: white;
     border: none;
-    color: #25D366;
-    font-size: 1.2rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
     cursor: pointer;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+}
+
+.search-user-invite button:active {
+    transform: scale(0.95);
+}
+
+.invite-search-results {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+}
+
+.invite-selected-users {
+    background: #1f1f1f;
+    border-radius: 10px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.invite-user-tag {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    text-decoration: none;
+    gap: 0.5rem;
+    background: #25D366;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    margin: 0.2rem;
+    font-size: 0.8rem;
 }
 
-.header-actions a:hover,
-.header-actions button:hover {
-    background: #2a2a2a;
+.invite-user-tag button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 0.8rem;
 }
-
-.connection-status {
-    bottom: 25px !important;
-}
-
-.conversations-list {
-    padding-bottom: 20px;
-}
-
     </style>
 </head>
 <body>
@@ -636,12 +592,11 @@
         <!-- قائمة المحادثات -->
         <div class="conversations-list" id="conversationsList">
             <div class="conversations-header">
-    <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
-    <div class="header-actions">
-        <a href="/"><i class="fas fa-home"></i></a>
-        <button onclick="showCreateRoomModal()"><i class="fas fa-plus"></i></button>
-        <button onclick="showUsersList()"><i class="fas fa-user-plus"></i></button>
-    </div>
+                <h2><i class="fas fa-comment-dots"></i> EnGo</h2>
+                <div class="header-actions">
+                    <a href="/"><i class="fas fa-home"></i></a>
+                    <button onclick="showCreateRoomModal()"><i class="fas fa-plus"></i></button>
+                </div>
             </div>
             
             <div class="search-bar">
@@ -649,16 +604,25 @@
             </div>
             
             <div class="chat-tabs">
-                <div class="chat-tab active" onclick="switchTab('rooms')">الغرف</div>
-                <div class="chat-tab" onclick="switchTab('private')">الخاص</div>
+                <div class="chat-tab active" onclick="switchTab('rooms')">👥 المجموعات</div>
+                <div class="chat-tab" onclick="switchTab('private')">💬 الخاص</div>
+                <div class="chat-tab" onclick="switchTab('search')">🔍 البحث</div>
             </div>
             
             <div class="conversations-scroll">
                 <div id="roomsList">
-                    <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل الغرف...</div>
+                    <div class="empty-state"><i class="fas fa-comments"></i>جاري تحميل المجموعات...</div>
                 </div>
                 <div id="privateList" style="display: none;">
                     <div class="empty-state"><i class="fas fa-user-friends"></i>جاري تحميل المحادثات...</div>
+                </div>
+                <div id="searchList" style="display: none;">
+                    <div class="search-bar" style="padding: 0 0 1rem 0;">
+                        <input type="text" id="searchUsername" placeholder="🔍 ابحث باسم المستخدم..." onkeyup="searchUsers()">
+                    </div>
+                    <div id="searchResults">
+                        <div class="empty-state"><i class="fas fa-search"></i>ابحث عن مستخدم لبدء محادثة</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -692,34 +656,45 @@
     
     <!-- Modals -->
     <div id="createRoomModal" class="modal">
-        <div class="modal-content">
-            <h3>إنشاء غرفة جديدة</h3>
-            <input type="text" id="roomName" placeholder="اسم الغرفة">
-            <label style="color:white;"><input type="checkbox" id="isPrivate"> غرفة خاصة</label>
-            <div id="inviteEmailsField" style="display: none;">
-                <input type="text" id="inviteEmails" placeholder="البريد الإلكتروني (مفصول بفواصل)">
+    <div class="modal-content">
+        <h3>إنشاء مجموعة جديدة</h3>
+        <input type="text" id="roomName" placeholder="اسم المجموعة">
+        <label style="color:white;"><input type="checkbox" id="isPrivate"> مجموعة خاصة</label>
+        
+        <!-- حقل إضافة مستخدمين للدعوة (للغرف الخاصة والعامة) -->
+        <div id="inviteUsersSection" style="display: none; margin-top: 1rem;">
+            <h4 style="color: white; margin-bottom: 0.5rem;">👥 دعوة مستخدمين</h4>
+            <input type="text" id="inviteUsernameSearch" placeholder="🔍 ابحث باسم المستخدم..." onkeyup="searchUsersToInvite()">
+            <div id="inviteSearchResults" class="invite-search-results" style="max-height: 150px; overflow-y: auto;"></div>
+            <div id="selectedInviteUsers" class="invite-selected-users" style="margin-top: 0.5rem;">
+                <span style="color: #888; font-size: 0.7rem;">المستخدمين المختارين:</span>
+                <div id="selectedUsersList"></div>
             </div>
-            <button onclick="createRoom()" style="background: #25D366; color: white;">إنشاء</button>
-            <button onclick="closeCreateRoomModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
         </div>
+        
+        <button onclick="createRoom()" style="background: #25D366; color: white;">إنشاء</button>
+        <button onclick="closeCreateRoomModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
+    </div>
     </div>
     
     <div id="inviteModal" class="modal">
-        <div class="modal-content">
-            <h3>دعوة إلى الغرفة</h3>
-            <input type="email" id="inviteEmail" placeholder="البريد الإلكتروني">
-            <textarea id="inviteMessage" rows="3" placeholder="رسالة"></textarea>
-            <button onclick="sendInvite()" style="background: #25D366; color: white;">إرسال الدعوة</button>
-            <button onclick="closeInviteModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
+    <div class="modal-content">
+        <h3>📨 دعوة إلى المجموعة</h3>
+        <p id="inviteRoomName" style="color: #25D366; margin-bottom: 0.5rem;"></p>
+        
+        <input type="text" id="inviteUsernameSearchModal" placeholder="🔍 ابحث باسم المستخدم..." onkeyup="searchUsersToInviteModal()">
+        <div id="inviteSearchResultsModal" class="invite-search-results" style="max-height: 150px; overflow-y: auto;"></div>
+        
+        <div id="selectedInviteUsersModal" class="invite-selected-users" style="margin-top: 0.5rem;">
+            <span style="color: #888; font-size: 0.7rem;">المستخدمين المختارين:</span>
+            <div id="selectedUsersListModal"></div>
         </div>
+        
+        <textarea id="inviteMessage" rows="2" placeholder="رسالة الدعوة (اختياري)"></textarea>
+        
+        <button onclick="sendInviteByUsername()" style="background: #25D366; color: white;">📤 إرسال الدعوة</button>
+        <button onclick="closeInviteModal()" style="background: #2a2a2a; color: white;">إلغاء</button>
     </div>
-    
-    <div id="usersListModal" class="modal">
-        <div class="modal-content">
-            <h3>👥 المستخدمين</h3>
-            <div id="usersForChat" style="max-height: 400px; overflow-y: auto;"></div>
-            <button onclick="closeUsersListModal()" style="background: #2a2a2a; color: white;">إغلاق</button>
-        </div>
     </div>
 
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
@@ -735,6 +710,271 @@
         let currentPrivateConvId = null;
         let roomsList = [];
         let privateChats = [];
+        let allUsers = [];
+
+        // ==================== دعوة المستخدمين عبر اسم المستخدم ====================
+let allUsersList = [];
+let selectedInviteUsers = [];
+let selectedInviteUsersModal = [];
+
+// تحميل قائمة المستخدمين
+async function loadAllUsersList() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL + '/api/users/chat-list', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+            allUsersList = await res.json();
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+// البحث عن مستخدمين للدعوة (في نافذة إنشاء الغرفة)
+function searchUsersToInvite() {
+    const searchTerm = document.getElementById('inviteUsernameSearch').value.toLowerCase().trim();
+    const resultsContainer = document.getElementById('inviteSearchResults');
+    
+    if (!searchTerm) {
+        resultsContainer.innerHTML = '';
+        return;
+    }
+    
+    // استبعاد المستخدم الحالي والمستخدمين المختارين بالفعل
+    const filteredUsers = allUsersList.filter(user => 
+        (user.username?.toLowerCase().includes(searchTerm) || 
+         user.name?.toLowerCase().includes(searchTerm)) &&
+        user.id !== currentUser?.id &&
+        !selectedInviteUsers.some(u => u.id === user.id)
+    );
+    
+    if (filteredUsers.length === 0) {
+        resultsContainer.innerHTML = '<div style="color: #888; padding: 0.5rem; text-align: center;">لا يوجد مستخدمين</div>';
+        return;
+    }
+    
+    resultsContainer.innerHTML = filteredUsers.map(user => `
+        <div class="search-user-invite">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="avatar" style="width: 35px; height: 35px;"><i class="fas fa-user"></i></div>
+                <div>
+                    <strong style="color: white;">${escapeHtml(user.username)}</strong>
+                    <small style="color: #888; display: block;">${escapeHtml(user.name || user.username)}</small>
+                </div>
+            </div>
+            <button onclick="addUserToInvite('${user.id}', '${escapeHtml(user.username)}')">
+                <i class="fas fa-plus"></i> إضافة
+            </button>
+        </div>
+    `).join('');
+}
+
+// إضافة مستخدم للدعوة (نافذة إنشاء الغرفة)
+function addUserToInvite(userId, username) {
+    if (!selectedInviteUsers.some(u => u.id === userId)) {
+        selectedInviteUsers.push({ id: userId, username: username });
+        renderSelectedUsersList();
+        document.getElementById('inviteUsernameSearch').value = '';
+        document.getElementById('inviteSearchResults').innerHTML = '';
+    }
+}
+
+// إزالة مستخدم من قائمة الدعوة
+function removeUserFromInvite(userId) {
+    selectedInviteUsers = selectedInviteUsers.filter(u => u.id !== userId);
+    renderSelectedUsersList();
+}
+
+// عرض قائمة المستخدمين المختارين
+function renderSelectedUsersList() {
+    const container = document.getElementById('selectedUsersList');
+    if (selectedInviteUsers.length === 0) {
+        container.innerHTML = '<span style="color: #888; font-size: 0.7rem;">لم يتم اختيار أي مستخدم</span>';
+        return;
+    }
+    container.innerHTML = selectedInviteUsers.map(user => `
+        <span class="invite-user-tag">
+            @${escapeHtml(user.username)}
+            <button onclick="removeUserFromInvite('${user.id}')"><i class="fas fa-times"></i></button>
+        </span>
+    `).join('');
+}
+
+// ==================== دوال نافذة الدعوة المنفصلة ====================
+let currentInviteRoomId = null;
+let currentInviteRoomName = null;
+
+function inviteToRoom() {
+    if (!currentChat || currentChatType !== 'room') {
+        showAlert('❌ اختر مجموعة أولاً', 'error');
+        return;
+    }
+    currentInviteRoomId = currentChat;
+    currentInviteRoomName = document.getElementById('chatName').innerText;
+    document.getElementById('inviteRoomName').innerHTML = `📢 ${escapeHtml(currentInviteRoomName)}`;
+    document.getElementById('inviteModal').style.display = 'flex';
+    selectedInviteUsersModal = [];
+    renderSelectedUsersListModal();
+    document.getElementById('inviteUsernameSearchModal').value = '';
+    document.getElementById('inviteSearchResultsModal').innerHTML = '';
+    document.getElementById('inviteMessage').value = '';
+}
+
+function searchUsersToInviteModal() {
+    const searchTerm = document.getElementById('inviteUsernameSearchModal').value.toLowerCase().trim();
+    const resultsContainer = document.getElementById('inviteSearchResultsModal');
+    
+    if (!searchTerm) {
+        resultsContainer.innerHTML = '';
+        return;
+    }
+    
+    const filteredUsers = allUsersList.filter(user => 
+        (user.username?.toLowerCase().includes(searchTerm) || 
+         user.name?.toLowerCase().includes(searchTerm)) &&
+        user.id !== currentUser?.id &&
+        !selectedInviteUsersModal.some(u => u.id === user.id)
+    );
+    
+    if (filteredUsers.length === 0) {
+        resultsContainer.innerHTML = '<div style="color: #888; padding: 0.5rem; text-align: center;">لا يوجد مستخدمين</div>';
+        return;
+    }
+    
+    resultsContainer.innerHTML = filteredUsers.map(user => `
+        <div class="search-user-invite">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="avatar" style="width: 35px; height: 35px;"><i class="fas fa-user"></i></div>
+                <div>
+                    <strong style="color: white;">${escapeHtml(user.username)}</strong>
+                    <small style="color: #888; display: block;">${escapeHtml(user.name || user.username)}</small>
+                </div>
+            </div>
+            <button onclick="addUserToInviteModal('${user.id}', '${escapeHtml(user.username)}')">
+                <i class="fas fa-plus"></i> إضافة
+            </button>
+        </div>
+    `).join('');
+}
+
+function addUserToInviteModal(userId, username) {
+    if (!selectedInviteUsersModal.some(u => u.id === userId)) {
+        selectedInviteUsersModal.push({ id: userId, username: username });
+        renderSelectedUsersListModal();
+        document.getElementById('inviteUsernameSearchModal').value = '';
+        document.getElementById('inviteSearchResultsModal').innerHTML = '';
+    }
+}
+
+function removeUserFromInviteModal(userId) {
+    selectedInviteUsersModal = selectedInviteUsersModal.filter(u => u.id !== userId);
+    renderSelectedUsersListModal();
+}
+
+function renderSelectedUsersListModal() {
+    const container = document.getElementById('selectedUsersListModal');
+    if (selectedInviteUsersModal.length === 0) {
+        container.innerHTML = '<span style="color: #888; font-size: 0.7rem;">لم يتم اختيار أي مستخدم</span>';
+        return;
+    }
+    container.innerHTML = selectedInviteUsersModal.map(user => `
+        <span class="invite-user-tag">
+            @${escapeHtml(user.username)}
+            <button onclick="removeUserFromInviteModal('${user.id}')"><i class="fas fa-times"></i></button>
+        </span>
+    `).join('');
+}
+
+function closeInviteModal() {
+    document.getElementById('inviteModal').style.display = 'none';
+    selectedInviteUsersModal = [];
+}
+
+// إرسال الدعوة عبر اسم المستخدم
+async function sendInviteByUsername() {
+    if (!currentInviteRoomId || selectedInviteUsersModal.length === 0) {
+        showAlert('❌ اختر مستخدمين للدعوة أولاً', 'error');
+        return;
+    }
+    
+    const message = document.getElementById('inviteMessage').value || 'انضم إلي في هذه المجموعة!';
+    const token = localStorage.getItem('token');
+    
+    try {
+        const res = await fetch(API_URL + '/api/chat/invite-by-username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                roomId: currentInviteRoomId,
+                roomName: currentInviteRoomName,
+                usernames: selectedInviteUsersModal.map(u => u.username),
+                message: message
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            showAlert(`✅ تم إرسال الدعوة إلى ${selectedInviteUsersModal.length} مستخدم`, 'success');
+            closeInviteModal();
+        } else {
+            showAlert('❌ ' + (data.message || 'حدث خطأ'), 'error');
+        }
+    } catch (error) {
+        console.error('Error sending invite:', error);
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// تحديث دالة إنشاء الغرفة لإرسال الدعوات عبر username
+function createRoom() {
+    const name = document.getElementById('roomName').value.trim();
+    if (!name) {
+        showAlert('❌ أدخل اسم المجموعة', 'error');
+        return;
+    }
+    
+    const isPrivate = document.getElementById('isPrivate').checked;
+    const invitedUsers = selectedInviteUsers.map(u => u.username);
+    
+    socket.emit('create_room', { 
+        name, 
+        private: isPrivate, 
+        invitedUsernames: invitedUsers 
+    }, (res) => {
+        if (res?.success) {
+            closeCreateRoomModal();
+            showAlert(`✅ تم إنشاء "${name}"`, 'success');
+            selectedInviteUsers = [];
+            renderSelectedUsersList();
+            loadRooms();
+            setTimeout(() => joinRoom(res.room.id, res.room.name), 500);
+        } else {
+            showAlert('❌ ' + (res?.error || 'حدث خطأ'), 'error');
+        }
+    });
+}
+
+// تحديث دالة إظهار نافذة إنشاء الغرفة
+function showCreateRoomModal() {
+    selectedInviteUsers = [];
+    renderSelectedUsersList();
+    document.getElementById('roomName').value = '';
+    document.getElementById('isPrivate').checked = false;
+    document.getElementById('inviteUsersSection').style.display = 'none';
+    document.getElementById('inviteUsernameSearch').value = '';
+    document.getElementById('inviteSearchResults').innerHTML = '';
+    document.getElementById('createRoomModal').style.display = 'flex';
+}
+
+document.getElementById('isPrivate').onchange = function() {
+    document.getElementById('inviteUsersSection').style.display = this.checked ? 'block' : 'none';
+};
         
         // ==================== UI Functions ====================
         function showConversationsList() {
@@ -745,31 +985,12 @@
             }
         }
         
-        function openChat(chatId, chatName, chatType) {
+        function openChat() {
             document.getElementById('chatArea').style.display = 'flex';
             if (window.innerWidth <= 768) {
                 document.getElementById('conversationsList').classList.add('hide');
             }
         }
-        function updateHeight() {
-
-    const height = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight;
-
-    document.documentElement.style.setProperty(
-        '--app-height',
-        height + 'px'
-    );
-}
-
-window.addEventListener('resize', updateHeight);
-
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', updateHeight);
-}
-
-updateHeight();
         
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
@@ -809,12 +1030,20 @@ updateHeight();
                 document.querySelector('.chat-tab:first-child').classList.add('active');
                 document.getElementById('roomsList').style.display = 'block';
                 document.getElementById('privateList').style.display = 'none';
+                document.getElementById('searchList').style.display = 'none';
                 loadRooms();
-            } else {
-                document.querySelector('.chat-tab:last-child').classList.add('active');
+            } else if (tab === 'private') {
+                document.querySelector('.chat-tab:nth-child(2)').classList.add('active');
                 document.getElementById('roomsList').style.display = 'none';
                 document.getElementById('privateList').style.display = 'block';
+                document.getElementById('searchList').style.display = 'none';
                 loadPrivateChats();
+            } else if (tab === 'search') {
+                document.querySelector('.chat-tab:nth-child(3)').classList.add('active');
+                document.getElementById('roomsList').style.display = 'none';
+                document.getElementById('privateList').style.display = 'none';
+                document.getElementById('searchList').style.display = 'block';
+                loadAllUsers();
             }
         }
         
@@ -847,6 +1076,7 @@ updateHeight();
                 document.getElementById('connectionStatus').className = 'connection-status connected';
                 loadRooms();
                 loadPrivateChats();
+                loadAllUsers();
             });
             
             socket.on('disconnect', () => {
@@ -892,7 +1122,7 @@ updateHeight();
         function renderRoomsList() {
             const container = document.getElementById('roomsList');
             if(!roomsList?.length) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-comments"></i>لا توجد غرف<br>أنشئ غرفة جديدة</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-comments"></i>لا توجد مجموعات<br>أنشئ مجموعة جديدة</div>';
                 return;
             }
             container.innerHTML = roomsList.map(room => `
@@ -931,7 +1161,7 @@ updateHeight();
         
         function createRoom() {
             const name = document.getElementById('roomName').value.trim();
-            if(!name) return showAlert('❌ أدخل اسم الغرفة','error');
+            if(!name) return showAlert('❌ أدخل اسم المجموعة','error');
             const isPrivate = document.getElementById('isPrivate').checked;
             const allowedUsers = isPrivate ? document.getElementById('inviteEmails').value.split(',').map(e=>e.trim()).filter(e=>e) : [];
             
@@ -960,7 +1190,7 @@ updateHeight();
         function renderPrivateList() {
             const container = document.getElementById('privateList');
             if(!privateChats?.length) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-friends"></i>لا توجد محادثات خاصة<br>ابدأ محادثة جديدة</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-friends"></i>لا توجد محادثات خاصة<br>ابحث عن مستخدم لبدء محادثة</div>';
                 return;
             }
             container.innerHTML = privateChats.map(chat => `
@@ -1033,22 +1263,60 @@ updateHeight();
             container.scrollTop = container.scrollHeight;
         }
         
-        function showUsersList() {
-            if(!socket?.connected) return showAlert('❌ غير متصل','error');
-            socket.emit('get_users_for_chat', (res) => {
-                if(res.success) {
-                    document.getElementById('usersForChat').innerHTML = res.users.map(u => `
-                        <div class="user-item" onclick="openPrivateChat('${u._id}','${escapeHtml(u.name)}')">
-                            <div class="avatar" style="width:40px;height:40px;"><i class="fas fa-user"></i></div>
-                            <div><strong>${escapeHtml(u.name)}</strong><br><small style="color:#888;">${escapeHtml(u.email)}</small></div>
-                        </div>
-                    `).join('');
-                    document.getElementById('usersListModal').style.display = 'flex';
+        // ==================== Search Users ====================
+        async function loadAllUsers() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(API_URL + '/api/users/chat-list', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    allUsers = await res.json();
                 }
-            });
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
         }
         
-        function closeUsersListModal() { document.getElementById('usersListModal').style.display = 'none'; }
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchUsername').value.toLowerCase().trim();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (!searchTerm) {
+                resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i>ابحث عن مستخدم لبدء محادثة</div>';
+                return;
+            }
+            
+            const filteredUsers = allUsers.filter(user => 
+                user.username?.toLowerCase().includes(searchTerm) || 
+                user.name?.toLowerCase().includes(searchTerm)
+            );
+            
+            if (filteredUsers.length === 0) {
+                resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i>لا يوجد مستخدم بهذا الاسم</div>';
+                return;
+            }
+            
+            resultsContainer.innerHTML = filteredUsers.map(user => `
+                <div class="search-user-item">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="avatar" style="width: 40px; height: 40px;"><i class="fas fa-user"></i></div>
+                        <div>
+                            <strong style="color: white;">${escapeHtml(user.username)}</strong><br>
+                            <small style="color: #888;">${escapeHtml(user.name || user.username)}</small>
+                        </div>
+                    </div>
+                    <button onclick="startChatWithUser('${user.id}', '${escapeHtml(user.username)}')">
+                        <i class="fas fa-comment"></i> راسل
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function startChatWithUser(userId, userName) {
+            openPrivateChat(userId, userName, null);
+            switchTab('private');
+        }
         
         // ==================== Send Messages ====================
         function sendMessage() {
@@ -1060,7 +1328,7 @@ updateHeight();
                 const tempMessage = {
                     id: 'temp_' + Date.now(),
                     userId: currentUser.id,
-                    userName: currentUser.name,
+                    userName: currentUser.username || currentUser.name,
                     text: text,
                     timestamp: new Date(),
                     roomId: currentChat
@@ -1079,7 +1347,7 @@ updateHeight();
                 const tempMessage = {
                     id: 'temp_' + Date.now(),
                     from: currentUser.id,
-                    fromName: currentUser.name,
+                    fromName: currentUser.username || currentUser.name,
                     text: text,
                     timestamp: new Date(),
                     read: false
@@ -1137,7 +1405,7 @@ updateHeight();
         document.getElementById('isPrivate').onchange=function(){ document.getElementById('inviteEmailsField').style.display=this.checked?'block':'none'; };
         
         let currentInviteRoomId=null;
-        function inviteToRoom(){ if(!currentChat || currentChatType !== 'room') return showAlert('❌ اختر غرفة أولاً','error'); currentInviteRoomId=currentChat; document.getElementById('inviteModal').style.display='flex'; }
+        function inviteToRoom(){ if(!currentChat || currentChatType !== 'room') return showAlert('❌ اختر مجموعة أولاً','error'); currentInviteRoomId=currentChat; document.getElementById('inviteModal').style.display='flex'; }
         function closeInviteModal(){ document.getElementById('inviteModal').style.display='none'; }
         function sendInvite(){
             const email=document.getElementById('inviteEmail').value.trim();
@@ -1149,39 +1417,10 @@ updateHeight();
         async function init() {
             if(await checkAuth()) {
                 connectSocket();
-                // عرض القائمة في البداية
                 showConversationsList();
             }
         }
         init();
-    
-    // حل مشكلة تغطية لوحة المفاتيح لحقل الكتابة
-const inputField = document.getElementById('messageInput');
-const inputArea = document.querySelector('.input-area');
-
-if (inputField) {
-    inputField.addEventListener('focus', function() {
-        setTimeout(() => {
-            inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }, 300);
-    });
-}
-
-// كشف ظهور لوحة المفاتيح في الأندرويد
-let originalHeight = window.innerHeight;
-window.addEventListener('resize', function() {
-    let newHeight = window.innerHeight;
-    if (originalHeight - newHeight > 150) {
-        // لوحة المفاتيح ظهرت
-        document.body.classList.add('keyboard-open');
-        inputArea.style.paddingBottom = '10px';
-    } else {
-        // لوحة المفاتيح اختفت
-        document.body.classList.remove('keyboard-open');
-        inputArea.style.paddingBottom = 'calc(0.8rem + env(safe-area-inset-bottom, 10px))';
-    }
-    originalHeight = newHeight;
-});
-        </script>
+    </script>
 </body>
 </html>
