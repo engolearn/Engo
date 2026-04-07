@@ -699,7 +699,7 @@ app.get('/api/admin/subscriptions', auth, adminAuth, async (req, res) => {
     }
 });
 
-// الموافقة على طلب اشتراك
+// الموافقة على طلب اشتراك (مع إضافة المستخدم إلى قائمة المسموح لهم)
 app.post('/api/admin/subscription/approve', auth, adminAuth, async (req, res) => {
     try {
         const { requestId } = req.body;
@@ -713,9 +713,14 @@ app.post('/api/admin/subscription/approve', auth, adminAuth, async (req, res) =>
             return res.status(400).json({ message: 'تمت الموافقة على هذا الطلب مسبقاً' });
         }
         
-        // تفعيل الدورة للمستخدم
+        // ✅ 1. تفعيل الدورة للمستخدم (إضافة إلى purchasedCourses)
         await User.findByIdAndUpdate(request.userId, {
             $addToSet: { purchasedCourses: request.courseId }
+        });
+        
+        // ✅ 2. إضافة المستخدم إلى قائمة allowedUsers في الدورة
+        await Course.findByIdAndUpdate(request.courseId, {
+            $addToSet: { allowedUsers: request.userId }
         });
         
         // تحديث حالة الطلب
@@ -733,7 +738,7 @@ app.post('/api/admin/subscription/approve', auth, adminAuth, async (req, res) =>
         
         res.json({ 
             success: true, 
-            message: 'تم تفعيل الدورة للمستخدم بنجاح',
+            message: 'تم تفعيل الدورة للمستخدم وإضافته إلى قائمة المسموح لهم',
             request: request
         });
         
@@ -742,7 +747,6 @@ app.post('/api/admin/subscription/approve', auth, adminAuth, async (req, res) =>
         res.status(500).json({ message: error.message });
     }
 });
-
 // رفض طلب اشتراك
 app.post('/api/admin/subscription/reject', auth, adminAuth, async (req, res) => {
     try {
