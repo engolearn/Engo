@@ -3571,12 +3571,20 @@ socket.on('create_room', async (data, callback) => {
         const roomId = Date.now().toString();
         const invitedUsernames = data.invitedUsernames || [];
         
-        // جلب معرفات المستخدمين المدعوين
-        const invitedUsers = await User.find({ 
-            username: { $in: invitedUsernames } 
-        });
-        const invitedUserIds = invitedUsers.map(u => u._id);
+        console.log('📝 Creating room:', data.name);
+        console.log('👥 Invited usernames:', invitedUsernames);
         
+        // جلب معرفات المستخدمين المدعوين
+        let invitedUserIds = [];
+        if (invitedUsernames.length > 0) {
+            const invitedUsers = await User.find({ 
+                username: { $in: invitedUsernames } 
+            });
+            invitedUserIds = invitedUsers.map(u => u._id);
+            console.log(`✅ Found ${invitedUserIds.length} invited users`);
+        }
+        
+        // إنشاء الغرفة
         const newRoom = new Room({
             roomId: roomId,
             name: data.name,
@@ -3594,28 +3602,31 @@ socket.on('create_room', async (data, callback) => {
         socket.join(roomId);
         
         // إرسال إشعارات للمستخدمين المدعوين
-        for (const user of invitedUsers) {
-            await addNotification(user._id, {
-                title: '📢 دعوة إلى مجموعة',
-                message: `${socket.user.username} دعاك للانضمام إلى مجموعة "${data.name}"`,
-                type: 'room_invite',
-                link: `/chat?room=${roomId}`
-            });
-            
-            const targetSocket = onlineUsers.get(user._id.toString());
-            if (targetSocket) {
-                io.to(targetSocket).emit('room_invite', {
-                    roomId: roomId,
-                    roomName: data.name,
-                    invitedBy: socket.user.username
+        for (const userId of invitedUserIds) {
+            const targetUser = await User.findById(userId);
+            if (targetUser) {
+                await addNotification(userId, {
+                    title: '📢 دعوة إلى مجموعة',
+                    message: `${socket.user.username} دعاك للانضمام إلى مجموعة "${data.name}"`,
+                    type: 'room_invite',
+                    link: `/chat?room=${roomId}`
                 });
+                
+                const targetSocket = onlineUsers.get(userId.toString());
+                if (targetSocket) {
+                    io.to(targetSocket).emit('room_invite', {
+                        roomId: roomId,
+                        roomName: data.name,
+                        invitedBy: socket.user.username
+                    });
+                }
             }
         }
         
         callback({ success: true, room: { id: roomId, name: data.name } });
         
     } catch (error) {
-        console.error('Error creating room:', error);
+        console.error('❌ Error creating room:', error);
         callback({ success: false, error: error.message });
     }
 });
