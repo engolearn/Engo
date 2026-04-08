@@ -900,6 +900,78 @@
         transform: scale(0.85);
     }
 }
+
+
+
+        /* ==================== تحسين عرض الإشعارات للهواتف ==================== */
+@media (max-width: 768px) {
+    .notifications-dropdown-content {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;
+        border-radius: 20px 20px 0 0;
+        max-height: 60vh;
+        background: white;
+        z-index: 10000;
+    }
+    
+    .notifications-dropdown.active .notifications-dropdown-content {
+        display: block;
+        animation: slideUp 0.3s ease;
+    }
+    
+    .notifications-dropdown:hover .notifications-dropdown-content {
+        display: none;
+    }
+    
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+    
+    /* تحسين حجم الخط في الإشعارات */
+    .notif-item {
+        padding: 12px;
+    }
+    
+    .notif-title {
+        font-size: 0.85rem;
+    }
+    
+    .notif-message {
+        font-size: 0.75rem;
+    }
+    
+    /* رأس الإشعارات */
+    .notifications-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid #e2e8f0;
+        background: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .close-notifications {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: #718096;
+    }
+}
     </style>
 </head>
 <body>
@@ -1934,26 +2006,29 @@ function formatNotificationTime(dateString) {
 
 // دالة فتح الإشعارات (تظهر فوراً)
 function toggleNotifications() {
-    console.log('🔔 Toggle notifications called'); // للتشخيص
     const dropdown = document.querySelector('.notifications-dropdown');
-    if (!dropdown) {
-        console.log('❌ Dropdown not found');
-        return;
+    if (!dropdown) return;
+    
+    // للهواتف، نستخدم class active
+    if (window.innerWidth <= 768) {
+        dropdown.classList.toggle('active');
+        
+        // منع التمرير في الخلف عند فتح الإشعارات
+        if (dropdown.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
     }
     
-    dropdown.classList.toggle('active');
-    console.log('Active class:', dropdown.classList.contains('active'));
-    
-    if (dropdown.classList.contains('active')) {
-        loadNotifications(true);
-    }
+    loadNotifications(true);
 }
 
-// دالة إغلاق الإشعارات
 function closeNotifications() {
     const dropdown = document.querySelector('.notifications-dropdown');
     if (dropdown) {
         dropdown.classList.remove('active');
+        document.body.style.overflow = '';
     }
 }
 
