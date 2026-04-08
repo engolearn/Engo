@@ -63,6 +63,134 @@
             .lesson-info { flex-direction: column; text-align: center; }
             .btn-start, .btn-locked { width: 100%; }
         }
+        /* أنماط الاختبارات */
+.quizzes-section {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.quizzes-section h2 {
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.quiz-card {
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s;
+}
+
+.quiz-card.completed {
+    background: #f0fff4;
+    border-color: #48bb78;
+}
+
+.quiz-card.locked {
+    opacity: 0.7;
+    background: #f1f5f9;
+}
+
+.quiz-info {
+    flex: 1;
+}
+
+.quiz-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2d3748;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.quiz-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: normal;
+}
+
+.badge-midterm { background: #667eea; color: white; }
+.badge-final { background: #e53e3e; color: white; }
+.badge-one-time { background: #f59e0b; color: white; }
+
+.quiz-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: #718096;
+    margin-top: 0.5rem;
+}
+
+.quiz-warning {
+    background: #fef3c7;
+    border-radius: 10px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.7rem;
+    color: #92400e;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.quiz-status {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-passed { color: #48bb78; }
+.status-failed { color: #e53e3e; }
+.status-pending { color: #ed8936; }
+.status-locked { color: #a0aec0; }
+
+.btn-start-quiz {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.btn-start-quiz:hover:not(:disabled) {
+    background: #5a67d8;
+    transform: scale(1.05);
+}
+
+.btn-start-quiz:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+}
+
+.btn-view-result {
+    background: #48bb78;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
     </style>
 </head>
 <body>
@@ -91,6 +219,13 @@
         <div class="lessons-grid" id="lessonsList">
             <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدروس...</div>
         </div>
+        <!-- قسم الاختبارات -->
+<div class="quizzes-section" id="quizzesSection" style="display: none; margin-top: 2rem;">
+    <h2><i class="fas fa-tasks"></i> اختبارات الدورة</h2>
+    <div class="quizzes-grid" id="quizzesList">
+        <div class="loading-spinner">جاري تحميل الاختبارات...</div>
+    </div>
+</div>
     </div>
 
 <div id="certificateBtn" style="display: none; text-align: center; margin: 30px 0;">
@@ -174,6 +309,176 @@
                 console.error('Error loading progress:', error);
             }
         }
+    // ==================== تحميل الاختبارات ====================
+async function loadQuizzes() {
+    const courseId = getCourseId();
+    const token = localStorage.getItem('token');
+    
+    if (!token) return;
+    
+    try {
+        const res = await fetch(API_URL + '/courses/' + courseId + '/quizzes', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!res.ok) {
+            console.log('No quizzes available');
+            return;
+        }
+        
+        const quizzes = await res.json();
+        const quizzesSection = document.getElementById('quizzesSection');
+        
+        const hasMidterm = quizzes.midterm !== null;
+        const hasFinal = quizzes.final !== null;
+        
+        if (!hasMidterm && !hasFinal) {
+            quizzesSection.style.display = 'none';
+            return;
+        }
+        
+        quizzesSection.style.display = 'block';
+        
+        let quizzesHtml = '';
+        
+        // ✅ اختبار نصفي
+        if (quizzes.midterm) {
+            const mid = quizzes.midterm;
+            let statusHtml = '';
+            let buttonHtml = '';
+            let cardClass = '';
+            let warningHtml = '';
+            
+            // ✅ تنبيه أن الاختبار لمرة واحدة
+            warningHtml = `<span class="quiz-warning"><i class="fas fa-exclamation-triangle"></i> يُؤخذ مرة واحدة فقط!</span>`;
+            
+            if (mid.completed) {
+                cardClass = 'completed';
+                const passed = mid.passed;
+                statusHtml = `<span class="quiz-status ${passed ? 'status-passed' : 'status-failed'}">
+                                <i class="fas ${passed ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                ${passed ? 'اجتزت' : 'لم تجتز'} (${mid.score}%)
+                             </span>`;
+                buttonHtml = `<button class="btn-view-result" onclick="viewQuizResult('${mid.id}', 'midterm')">
+                                <i class="fas fa-chart-line"></i> عرض النتيجة
+                            </button>`;
+            } else if (mid.unlocked) {
+                statusHtml = `<span class="quiz-status status-pending">
+                                <i class="fas fa-clock"></i> متاح الآن - ${mid.unlockMessage || 'يمكنك البدء'}
+                              </span>`;
+                buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${mid.id}', '${mid.name}', ${mid.duration})">
+                                <i class="fas fa-play"></i> بدء الاختبار
+                            </button>`;
+            } else {
+                cardClass = 'locked';
+                statusHtml = `<span class="quiz-status status-locked">
+                                <i class="fas fa-lock"></i> ${mid.unlockMessage || 'غير متاح بعد'}
+                              </span>`;
+                buttonHtml = `<button class="btn-start-quiz" disabled>
+                                <i class="fas fa-lock"></i> غير متاح
+                            </button>`;
+            }
+            
+            quizzesHtml += `
+                <div class="quiz-card ${cardClass}">
+                    <div class="quiz-info">
+                        <div class="quiz-title">
+                            📝 ${escapeHtml(mid.name)}
+                            <span class="quiz-badge badge-midterm">اختبار نصفي</span>
+                            ${warningHtml}
+                        </div>
+                        <div class="quiz-meta">
+                            <span><i class="fas fa-clock"></i> ${mid.duration} دقيقة</span>
+                            <span><i class="fas fa-question-circle"></i> ${mid.questionsCount} سؤال</span>
+                            <span><i class="fas fa-star"></i> نسبة النجاح: ${mid.passingScore}%</span>
+                        </div>
+                        <div class="quiz-meta">
+                            ${statusHtml}
+                        </div>
+                    </div>
+                    ${buttonHtml}
+                </div>
+            `;
+        }
+        
+        // ✅ اختبار نهائي (نفس المنطق مع تنبيه لمرة واحدة)
+        if (quizzes.final) {
+            const fin = quizzes.final;
+            let statusHtml = '';
+            let buttonHtml = '';
+            let cardClass = '';
+            let warningHtml = `<span class="quiz-warning"><i class="fas fa-exclamation-triangle"></i> يُؤخذ مرة واحدة فقط!</span>`;
+            
+            if (fin.completed) {
+                cardClass = 'completed';
+                const passed = fin.passed;
+                statusHtml = `<span class="quiz-status ${passed ? 'status-passed' : 'status-failed'}">
+                                <i class="fas ${passed ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                ${passed ? 'اجتزت' : 'لم تجتز'} (${fin.score}%)
+                             </span>`;
+                buttonHtml = `<button class="btn-view-result" onclick="viewQuizResult('${fin.id}', 'final')">
+                                <i class="fas fa-chart-line"></i> عرض النتيجة
+                            </button>`;
+            } else if (fin.unlocked) {
+                statusHtml = `<span class="quiz-status status-pending">
+                                <i class="fas fa-clock"></i> متاح الآن - ${fin.unlockMessage || 'يمكنك البدء'}
+                              </span>`;
+                buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${fin.id}', '${fin.name}', ${fin.duration})">
+                                <i class="fas fa-play"></i> بدء الاختبار
+                            </button>`;
+            } else {
+                cardClass = 'locked';
+                statusHtml = `<span class="quiz-status status-locked">
+                                <i class="fas fa-lock"></i> ${fin.unlockMessage || 'غير متاح بعد'}
+                              </span>`;
+                buttonHtml = `<button class="btn-start-quiz" disabled>
+                                <i class="fas fa-lock"></i> غير متاح
+                            </button>`;
+            }
+            
+            quizzesHtml += `
+                <div class="quiz-card ${cardClass}">
+                    <div class="quiz-info">
+                        <div class="quiz-title">
+                            🎓 ${escapeHtml(fin.name)}
+                            <span class="quiz-badge badge-final">اختبار نهائي</span>
+                            ${warningHtml}
+                        </div>
+                        <div class="quiz-meta">
+                            <span><i class="fas fa-clock"></i> ${fin.duration} دقيقة</span>
+                            <span><i class="fas fa-question-circle"></i> ${fin.questionsCount} سؤال</span>
+                            <span><i class="fas fa-star"></i> نسبة النجاح: ${fin.passingScore}%</span>
+                        </div>
+                        <div class="quiz-meta">
+                            ${statusHtml}
+                        </div>
+                    </div>
+                    ${buttonHtml}
+                </div>
+            `;
+        }
+        
+        document.getElementById('quizzesList').innerHTML = quizzesHtml;
+        
+    } catch (error) {
+        console.error('Error loading quizzes:', error);
+        document.getElementById('quizzesList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبارات</div>';
+    }
+}
+
+// بدء الاختبار
+function startQuiz(quizId, quizName, duration) {
+    // ✅ تنبيه للمستخدم بأن الاختبار لمرة واحدة
+    if (confirm(`⚠️ تنبيه مهم!\n\nاختبار "${quizName}" يُؤخذ مرة واحدة فقط.\n\nالمدة: ${duration} دقيقة\n\nبمجرد البدء، لا يمكنك إعادة الاختبار.\n\nهل أنت مستعد للبدء؟`)) {
+        window.location.href = `/quiz.html?id=${quizId}`;
+    }
+}
+
+// عرض نتيجة الاختبار
+function viewQuizResult(quizId, type) {
+    window.location.href = `/quiz-result.html?id=${quizId}&type=${type}`;
+}
+    
 // ==================== الحصول على الشهادة ====================
 async function getCertificate() {
     const token = localStorage.getItem('token');
