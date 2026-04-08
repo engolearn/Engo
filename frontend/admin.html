@@ -751,6 +751,9 @@
                 <button type="button" class="btn-secondary" onclick="previewAnnouncement()" style="background: #718096; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer;">
                     <i class="fas fa-eye"></i> معاينة
                 </button>
+                <button type="button" class="btn-secondary" onclick="resetAnnouncementForm()" style="background: #718096; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer;">
+    <i class="fas fa-plus"></i> تنبيه جديد
+                </button>
             </div>
         </form>
         
@@ -1359,6 +1362,163 @@ if (document.getElementById('originalPrice')) {
     document.getElementById('originalPrice').addEventListener('input', updateDiscountPreview);
     document.getElementById('discountPrice').addEventListener('input', updateDiscountPreview);
 }
+
+        // ==================== تعديل التنبيهات ====================
+let currentEditingAnnouncementId = null;
+
+// فتح نافذة تعديل التنبيه
+async function editAnnouncement(announcementId) {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const res = await fetch(API_URL + '/admin/announcements', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!res.ok) throw new Error('Failed to load');
+        
+        const announcements = await res.json();
+        const announcement = announcements.find(a => a._id === announcementId);
+        
+        if (!announcement) {
+            showAlert('❌ التنبيه غير موجود', 'error');
+            return;
+        }
+        
+        currentEditingAnnouncementId = announcementId;
+        
+        // تعبئة النموذج بالبيانات
+        document.getElementById('announcementText').value = announcement.text;
+        document.getElementById('enableCountdown').checked = announcement.hasCountdown || false;
+        
+        if (announcement.hasCountdown && announcement.countdownDate) {
+            document.getElementById('countdownFields').style.display = 'block';
+            // تنسيق التاريخ ليتناسب مع input datetime-local
+            const countdownDate = new Date(announcement.countdownDate);
+            document.getElementById('countdownDate').value = countdownDate.toISOString().slice(0, 16);
+        } else {
+            document.getElementById('countdownFields').style.display = 'none';
+            document.getElementById('countdownDate').value = '';
+        }
+        
+        if (announcement.expiryDate) {
+            const expiryDate = new Date(announcement.expiryDate);
+            document.getElementById('expiryDate').value = expiryDate.toISOString().slice(0, 16);
+        } else {
+            document.getElementById('expiryDate').value = '';
+        }
+        
+        // تغيير زر الإرسال إلى "تحديث"
+        const submitBtn = document.querySelector('#announcementForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> تحديث التنبيه';
+            submitBtn.style.background = '#ed8936';
+        }
+        
+        // إضافة زر إلغاء التعديل إذا لم يكن موجوداً
+        if (!document.getElementById('cancelEditBtn')) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.id = 'cancelEditBtn';
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'btn-secondary';
+            cancelBtn.innerHTML = '<i class="fas fa-times"></i> إلغاء التعديل';
+            cancelBtn.style.cssText = 'background: #718096; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer; margin-right: 10px;';
+            cancelBtn.onclick = cancelEditAnnouncement;
+            submitBtn.parentNode.insertBefore(cancelBtn, submitBtn);
+        }
+        
+        // تمرير إلى النموذج
+        document.getElementById('announcementForm').scrollIntoView({ behavior: 'smooth' });
+        showAlert('✏️ يمكنك الآن تعديل التنبيه', 'success');
+        
+    } catch (error) {
+        console.error('Error loading announcement for edit:', error);
+        showAlert('❌ خطأ في تحميل بيانات التنبيه', 'error');
+    }
+}
+
+// إلغاء التعديل
+function cancelEditAnnouncement() {
+    currentEditingAnnouncementId = null;
+    resetAnnouncementForm();
+    
+    const submitBtn = document.querySelector('#announcementForm button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> نشر التنبيه';
+        submitBtn.style.background = '#f59e0b';
+    }
+    
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.remove();
+    
+    showAlert('🔄 تم إلغاء التعديل', 'success');
+}
+
+// تحديث التنبيه الموجود
+async function updateAnnouncement() {
+    const token = localStorage.getItem('token');
+    const text = document.getElementById('announcementText').value.trim();
+    const hasCountdown = document.getElementById('enableCountdown').checked;
+    const countdownDate = document.getElementById('countdownDate').value;
+    const expiryDate = document.getElementById('expiryDate').value;
+    
+    if (!text) {
+        showAlert('❌ أدخل نص التنبيه', 'error');
+        return false;
+    }
+    
+    try {
+        const res = await fetch(API_URL + '/admin/announcements/' + currentEditingAnnouncementId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',   // ✅ صحيح
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                text: text,
+                hasCountdown: hasCountdown,
+                countdownDate: countdownDate || null,
+                expiryDate: expiryDate || null,
+                isActive: true
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            showAlert('✅ تم تحديث التنبيه بنجاح', 'success');
+            cancelEditAnnouncement();
+            loadAnnouncementsList(); // تحديث القائمة
+            return true;
+        } else {
+            showAlert('❌ ' + (data.message || 'حدث خطأ'), 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error updating announcement:', error);
+        showAlert('❌ خطأ في الاتصال', 'error');
+        return false;
+    }
+}
+
+// تعديل دالة إرسال النموذج لتدعم الإضافة والتحديث
+document.getElementById('announcementForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (currentEditingAnnouncementId) {
+        await updateAnnouncement();
+    } else {
+        await publishAnnouncement();
+    }
+});
+        function resetAnnouncementForm() {
+    document.getElementById('announcementText').value = '';
+    document.getElementById('enableCountdown').checked = false;
+    document.getElementById('countdownFields').style.display = 'none';
+    document.getElementById('countdownDate').value = '';
+    document.getElementById('expiryDate').value = '';
+    document.getElementById('announcementPreview').style.display = 'none';
+        }
         // ==================== معالجة صورة الدورة ====================
 function previewCourseImage(event) {
     const file = event.target.files[0];
@@ -1471,56 +1631,7 @@ window.deleteCourse = async (id) => {
         }
     } 
 };
-// تحميل وعرض التنبيهات المنشورة
-function loadPublishedAnnouncements() {
-    const container = document.getElementById('publishedAnnouncements');
-    const announcementData = localStorage.getItem('site_announcement');
-    
-    if (!announcementData) {
-        container.innerHTML = '<div class="empty-message">📭 لا توجد تنبيهات منشورة حالياً</div>';
-        return;
-    }
-    
-    try {
-        const data = JSON.parse(announcementData);
-        
-        // التحقق من صلاحية التنبيه
-        const isExpired = data.expiryDate && new Date(data.expiryDate) < new Date();
-        
-        container.innerHTML = `
-            <div style="background: #f7fafc; border-radius: 15px; padding: 1rem; margin-bottom: 1rem; border-right: 4px solid #f59e0b;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                            <span style="background: #f59e0b; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;">
-                                <i class="fas fa-bullhorn"></i> منشور حالياً
-                            </span>
-                            ${isExpired ? '<span style="background: #e53e3e; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;">⏰ منتهي الصلاحية</span>' : ''}
-                        </div>
-                        <p style="margin-top: 0.8rem; font-size: 1rem;"><strong>📢 نص التنبيه:</strong></p>
-                        <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 12px; padding: 0.8rem; margin-top: 0.5rem;">
-                            <div style="color: white; font-weight: bold;">${escapeHtml(data.text)}</div>
-                            ${data.hasCountdown && data.countdownDate ? `<div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: 5px;">⏰ ينتهي العداد في: ${new Date(data.countdownDate).toLocaleString('ar')}</div>` : ''}
-                        </div>
-                        <div style="margin-top: 0.8rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem;">
-                            ${data.expiryDate ? `<p><strong>📅 تاريخ انتهاء الصلاحية:</strong> ${new Date(data.expiryDate).toLocaleString('ar')}</p>` : '<p><strong>📅 تاريخ انتهاء الصلاحية:</strong> غير محدد</p>'}
-                            ${data.hasCountdown && data.countdownDate ? `<p><strong>⏰ تاريخ نهاية العداد:</strong> ${new Date(data.countdownDate).toLocaleString('ar')}</p>` : ''}
-                            <p><strong>📅 تاريخ النشر:</strong> ${new Date(data.createdAt).toLocaleString('ar')}</p>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn-danger" onclick="clearAnnouncement()" style="padding: 8px 20px;">
-                            <i class="fas fa-trash"></i> إزالة التنبيه
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    } catch(e) {
-        console.error(e);
-        container.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل التنبيه</div>';
-    }
-}
+
         // ==================== إدارة التنبيهات والإعلانات ====================
 document.getElementById('enableCountdown')?.addEventListener('change', function() {
     document.getElementById('countdownFields').style.display = this.checked ? 'block' : 'none';
@@ -1575,67 +1686,8 @@ document.getElementById('announcementForm')?.addEventListener('submit', async (e
     await publishAnnouncement();
 });
     
-    const announcementData = {
-        text: text,
-        hasCountdown: document.getElementById('enableCountdown').checked,
-        countdownDate: document.getElementById('enableCountdown').checked ? document.getElementById('countdownDate').value : null,
-        expiryDate: document.getElementById('expiryDate').value || null,
-        createdAt: new Date().toISOString()
-    };
     
-    // حفظ التنبيه في localStorage (يمكن نقله إلى السيرفر لاحقاً)
-    localStorage.setItem('site_announcement', JSON.stringify(announcementData));
-    
-    showAlert('✅ تم نشر التنبيه بنجاح!', 'success');
-    
-    // إعادة تعيين النموذج
-    document.getElementById('announcementText').value = '';
-    document.getElementById('enableCountdown').checked = false;
-    document.getElementById('countdownFields').style.display = 'none';
-    document.getElementById('countdownDate').value = '';
-    document.getElementById('expiryDate').value = '';
-    document.getElementById('announcementPreview').style.display = 'none';
-});
 
-// إزالة التنبيه
-function clearAnnouncement() {
-    if (confirm('⚠️ هل أنت متأكد من إزالة التنبيه من الصفحة الرئيسية؟')) {
-        localStorage.removeItem('site_announcement');
-        // ✅ لا نزيل announcement_hidden_until لأنها لم تعد تستخدم
-        showAlert('✅ تم إزالة التنبيه', 'success');
-        
-        // إعادة تعيين النموذج
-        document.getElementById('announcementText').value = '';
-        document.getElementById('enableCountdown').checked = false;
-        document.getElementById('countdownFields').style.display = 'none';
-        document.getElementById('countdownDate').value = '';
-        document.getElementById('expiryDate').value = '';
-        document.getElementById('announcementPreview').style.display = 'none';
-        
-        // تحديث قائمة التنبيهات
-        loadPublishedAnnouncements();
-    }
-}
-
-// تحميل التنبيه الحالي لعرضه في لوحة الأدمن
-function loadCurrentAnnouncement() {
-    const announcement = localStorage.getItem('site_announcement');
-    if (announcement) {
-        const data = JSON.parse(announcement);
-        document.getElementById('announcementText').value = data.text;
-        if (data.hasCountdown && data.countdownDate) {
-            document.getElementById('enableCountdown').checked = true;
-            document.getElementById('countdownFields').style.display = 'block';
-            document.getElementById('countdownDate').value = data.countdownDate;
-        }
-        if (data.expiryDate) {
-            document.getElementById('expiryDate').value = data.expiryDate;
-        }
-    }
-}
-
-// استدعاء loadCurrentAnnouncement عند تحميل صفحة الأدمن
-        // ==================== إدارة التنبيهات (API) ====================
 
 // تحميل التنبيهات من السيرفر
 async function loadAnnouncementsList() {
@@ -4589,7 +4641,7 @@ async function updateQuiz() {
         return false;
     }
 }
-        async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadCurrentAnnouncement(); loadPayments(); await loadCoursesForSelect(); } }
+        async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadPayments(); await loadCoursesForSelect(); } }
         init();
         // ==================== دوال الخصم في نافذة التعديل ====================
 function toggleEditDiscountFields() {
