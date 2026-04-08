@@ -162,9 +162,14 @@
         <div id="paymentSection" class="payment-section" style="display: none;">
             <h3>💳 تفاصيل الدفع</h3>
             
+            
             <div id="selectedCourseInfo" style="background: #f7fafc; border-radius: 15px; padding: 1rem; margin-bottom: 1.5rem;">
-                <p><strong>📚 الدورة المختارة:</strong> <span id="selectedCourseTitle"></span></p>
-                <p><strong>💰 السعر:</strong> <span id="selectedCoursePrice"></span> ريال</p>
+    <p><strong>📚 الدورة المختارة:</strong> <span id="selectedCourseTitle"></span></p>
+    <p>
+        <strong>💰 السعر:</strong> 
+        <span id="selectedCourseOriginalPrice" style="display: none;"></span>
+        <span id="selectedCoursePrice"></span> ريال
+    </p>
             </div>
             
             <h4>اختر طريقة الدفع:</h4>
@@ -243,24 +248,21 @@ async function loadCourses() {
         }
         
         grid.innerHTML = courses.map(course => `
-            <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${course.price}, this)"
+            <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${getCoursePrice(course)}, ${course.price}, ${course.hasDiscount || false})" 
                  ${selectedCourseId === course._id ? 'id="selectedCourseCard"' : ''}>
-                <div class="course-image">
-    ${course.image ? `<img src="${course.image}" style="width:100%;height:100%;object-fit:cover;">` : '<i class="fas fa-crown"></i>'}
-</div>
+                <div class="course-image"><i class="fas fa-crown"></i></div>
                 <div class="course-info">
                     <div class="course-title">${escapeHtml(course.title)}</div>
-                    <div class="course-price">${course.price} ريال</div>
+                    ${displayCoursePrice(course)}
                     <div class="course-desc" style="font-size:0.8rem; color:#718096;">${escapeHtml(course.description.substring(0, 80))}...</div>
                 </div>
             </div>
         `).join('');
         
-        // إذا كان هناك دورة محددة في الرابط، قم بتحديدها تلقائياً
         if (selectedCourseId) {
             const selectedCourse = courses.find(c => c._id === selectedCourseId);
             if (selectedCourse) {
-                selectCourse(selectedCourse._id, selectedCourse.title, selectedCourse.price);
+                selectCourse(selectedCourse._id, selectedCourse.title, getCoursePrice(selectedCourse), selectedCourse.price, selectedCourse.hasDiscount);
                 document.getElementById('selectedCourseCard')?.scrollIntoView({ behavior: 'smooth' });
             }
         }
@@ -270,22 +272,71 @@ async function loadCourses() {
         document.getElementById('coursesGrid').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
     }
 }
-        function selectCourse(id, title, price, element) {
-    selectedCourse = { id, title, price };
+        function selectCourse(id, title, finalPrice, originalPrice, hasDiscount) {
+    selectedCourse = { 
+        id: id, 
+        title: title, 
+        price: finalPrice,  // السعر النهائي بعد الخصم
+        originalPrice: originalPrice,
+        hasDiscount: hasDiscount
+    };
+    
     document.getElementById('selectedCourseTitle').innerText = title;
-    document.getElementById('selectedCoursePrice').innerText = price;
+    document.getElementById('selectedCoursePrice').innerText = finalPrice;
+    
+    // إذا كان هناك خصم، أظهر السعر الأصلي مشطوب
+    if (hasDiscount && originalPrice > finalPrice) {
+        document.getElementById('selectedCourseOriginalPrice').innerHTML = `<span style="text-decoration: line-through; color: #a0aec0;">${originalPrice} ريال</span>`;
+        document.getElementById('selectedCourseOriginalPrice').style.display = 'inline';
+    } else {
+        document.getElementById('selectedCourseOriginalPrice').style.display = 'none';
+    }
+    
     document.getElementById('paymentSection').style.display = 'block';
     
     // تحديث واجهة البطاقات
     document.querySelectorAll('.course-card').forEach(card => card.classList.remove('selected'));
-    if (element) {
-        element.classList.add('selected');
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('selected');
     }
     
     // التحقق من زر التأكيد
     updateSubscribeButton();
         }
+// حساب السعر بعد الخصم
+function getCoursePrice(course) {
+    if (!course.isPremium) return 0;
+    
+    // التحقق من صحة الخصم
+    const now = new Date();
+    const discountValid = course.hasDiscount && course.discountPrice && 
+                         (!course.discountEndDate || new Date(course.discountEndDate) > now);
+    
+    if (discountValid) {
+        return course.discountPrice; // السعر بعد الخصم
+    }
+    return course.price; // السعر الأصلي
+}
 
+// عرض السعر مع الخصم في واجهة المستخدم
+function displayCoursePrice(course) {
+    const now = new Date();
+    const discountValid = course.hasDiscount && course.discountPrice && 
+                         (!course.discountEndDate || new Date(course.discountEndDate) > now);
+    
+    if (discountValid) {
+        const discountPercent = Math.round(((course.price - course.discountPrice) / course.price) * 100);
+        return `
+            <div class="course-price">
+                <span style="text-decoration: line-through; color: #a0aec0; font-size: 0.85rem;">${course.price} ريال</span>
+                <span style="color: #e53e3e; font-weight: bold; font-size: 1.2rem;">${course.discountPrice} ريال</span>
+                <span style="background: #e53e3e; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-right: 8px;">🔥 خصم ${discountPercent}%</span>
+            </div>
+        `;
+    } else {
+        return `<div class="course-price">💰 ${course.price} ريال</div>`;
+    }
+}
         function selectPaymentMethod(method) {
             selectedPaymentMethod = method;
             document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
@@ -299,30 +350,31 @@ async function loadCourses() {
         }
 
         async function requestSubscription() {
-            if (!selectedCourse || !selectedPaymentMethod) {
-                showAlert('❌ اختر الدورة وطريقة الدفع أولاً', 'error');
-                return;
-            }
-            
-            const token = localStorage.getItem('token');
-            const btn = document.getElementById('subscribeBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ جاري إرسال الطلب...';
-            btn.disabled = true;
-            
-            try {
-                const res = await fetch(API_URL + '/subscription/request', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({
-                        courseId: selectedCourse.id,
-                        paymentMethod: selectedPaymentMethod,
-                        amount: selectedCourse.price
-                    })
-                });
+    if (!selectedCourse || !selectedPaymentMethod) {
+        showAlert('❌ اختر الدورة وطريقة الدفع أولاً', 'error');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    const btn = document.getElementById('subscribeBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ جاري إرسال الطلب...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch(API_URL + '/subscription/request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                courseId: selectedCourse.id,
+                paymentMethod: selectedPaymentMethod,
+                amount: selectedCourse.price  // السعر بعد الخصم
+            })
+        });
+        
                 
                 const data = await res.json();
                 
