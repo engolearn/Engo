@@ -1766,7 +1766,11 @@ async function saveCourseEdit() {
     const token = localStorage.getItem('token');
     const courseId = document.getElementById('editCourseId').value;
     // أضف هذه المتغيرات في بداية saveCourseEdit
-const hasDiscount = document.getElementById('editHasDiscount').checked;
+
+    // ✅ جلب القيمة بشكل صحيح
+    const freeLessonsInput = document.getElementById('editFreeLessons');
+    const freeLessonsValue = parseInt(freeLessonsInput.value);
+    const hasDiscount = document.getElementById('editHasDiscount').checked;
 const originalPrice = parseFloat(document.getElementById('editOriginalPrice').value) || 0;
 const discountPriceVal = parseFloat(document.getElementById('editDiscountPrice').value) || 0;
 const discountEndDate = document.getElementById('editDiscountEndDate').value;
@@ -1775,9 +1779,6 @@ let discountPercentage = 0;
 if (hasDiscount && originalPrice > 0 && discountPriceVal > 0 && discountPriceVal < originalPrice) {
     discountPercentage = Math.round(((originalPrice - discountPriceVal) / originalPrice) * 100);
 }
-    // ✅ جلب القيمة بشكل صحيح
-    const freeLessonsInput = document.getElementById('editFreeLessons');
-    const freeLessonsValue = parseInt(freeLessonsInput.value);
     
     console.log('🔍 Free lessons input value:', freeLessonsInput.value);
     console.log('🔍 Parsed free lessons value:', freeLessonsValue);
