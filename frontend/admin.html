@@ -712,6 +712,51 @@
         <div id="quizzesList"><div class="loading">جاري تحميل الاختبارات...</div></div>
     </div>
 </div>
+        <!-- قسم إدارة التنبيهات والإعلانات -->
+<div class="admin-section">
+    <h2><i class="fas fa-bullhorn"></i> 📢 إدارة التنبيهات والإعلانات</h2>
+    <form id="announcementForm">
+        <div class="form-group">
+            <label>نص التنبيه *</label>
+            <textarea id="announcementText" rows="3" placeholder="مثال: 🔥 خصم 50% على جميع الدورات لمدة محدودة! سارع بالتسجيل"></textarea>
+            <small>يمكنك استخدام الإيموجي والرموز التعبيرية لجذب الانتباه</small>
+        </div>
+        
+        <div class="form-group">
+            <label><input type="checkbox" id="enableCountdown"> تفعيل عداد الوقت التنازلي</label>
+        </div>
+        
+        <div id="countdownFields" style="display: none;">
+            <div class="form-group">
+                <label>📅 تاريخ انتهاء التنبيه (للعداد)</label>
+                <input type="datetime-local" id="countdownDate">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>📅 تاريخ انتهاء صلاحية التنبيه (اختياري)</label>
+            <input type="datetime-local" id="expiryDate">
+            <small>بعد هذا التاريخ سيختفي التنبيه تلقائياً</small>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn-primary" style="background: #f59e0b;">
+                <i class="fas fa-paper-plane"></i> نشر التنبيه
+            </button>
+            <button type="button" class="btn-danger" onclick="clearAnnouncement()">
+                <i class="fas fa-trash"></i> إزالة التنبيه
+            </button>
+            <button type="button" class="btn-outline" onclick="previewAnnouncement()">
+                <i class="fas fa-eye"></i> معاينة
+            </button>
+        </div>
+    </form>
+    
+    <div id="announcementPreview" style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 12px; display: none;">
+        <h4>📱 المعاينة:</h4>
+        <div id="previewContent"></div>
+    </div>
+</div>
 
         <!-- تبويب الإشعارات -->
 <div id="notificationsTab" class="tab-content">
@@ -1414,6 +1459,114 @@ window.deleteCourse = async (id) => {
         }
     } 
 };
+
+        // ==================== إدارة التنبيهات والإعلانات ====================
+document.getElementById('enableCountdown')?.addEventListener('change', function() {
+    document.getElementById('countdownFields').style.display = this.checked ? 'block' : 'none';
+});
+
+function previewAnnouncement() {
+    const text = document.getElementById('announcementText').value;
+    const hasCountdown = document.getElementById('enableCountdown').checked;
+    const countdownDate = document.getElementById('countdownDate').value;
+    
+    const previewDiv = document.getElementById('announcementPreview');
+    const previewContent = document.getElementById('previewContent');
+    
+    if (!text.trim()) {
+        showAlert('❌ أدخل نص التنبيه أولاً', 'error');
+        return;
+    }
+    
+    let previewHtml = `
+        <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 12px; padding: 0.8rem 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <i class="fas fa-bullhorn" style="font-size: 1.2rem; color: white;"></i>
+                <div style="flex: 1;">
+                    <div style="color: white; font-weight: bold;">${escapeHtml(text)}</div>
+                    ${hasCountdown && countdownDate ? `<div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: 4px;">⏰ ينتهي خلال: <span id="previewTimer"></span></div>` : ''}
+                </div>
+                <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 25px; height: 25px; border-radius: 50%; cursor: default;">✖</button>
+            </div>
+        </div>
+    `;
+    
+    previewContent.innerHTML = previewHtml;
+    previewDiv.style.display = 'block';
+    
+    if (hasCountdown && countdownDate) {
+        const previewTimer = document.getElementById('previewTimer');
+        if (previewTimer) {
+            const target = new Date(countdownDate).getTime();
+            const now = new Date().getTime();
+            const diff = Math.max(0, target - now);
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            previewTimer.innerHTML = `${hours} ساعة ${minutes} دقيقة`;
+        }
+    }
+}
+
+// نشر التنبيه
+document.getElementById('announcementForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const text = document.getElementById('announcementText').value.trim();
+    if (!text) {
+        showAlert('❌ أدخل نص التنبيه', 'error');
+        return;
+    }
+    
+    const announcementData = {
+        text: text,
+        hasCountdown: document.getElementById('enableCountdown').checked,
+        countdownDate: document.getElementById('enableCountdown').checked ? document.getElementById('countdownDate').value : null,
+        expiryDate: document.getElementById('expiryDate').value || null,
+        createdAt: new Date().toISOString()
+    };
+    
+    // حفظ التنبيه في localStorage (يمكن نقله إلى السيرفر لاحقاً)
+    localStorage.setItem('site_announcement', JSON.stringify(announcementData));
+    
+    showAlert('✅ تم نشر التنبيه بنجاح!', 'success');
+    
+    // إعادة تعيين النموذج
+    document.getElementById('announcementText').value = '';
+    document.getElementById('enableCountdown').checked = false;
+    document.getElementById('countdownFields').style.display = 'none';
+    document.getElementById('countdownDate').value = '';
+    document.getElementById('expiryDate').value = '';
+    document.getElementById('announcementPreview').style.display = 'none';
+});
+
+// إزالة التنبيه
+function clearAnnouncement() {
+    if (confirm('⚠️ هل أنت متأكد من إزالة التنبيه من الصفحة الرئيسية؟')) {
+        localStorage.removeItem('site_announcement');
+        localStorage.removeItem('announcement_hidden_until');
+        showAlert('✅ تم إزالة التنبيه', 'success');
+    }
+}
+
+// تحميل التنبيه الحالي لعرضه في لوحة الأدمن
+function loadCurrentAnnouncement() {
+    const announcement = localStorage.getItem('site_announcement');
+    if (announcement) {
+        const data = JSON.parse(announcement);
+        document.getElementById('announcementText').value = data.text;
+        if (data.hasCountdown && data.countdownDate) {
+            document.getElementById('enableCountdown').checked = true;
+            document.getElementById('countdownFields').style.display = 'block';
+            document.getElementById('countdownDate').value = data.countdownDate;
+        }
+        if (data.expiryDate) {
+            document.getElementById('expiryDate').value = data.expiryDate;
+        }
+    }
+}
+
+// استدعاء loadCurrentAnnouncement عند تحميل صفحة الأدمن
+        
         // ==================== تعديل الدرس ====================
 
 let editLessonParagraphs = [];
@@ -4235,7 +4388,7 @@ async function updateQuiz() {
         return false;
     }
 }
-        async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadPayments(); await loadCoursesForSelect(); } }
+        async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadAnnouncement(); loadCurrentAnnouncement(); loadPayments(); await loadCoursesForSelect(); } }
         init();
         // ==================== دوال الخصم في نافذة التعديل ====================
 function toggleEditDiscountFields() {
