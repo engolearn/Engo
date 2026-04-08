@@ -447,6 +447,7 @@
             <button class="tab-btn" onclick="showTab('levelTests')">📝 اختبارات المستوى</button>
             <button class="tab-btn" onclick="showTab('quizzes')">📝 الاختبارات</button>
             <button class="tab-btn" onclick="showTab('notifications')">🔔 الإشعارات</button>
+            <button class="tab-btn" onclick="showTab('announcements')">📢 التنبيهات</button>
             <button class="tab-btn" onclick="showTab('bots')">🤖 إدارة البوتات</button>
             <button class="tab-btn" onclick="showTab('subscriptions')">💎 طلبات الاشتراك</button>
             <button class="tab-btn" onclick="showTab('users')">👥 المستخدمين</button>
@@ -712,52 +713,53 @@
         <div id="quizzesList"><div class="loading">جاري تحميل الاختبارات...</div></div>
     </div>
 </div>
-        <!-- قسم إدارة التنبيهات والإعلانات -->
-<div class="admin-section">
-    <h2><i class="fas fa-bullhorn"></i> 📢 إدارة التنبيهات والإعلانات</h2>
-    <form id="announcementForm">
-        <div class="form-group">
-            <label>نص التنبيه *</label>
-            <textarea id="announcementText" rows="3" placeholder="مثال: 🔥 خصم 50% على جميع الدورات لمدة محدودة! سارع بالتسجيل"></textarea>
-            <small>يمكنك استخدام الإيموجي والرموز التعبيرية لجذب الانتباه</small>
-        </div>
-        
-        <div class="form-group">
-            <label><input type="checkbox" id="enableCountdown"> تفعيل عداد الوقت التنازلي</label>
-        </div>
-        
-        <div id="countdownFields" style="display: none;">
+<!-- تبويب التنبيهات والإعلانات -->
+<div id="announcementsTab" class="tab-content">
+    <div class="admin-section">
+        <h2><i class="fas fa-bullhorn"></i> 📢 إدارة التنبيهات والإعلانات</h2>
+        <form id="announcementForm">
             <div class="form-group">
-                <label>📅 تاريخ انتهاء التنبيه (للعداد)</label>
-                <input type="datetime-local" id="countdownDate">
+                <label>نص التنبيه *</label>
+                <textarea id="announcementText" rows="3" placeholder="مثال: 🔥 خصم 50% على جميع الدورات لمدة محدودة! سارع بالتسجيل"></textarea>
+                <small>يمكنك استخدام الإيموجي والرموز التعبيرية لجذب الانتباه</small>
             </div>
-        </div>
+            
+            <div class="form-group">
+                <label><input type="checkbox" id="enableCountdown"> تفعيل عداد الوقت التنازلي</label>
+            </div>
+            
+            <div id="countdownFields" style="display: none;">
+                <div class="form-group">
+                    <label>📅 تاريخ انتهاء التنبيه (للعداد)</label>
+                    <input type="datetime-local" id="countdownDate">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>📅 تاريخ انتهاء صلاحية التنبيه (اختياري)</label>
+                <input type="datetime-local" id="expiryDate">
+                <small>بعد هذا التاريخ سيختفي التنبيه تلقائياً</small>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn-primary" style="background: #f59e0b;">
+                    <i class="fas fa-paper-plane"></i> نشر التنبيه
+                </button>
+                <button type="button" class="btn-danger" onclick="clearAnnouncement()">
+                    <i class="fas fa-trash"></i> إزالة التنبيه
+                </button>
+                <button type="button" class="btn-outline" onclick="previewAnnouncement()">
+                    <i class="fas fa-eye"></i> معاينة
+                </button>
+            </div>
+        </form>
         
-        <div class="form-group">
-            <label>📅 تاريخ انتهاء صلاحية التنبيه (اختياري)</label>
-            <input type="datetime-local" id="expiryDate">
-            <small>بعد هذا التاريخ سيختفي التنبيه تلقائياً</small>
+        <div id="announcementPreview" style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 12px; display: none;">
+            <h4>📱 المعاينة:</h4>
+            <div id="previewContent"></div>
         </div>
-        
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-            <button type="submit" class="btn-primary" style="background: #f59e0b;">
-                <i class="fas fa-paper-plane"></i> نشر التنبيه
-            </button>
-            <button type="button" class="btn-danger" onclick="clearAnnouncement()">
-                <i class="fas fa-trash"></i> إزالة التنبيه
-            </button>
-            <button type="button" class="btn-outline" onclick="previewAnnouncement()">
-                <i class="fas fa-eye"></i> معاينة
-            </button>
-        </div>
-    </form>
-    
-    <div id="announcementPreview" style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 12px; display: none;">
-        <h4>📱 المعاينة:</h4>
-        <div id="previewContent"></div>
     </div>
 </div>
-
         <!-- تبويب الإشعارات -->
 <div id="notificationsTab" class="tab-content">
     <div class="admin-section">
@@ -3205,6 +3207,9 @@ function saveNotificationToHistory(notification) {
     
     if(tabName === 'courses') loadCourses();
      if(tabName === 'subscriptions') loadSubscriptions();
+            if(tabName === 'announcements') { 
+    loadCurrentAnnouncement();
+            }
             
     if(tabName === 'users') loadUsers();
     if(tabName === 'payments') loadPayments();
@@ -4388,7 +4393,7 @@ async function updateQuiz() {
         return false;
     }
 }
-        async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadAnnouncement(); loadCurrentAnnouncement(); loadPayments(); await loadCoursesForSelect(); } }
+        async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadCurrentAnnouncement(); loadPayments(); await loadCoursesForSelect(); } }
         init();
         // ==================== دوال الخصم في نافذة التعديل ====================
 function toggleEditDiscountFields() {
