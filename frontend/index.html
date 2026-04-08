@@ -1151,19 +1151,62 @@
         }
         
         async function login(username, password) {
-            const res = await fetch(API_URL + '/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message);
-            
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            currentUser = data.user;
-            showAlert(`✅ مرحباً ${data.user.username}!`, 'success');
+    // التحقق من إدخال البيانات
+    if (!username || !password) {
+        showAlert('❌ الرجاء إدخال اسم المستخدم وكلمة المرور', 'error');
+        return false;
+    }
+    
+    // إظهار مؤشر التحميل
+    const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.innerHTML : 'دخول';
+    if (submitBtn) {
+        submitBtn.innerHTML = '⏳ جاري تسجيل الدخول...';
+        submitBtn.disabled = true;
+    }
+    
+    try {
+        const res = await fetch(API_URL + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+            // عرض رسالة الخطأ المناسبة
+            if (res.status === 401) {
+                showAlert('❌ اسم المستخدم أو كلمة المرور غير صحيحة', 'error');
+            } else {
+                showAlert('❌ ' + (data.message || 'حدث خطأ في تسجيل الدخول'), 'error');
+            }
+            return false;
+        }
+        
+        // حفظ بيانات المستخدم
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        currentUser = data.user;
+        
+        showAlert(`✅ مرحباً ${data.user.fullName || data.user.username}! تم تسجيل الدخول بنجاح`, 'success');
+        
+        // إغلاق النافذة وإعادة تحميل الصفحة
+        closeLoginModal();
+        setTimeout(() => {
             location.reload();
+        }, 1500);
+        
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+        return false;
+    } finally {
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
         }
         
         // ==================== دوال التسجيل ====================
