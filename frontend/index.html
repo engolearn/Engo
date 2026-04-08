@@ -1446,6 +1446,12 @@ async function loadCourses() {
         </div>
     `;
 }).join('');
+          } catch(err) {
+        console.error(err);
+        const grid = document.getElementById('coursesGrid');
+        if (grid) grid.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
+    }
+}
 
 // دالة الانتقال إلى صفحة الاشتراك مع تحديد الدورة
 function goToSubscribe(courseId) {
