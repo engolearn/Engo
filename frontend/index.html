@@ -1528,10 +1528,10 @@ function loadAnnouncement() {
             document.getElementById('announcementText').innerHTML = data.text;
             document.getElementById('announcementBar').style.display = 'flex';
             
-            // تشغيل العداد إذا كان موجوداً
-            if (data.hasCountdown && data.countdownDate) {
-                startCountdownTimer(data.countdownDate);
-            }
+            // داخل loadAnnouncement، عند تشغيل العداد
+if (data.hasCountdown && data.countdownDate) {
+    startCountdownTimer(data.countdownDate);  // ✅ الاسم الصحيح
+}
         }
     } catch(e) {
         console.error('Error loading announcement:', e);
@@ -1540,7 +1540,8 @@ function loadAnnouncement() {
 }
 
 // تشغيل العداد التنازلي
-function startCountdown(targetDate) {
+// غير اسم هذه الدالة من startCountdown إلى startCountdownTimer
+function startCountdownTimer(targetDate) {
     if (announcementInterval) clearInterval(announcementInterval);
     
     const updateTimer = () => {
@@ -1946,6 +1947,7 @@ async function markAllNotificationsRead() {
             loadCourses();
             loadLevelTest();
             loadAnnouncement();
+            
             
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
