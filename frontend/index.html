@@ -1741,39 +1741,46 @@ function goToSubscribe(courseId) {
 let announcementInterval = null;
 
 // تحميل التنبيه من localStorage أو السيرفر
-function loadAnnouncement() {
+async function loadAnnouncement() {
     try {
-        const announcementData = localStorage.getItem('site_announcement');
+        const res = await fetch(API_URL + '/announcement/active');
+        const data = await res.json();
         
-        if (!announcementData) {
-            document.getElementById('announcementBar').style.display = 'none';
+        const bar = document.getElementById('announcementBar');
+        const textEl = document.getElementById('announcementText');
+        
+        if (!bar || !textEl) return;
+        
+        if (!data.announcement) {
+            bar.style.display = 'none';
             return;
         }
         
-        const data = JSON.parse(announcementData);
+        const ann = data.announcement;
         
-        // التحقق من صلاحية التنبيه
-        if (data.expiryDate && new Date(data.expiryDate) < new Date()) {
-            localStorage.removeItem('site_announcement');
-            document.getElementById('announcementBar').style.display = 'none';
+        // التحقق من صلاحية التنبيه من ناحية تاريخ الانتهاء
+        if (ann.expiryDate && new Date(ann.expiryDate) < new Date()) {
+            bar.style.display = 'none';
             return;
         }
-        
-        // ✅ تم إزالة التحقق من announcement_hidden_until
         
         // عرض التنبيه
-        if (data.text && data.text.trim() !== '') {
-            document.getElementById('announcementText').innerHTML = data.text;
-            document.getElementById('announcementBar').style.display = 'flex';
-            
-            // داخل loadAnnouncement، عند تشغيل العداد
-if (data.hasCountdown && data.countdownDate) {
-    startCountdownTimer(data.countdownDate);  // ✅ الاسم الصحيح
-}
+        textEl.innerHTML = ann.text;
+        bar.style.display = 'flex';
+        
+        // العداد التنازلي
+        if (ann.hasCountdown && ann.countdownDate) {
+            startCountdownTimer(ann.countdownDate);
+        } else if (announcementInterval) {
+            clearInterval(announcementInterval);
+            const timerEl = document.getElementById('announcementTimer');
+            if (timerEl) timerEl.innerHTML = '';
         }
-    } catch(e) {
-        console.error('Error loading announcement:', e);
-        document.getElementById('announcementBar').style.display = 'none';
+        
+    } catch(error) {
+        console.error('Error loading announcement:', error);
+        const bar = document.getElementById('announcementBar');
+        if (bar) bar.style.display = 'none';
     }
 }
 
