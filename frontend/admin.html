@@ -713,19 +713,22 @@
         <div id="quizzesList"><div class="loading">جاري تحميل الاختبارات...</div></div>
     </div>
 </div>
-<!-- تبويب التنبيهات والإعلانات -->
+
+        <!-- تبويب التنبيهات والإعلانات -->
 <div id="announcementsTab" class="tab-content">
+    
+    <!-- قسم إضافة تنبيه جديد -->
     <div class="admin-section">
-        <h2><i class="fas fa-bullhorn"></i> 📢 إدارة التنبيهات والإعلانات</h2>
+        <h2><i class="fas fa-plus-circle"></i> ➕ إضافة تنبيه جديد</h2>
         <form id="announcementForm">
             <div class="form-group">
-                <label>نص التنبيه *</label>
+                <label>📢 نص التنبيه *</label>
                 <textarea id="announcementText" rows="3" placeholder="مثال: 🔥 خصم 50% على جميع الدورات لمدة محدودة! سارع بالتسجيل"></textarea>
                 <small>يمكنك استخدام الإيموجي والرموز التعبيرية لجذب الانتباه</small>
             </div>
             
             <div class="form-group">
-                <label><input type="checkbox" id="enableCountdown"> تفعيل عداد الوقت التنازلي</label>
+                <label><input type="checkbox" id="enableCountdown"> ⏰ تفعيل عداد الوقت التنازلي</label>
             </div>
             
             <div id="countdownFields" style="display: none;">
@@ -741,14 +744,11 @@
                 <small>بعد هذا التاريخ سيختفي التنبيه تلقائياً</small>
             </div>
             
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
                 <button type="submit" class="btn-primary" style="background: #f59e0b;">
                     <i class="fas fa-paper-plane"></i> نشر التنبيه
                 </button>
-                <button type="button" class="btn-danger" onclick="clearAnnouncement()">
-                    <i class="fas fa-trash"></i> إزالة التنبيه
-                </button>
-                <button type="button" class="btn-outline" onclick="previewAnnouncement()">
+                <button type="button" class="btn-secondary" onclick="previewAnnouncement()" style="background: #718096; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer;">
                     <i class="fas fa-eye"></i> معاينة
                 </button>
             </div>
@@ -759,7 +759,17 @@
             <div id="previewContent"></div>
         </div>
     </div>
+    
+    <!-- قسم عرض التنبيهات المنشورة -->
+    <div class="admin-section">
+        <h2><i class="fas fa-list"></i> 📋 التنبيهات المنشورة حالياً</h2>
+        <div id="publishedAnnouncements">
+            <div class="loading">جاري تحميل التنبيهات...</div>
+        </div>
+    </div>
+    
 </div>
+        
         <!-- تبويب الإشعارات -->
 <div id="notificationsTab" class="tab-content">
     <div class="admin-section">
@@ -1461,11 +1471,61 @@ window.deleteCourse = async (id) => {
         }
     } 
 };
-
+// تحميل وعرض التنبيهات المنشورة
+function loadPublishedAnnouncements() {
+    const container = document.getElementById('publishedAnnouncements');
+    const announcementData = localStorage.getItem('site_announcement');
+    
+    if (!announcementData) {
+        container.innerHTML = '<div class="empty-message">📭 لا توجد تنبيهات منشورة حالياً</div>';
+        return;
+    }
+    
+    try {
+        const data = JSON.parse(announcementData);
+        
+        // التحقق من صلاحية التنبيه
+        const isExpired = data.expiryDate && new Date(data.expiryDate) < new Date();
+        
+        container.innerHTML = `
+            <div style="background: #f7fafc; border-radius: 15px; padding: 1rem; margin-bottom: 1rem; border-right: 4px solid #f59e0b;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="background: #f59e0b; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;">
+                                <i class="fas fa-bullhorn"></i> منشور حالياً
+                            </span>
+                            ${isExpired ? '<span style="background: #e53e3e; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;">⏰ منتهي الصلاحية</span>' : ''}
+                        </div>
+                        <p style="margin-top: 0.8rem; font-size: 1rem;"><strong>📢 نص التنبيه:</strong></p>
+                        <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 12px; padding: 0.8rem; margin-top: 0.5rem;">
+                            <div style="color: white; font-weight: bold;">${escapeHtml(data.text)}</div>
+                            ${data.hasCountdown && data.countdownDate ? `<div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: 5px;">⏰ ينتهي العداد في: ${new Date(data.countdownDate).toLocaleString('ar')}</div>` : ''}
+                        </div>
+                        <div style="margin-top: 0.8rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem;">
+                            ${data.expiryDate ? `<p><strong>📅 تاريخ انتهاء الصلاحية:</strong> ${new Date(data.expiryDate).toLocaleString('ar')}</p>` : '<p><strong>📅 تاريخ انتهاء الصلاحية:</strong> غير محدد</p>'}
+                            ${data.hasCountdown && data.countdownDate ? `<p><strong>⏰ تاريخ نهاية العداد:</strong> ${new Date(data.countdownDate).toLocaleString('ar')}</p>` : ''}
+                            <p><strong>📅 تاريخ النشر:</strong> ${new Date(data.createdAt).toLocaleString('ar')}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn-danger" onclick="clearAnnouncement()" style="padding: 8px 20px;">
+                            <i class="fas fa-trash"></i> إزالة التنبيه
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch(e) {
+        console.error(e);
+        container.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل التنبيه</div>';
+    }
+}
         // ==================== إدارة التنبيهات والإعلانات ====================
 document.getElementById('enableCountdown')?.addEventListener('change', function() {
     document.getElementById('countdownFields').style.display = this.checked ? 'block' : 'none';
 });
+        
 
 function previewAnnouncement() {
     const text = document.getElementById('announcementText').value;
@@ -1547,8 +1607,19 @@ function clearAnnouncement() {
         localStorage.removeItem('site_announcement');
         localStorage.removeItem('announcement_hidden_until');
         showAlert('✅ تم إزالة التنبيه', 'success');
+        
+        // إعادة تعيين النموذج
+        document.getElementById('announcementText').value = '';
+        document.getElementById('enableCountdown').checked = false;
+        document.getElementById('countdownFields').style.display = 'none';
+        document.getElementById('countdownDate').value = '';
+        document.getElementById('expiryDate').value = '';
+        document.getElementById('announcementPreview').style.display = 'none';
+        
+        // تحديث قائمة التنبيهات
+        loadPublishedAnnouncements();
     }
-}
+        }
 
 // تحميل التنبيه الحالي لعرضه في لوحة الأدمن
 function loadCurrentAnnouncement() {
@@ -3206,21 +3277,24 @@ function saveNotificationToHistory(notification) {
     event.target.classList.add('active');
     
     if(tabName === 'courses') loadCourses();
-     if(tabName === 'subscriptions') loadSubscriptions();
-            if(tabName === 'announcements') { 
-    loadCurrentAnnouncement();
-            }
-            
+    if(tabName === 'subscriptions') loadSubscriptions();
+    if(tabName === 'announcements') { 
+        loadCurrentAnnouncement();
+        loadPublishedAnnouncements();
+    }
     if(tabName === 'users') loadUsers();
     if(tabName === 'payments') loadPayments();
-    if(tabName === 'lessons') { loadCoursesForSelect(); loadCoursesForSelect2(); }
+    if(tabName === 'lessons') { 
+        loadCoursesForSelect(); 
+        loadCoursesForSelect2(); 
+    }
     if(tabName === 'levelTests') loadLevelTests();
     if(tabName === 'quizzes') loadQuizzes();
-            if(tabName === 'bots') { 
-    loadBots(); 
-    loadRoomsForBots(); 
-    loadBotsLogs(); 
-            }
+    if(tabName === 'bots') { 
+        loadBots(); 
+        loadRoomsForBots(); 
+        loadBotsLogs(); 
+    }
     if(tabName === 'notifications') { 
         loadUsersForNotification(); 
         loadSentNotifications();
