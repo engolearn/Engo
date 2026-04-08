@@ -1895,7 +1895,7 @@ app.get('/api/courses', async (req, res) => {
 
 
 
-// جلب تفاصيل الدورة مع التحقق من الاشتراك
+/// جلب تفاصيل الدورة مع التحقق من الاشتراك
 app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId).populate('lessons');
@@ -1921,18 +1921,48 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
             });
         }
         
-        // ✅ إذا كانت الدورة مجانية أو المستخدم مشترك
-        const isPurchased = req.user.purchasedCourses?.includes(course._id.toString());
-        const lessonsWithStatus = course.lessons.map((lesson, index) => ({
-            ...lesson.toObject(),
-            isLocked: !isPurchased && index >= course.freeLessons
-        }));
+        // ✅ جلب تقدم المستخدم في هذه الدورة
+        const progress = await UserProgress.findOne({ userId, courseId: course._id });
+        const completedLessonIds = progress?.completedLessons?.map(l => l.lessonId.toString()) || [];
+        
+        // ✅ معرفة إذا كان المستخدم قد اشترى الدورة
+        const isPurchased = req.user.purchasedCourses?.includes(course._id.toString()) ||
+                            course.allowedUsers?.some(id => id.toString() === userId.toString());
+        
+        // ✅ حساب الدروس المقفلة بناءً على الترتيب
+        const lessonsWithStatus = course.lessons.map((lesson, index) => {
+            const lessonId = lesson._id.toString();
+            const isCompleted = completedLessonIds.includes(lessonId);
+            
+            let isLocked = false;
+            
+            // 1. شرط الدروس المجانية (إذا لم يشتري الدورة)
+            if (!isPurchased && index >= course.freeLessons) {
+                isLocked = true;
+            }
+            
+            // 2. ✅ شرط الترتيب الإجباري: إذا كان الدرس السابق غير مكتمل
+            if (index > 0 && !isLocked) {
+                const prevLessonId = course.lessons[index - 1]._id.toString();
+                const isPrevCompleted = completedLessonIds.includes(prevLessonId);
+                if (!isPrevCompleted) {
+                    isLocked = true;
+                }
+            }
+            
+            return {
+                ...lesson.toObject(),
+                isCompleted: isCompleted,
+                isLocked: isLocked
+            };
+        });
         
         res.json({ 
             ...course.toObject(), 
             lessons: lessonsWithStatus, 
             isPurchased,
-            isSubscribed
+            isSubscribed,
+            completedLessons: completedLessonIds
         });
         
     } catch (error) {
