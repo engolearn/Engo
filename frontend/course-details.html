@@ -84,6 +84,10 @@
             <!-- قائمة الدروس -->
     <div id="lessonsContainer" class="lessons-container">
         <h2><i class="fas fa-list"></i> دروس الدورة</h2>
+        <div class="progress-info" style="background: #e2e8f0; border-radius: 12px; padding: 0.8rem; margin-bottom: 1rem; text-align: center;">
+    <i class="fas fa-info-circle"></i> 
+    <span id="progressMessage">يجب إكمال الدروس بالترتيب. لا يمكنك الانتقال إلى الدرس التالي إلا بعد إكمال الدرس الحالي.</span>
+        </div>
         <div class="lessons-grid" id="lessonsList">
             <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدروس...</div>
         </div>
@@ -307,48 +311,59 @@ function goToSubscribe(courseId) {
             return completedLessons.includes(lessonId);
         }
 
-        // عرض قائمة الدروس (أرقام وعناوين فقط)
-        function renderLessonsList() {
-            const container = document.getElementById('lessonsList');
-            if (!courseData.lessons || courseData.lessons.length === 0) {
-                container.innerHTML = '<div class="empty-message">📚 لا توجد دروس في هذه الدورة حالياً</div>';
-                return;
-            }
+        // عرض قائمة الدروس (مع الترتيب الإجباري)
+function renderLessonsList() {
+    const container = document.getElementById('lessonsList');
+    if (!courseData.lessons || courseData.lessons.length === 0) {
+        container.innerHTML = '<div class="empty-message">📚 لا توجد دروس في هذه الدورة حالياً</div>';
+        return;
+    }
 
-            container.innerHTML = courseData.lessons.map((lesson, index) => {
-                const isCompleted = isLessonCompleted(lesson._id);
-                const isLocked = lesson.isLocked;
-                
-                let statusHtml = '';
-                let buttonHtml = '';
-                
-                if (isCompleted) {
-                    statusHtml = '<span class="status-completed"><i class="fas fa-check-circle"></i> مكتمل</span>';
-                    buttonHtml = `<button class="btn-start" onclick="startLesson('${lesson._id}', ${index})"><i class="fas fa-redo"></i> مراجعة الدرس</button>`;
-                } else if (isLocked) {
-                    statusHtml = '<span class="status-locked"><i class="fas fa-lock"></i> مقفل</span>';
-                    buttonHtml = '<button class="btn-locked" disabled><i class="fas fa-lock"></i> غير متاح</button>';
-                } else {
-                    statusHtml = '<span class="status-unlocked"><i class="fas fa-unlock-alt"></i> متاح</span>';
-                    buttonHtml = `<button class="btn-start" onclick="startLesson('${lesson._id}', ${index})"><i class="fas fa-play"></i> بدء الدرس</button>`;
-                }
-                
-                return `
-                    <div class="lesson-card ${isLocked ? 'locked' : ''}">
-                        <div class="lesson-info">
-                            <div class="lesson-number">${lesson.lessonNumber}</div>
-                            <div class="lesson-details">
-                                <div class="lesson-title">${escapeHtml(lesson.title)}</div>
-                                <div class="lesson-status">
-                                    ${statusHtml}
-                                </div>
-                            </div>
-                        </div>
-                        ${buttonHtml}
-                    </div>
-                `;
-            }).join('');
+    container.innerHTML = courseData.lessons.map((lesson, index) => {
+        const isCompleted = lesson.isCompleted || false;
+        const isLocked = lesson.isLocked || false;
+        
+        let statusHtml = '';
+        let buttonHtml = '';
+        let lockReason = '';
+        
+        if (isCompleted) {
+            statusHtml = '<span class="status-completed"><i class="fas fa-check-circle"></i> مكتمل ✓</span>';
+            buttonHtml = `<button class="btn-start" onclick="startLesson('${lesson._id}', ${index})"><i class="fas fa-redo"></i> مراجعة الدرس</button>`;
+        } else if (isLocked) {
+            // ✅ تحديد سبب القفل
+            if (index > 0 && !courseData.lessons[index - 1]?.isCompleted) {
+                lockReason = 'يجب إكمال الدرس السابق أولاً';
+            } else if (!courseData.isPurchased && index >= courseData.freeLessons) {
+                lockReason = 'هذا الدرس مدفوع، يرجى الاشتراك في الدورة';
+            } else {
+                lockReason = 'هذا الدرس غير متاح حالياً';
+            }
+            
+            statusHtml = `<span class="status-locked"><i class="fas fa-lock"></i> مقفل</span>`;
+            buttonHtml = `<button class="btn-locked" disabled title="${lockReason}"><i class="fas fa-lock"></i> غير متاح</button>`;
+        } else {
+            statusHtml = '<span class="status-unlocked"><i class="fas fa-unlock-alt"></i> متاح</span>';
+            buttonHtml = `<button class="btn-start" onclick="startLesson('${lesson._id}', ${index})"><i class="fas fa-play"></i> بدء الدرس</button>`;
         }
+        
+        return `
+            <div class="lesson-card ${isLocked ? 'locked' : ''}">
+                <div class="lesson-info">
+                    <div class="lesson-number">${lesson.lessonNumber}</div>
+                    <div class="lesson-details">
+                        <div class="lesson-title">${escapeHtml(lesson.title)}</div>
+                        <div class="lesson-status">
+                            ${statusHtml}
+                            ${isLocked && lockReason ? `<span class="lock-reason" style="font-size: 0.7rem; color: #e53e3e; margin-right: 8px;">🔒 ${lockReason}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+                ${buttonHtml}
+            </div>
+        `;
+    }).join('');
+}
 
         // بدء الدرس - الانتقال إلى صفحة عرض الدرس
         function startLesson(lessonId, lessonIndex) {
