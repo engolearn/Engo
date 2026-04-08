@@ -1072,6 +1072,31 @@
             <label>عدد الدروس المجانية</label>
             <input type="number" id="editFreeLessons" class="form-control">
         </div>
+        <!-- حقل الخصم في تعديل الدورة -->
+<div style="border-top: 1px solid #e2e8f0; padding-top: 1rem; margin-top: 0.5rem;">
+    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+        <input type="checkbox" id="editHasDiscount" onchange="toggleEditDiscountFields()">
+        <span>🏷️ تفعيل الخصم على هذه الدورة</span>
+    </label>
+</div>
+
+<div id="editDiscountFields" style="display: none;">
+    <div class="form-group">
+        <label>💰 السعر الأصلي (ريال)</label>
+        <input type="number" id="editOriginalPrice" placeholder="السعر قبل الخصم">
+    </div>
+    <div class="form-group">
+        <label>🏷️ سعر الخصم (ريال)</label>
+        <input type="number" id="editDiscountPrice" placeholder="السعر بعد الخصم">
+    </div>
+    <div class="form-group">
+        <label>📅 تاريخ انتهاء الخصم (اختياري)</label>
+        <input type="date" id="editDiscountEndDate">
+    </div>
+    <div id="editDiscountPreview" style="background: #fef3c7; padding: 0.8rem; border-radius: 12px; margin-bottom: 1rem; font-size: 0.85rem; text-align: center;">
+        🔥 الخصم: 0%
+    </div>
+</div>
         
         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
             <button class="btn-primary" onclick="saveCourseEdit()" style="flex: 1;">💾 حفظ التغييرات</button>
@@ -1694,6 +1719,21 @@ async function editCourse(courseId) {
     } catch (error) {
         showAlert('❌ خطأ في تحميل الدورة', 'error');
     }
+    // تحميل بيانات الخصم
+const hasDiscount = course.hasDiscount || false;
+document.getElementById('editHasDiscount').checked = hasDiscount;
+document.getElementById('editOriginalPrice').value = course.price || 0;
+document.getElementById('editDiscountPrice').value = course.discountPrice || '';
+document.getElementById('editDiscountEndDate').value = course.discountEndDate ? course.discountEndDate.split('T')[0] : '';
+
+const discountFields = document.getElementById('editDiscountFields');
+if (discountFields) {
+    discountFields.style.display = hasDiscount ? 'block' : 'none';
+}
+if (hasDiscount) {
+    updateEditDiscountPreview();
+}
+    
 }
 
 function closeEditCourseModal() {
@@ -1725,7 +1765,16 @@ function clearEditImagePreview() {
 async function saveCourseEdit() {
     const token = localStorage.getItem('token');
     const courseId = document.getElementById('editCourseId').value;
-    
+    // أضف هذه المتغيرات في بداية saveCourseEdit
+const hasDiscount = document.getElementById('editHasDiscount').checked;
+const originalPrice = parseFloat(document.getElementById('editOriginalPrice').value) || 0;
+const discountPriceVal = parseFloat(document.getElementById('editDiscountPrice').value) || 0;
+const discountEndDate = document.getElementById('editDiscountEndDate').value;
+
+let discountPercentage = 0;
+if (hasDiscount && originalPrice > 0 && discountPriceVal > 0 && discountPriceVal < originalPrice) {
+    discountPercentage = Math.round(((originalPrice - discountPriceVal) / originalPrice) * 100);
+}
     // ✅ جلب القيمة بشكل صحيح
     const freeLessonsInput = document.getElementById('editFreeLessons');
     const freeLessonsValue = parseInt(freeLessonsInput.value);
@@ -1734,14 +1783,18 @@ async function saveCourseEdit() {
     console.log('🔍 Parsed free lessons value:', freeLessonsValue);
     
     const courseData = {
-        title: document.getElementById('editCourseTitle').value,
-        description: document.getElementById('editCourseDescription').value,
-        level: document.getElementById('editCourseLevel').value,
-        price: parseInt(document.getElementById('editCoursePrice').value) || 0,
-        isPremium: document.getElementById('editCoursePremium').checked,
-        freeLessons: isNaN(freeLessonsValue) ? 0 : freeLessonsValue,
-        image: document.getElementById('editCourseImageUrl').value || ''
-    };
+    title: document.getElementById('editCourseTitle').value,
+    description: document.getElementById('editCourseDescription').value,
+    level: document.getElementById('editCourseLevel').value,
+    price: hasDiscount ? originalPrice : (parseFloat(document.getElementById('editCoursePrice').value) || 0),
+    isPremium: document.getElementById('editCoursePremium').checked,
+    freeLessons: freeLessonsValue,
+    image: document.getElementById('editCourseImageUrl').value || '',
+    hasDiscount: hasDiscount,
+    discountPrice: hasDiscount && discountPriceVal > 0 ? discountPriceVal : null,
+    discountEndDate: hasDiscount && discountEndDate ? discountEndDate : null,
+    discountPercentage: discountPercentage
+};
     
     console.log('📤 Sending course data:', courseData);
     
@@ -4183,6 +4236,46 @@ async function updateQuiz() {
 }
         async function init() { if(await checkAdmin()) { await loadCourses(); await loadUsers(); loadPayments(); await loadCoursesForSelect(); } }
         init();
+        // ==================== دوال الخصم في نافذة التعديل ====================
+function toggleEditDiscountFields() {
+    const hasDiscount = document.getElementById('editHasDiscount').checked;
+    const discountFields = document.getElementById('editDiscountFields');
+    discountFields.style.display = hasDiscount ? 'block' : 'none';
+    if (hasDiscount) {
+        updateEditDiscountPreview();
+    }
+}
+
+function updateEditDiscountPreview() {
+    const originalPrice = parseFloat(document.getElementById('editOriginalPrice').value) || 0;
+    const discountPrice = parseFloat(document.getElementById('editDiscountPrice').value) || 0;
+    const preview = document.getElementById('editDiscountPreview');
+    
+    if (!preview) return;
+    
+    if (originalPrice > 0 && discountPrice > 0 && discountPrice < originalPrice) {
+        const discountAmount = originalPrice - discountPrice;
+        const discountPercent = Math.round((discountAmount / originalPrice) * 100);
+        preview.innerHTML = `🔥 خصم ${discountPercent}% - وفر ${discountAmount} ريال 🔥`;
+        preview.style.background = '#fed7d7';
+        preview.style.color = '#c53030';
+        preview.style.fontWeight = 'bold';
+    } else if (discountPrice >= originalPrice && originalPrice > 0) {
+        preview.innerHTML = '⚠️ سعر الخصم يجب أن يكون أقل من السعر الأصلي';
+        preview.style.background = '#fed7d7';
+        preview.style.color = '#c53030';
+    } else {
+        preview.innerHTML = '📝 أدخل السعر الأصلي وسعر الخصم';
+        preview.style.background = '#fef3c7';
+        preview.style.color = '#92400e';
+    }
+}
+
+// ربط أحداث الخصم في نافذة التعديل
+if (document.getElementById('editOriginalPrice')) {
+    document.getElementById('editOriginalPrice').addEventListener('input', updateEditDiscountPreview);
+    document.getElementById('editDiscountPrice').addEventListener('input', updateEditDiscountPreview);
+}
     </script>
 </body>
 </html>
