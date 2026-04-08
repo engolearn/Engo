@@ -164,12 +164,19 @@
             
             
             <div id="selectedCourseInfo" style="background: #f7fafc; border-radius: 15px; padding: 1rem; margin-bottom: 1.5rem;">
-    <p><strong>📚 الدورة المختارة:</strong> <span id="selectedCourseTitle"></span></p>
-    <p>
-        <strong>💰 السعر:</strong> 
-        <span id="selectedCourseOriginalPrice" style="display: none;"></span>
-        <span id="selectedCoursePrice"></span> ريال
-    </p>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+        <div id="selectedCourseImage" style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; background: #e2e8f0;">
+            <img id="selectedCourseImg" src="" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="flex: 1;">
+            <p><strong>📚 الدورة المختارة:</strong> <span id="selectedCourseTitle"></span></p>
+            <p>
+                <strong>💰 السعر:</strong> 
+                <span id="selectedCourseOriginalPrice" style="display: none;"></span>
+                <span id="selectedCoursePrice"></span> ريال
+            </p>
+        </div>
+    </div>
             </div>
             
             <h4>اختر طريقة الدفع:</h4>
@@ -248,16 +255,21 @@ async function loadCourses() {
         }
         
         grid.innerHTML = courses.map(course => `
-            <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${getCoursePrice(course)}, ${course.price}, ${course.hasDiscount || false})" 
-                 ${selectedCourseId === course._id ? 'id="selectedCourseCard"' : ''}>
-                <div class="course-image"><i class="fas fa-crown"></i></div>
-                <div class="course-info">
-                    <div class="course-title">${escapeHtml(course.title)}</div>
-                    ${displayCoursePrice(course)}
-                    <div class="course-desc" style="font-size:0.8rem; color:#718096;">${escapeHtml(course.description.substring(0, 80))}...</div>
-                </div>
-            </div>
-        `).join('');
+    <div class="course-card" onclick="selectCourse('${course._id}', '${escapeHtml(course.title)}', ${getCoursePrice(course)}, ${course.price}, ${course.hasDiscount || false}, '${course.image || ''}')" 
+         ${selectedCourseId === course._id ? 'id="selectedCourseCard"' : ''}>
+        <div class="course-image">
+            ${course.image ? 
+                `<img src="${course.image}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                '<i class="fas fa-crown"></i>'
+            }
+        </div>
+        <div class="course-info">
+            <div class="course-title">${escapeHtml(course.title)}</div>
+            ${displayCoursePrice(course)}
+            <div class="course-desc" style="font-size:0.8rem; color:#718096;">${escapeHtml(course.description.substring(0, 80))}...</div>
+        </div>
+    </div>
+`).join('');
         
         if (selectedCourseId) {
             const selectedCourse = courses.find(c => c._id === selectedCourseId);
@@ -272,24 +284,38 @@ async function loadCourses() {
         document.getElementById('coursesGrid').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الدورات</div>';
     }
 }
-        function selectCourse(id, title, finalPrice, originalPrice, hasDiscount) {
+        function selectCourse(id, title, finalPrice, originalPrice, hasDiscount, imageUrl) {
     selectedCourse = { 
         id: id, 
         title: title, 
-        price: finalPrice,  // السعر النهائي بعد الخصم
+        price: finalPrice,
         originalPrice: originalPrice,
-        hasDiscount: hasDiscount
+        hasDiscount: hasDiscount,
+        image: imageUrl
     };
     
     document.getElementById('selectedCourseTitle').innerText = title;
     document.getElementById('selectedCoursePrice').innerText = finalPrice;
     
+    // عرض الصورة
+    const imgElement = document.getElementById('selectedCourseImg');
+    if (imgElement && imageUrl) {
+        imgElement.src = imageUrl;
+        imgElement.style.display = 'block';
+    } else if (imgElement) {
+        imgElement.style.display = 'none';
+    }
+    
     // إذا كان هناك خصم، أظهر السعر الأصلي مشطوب
     if (hasDiscount && originalPrice > finalPrice) {
-        document.getElementById('selectedCourseOriginalPrice').innerHTML = `<span style="text-decoration: line-through; color: #a0aec0;">${originalPrice} ريال</span>`;
-        document.getElementById('selectedCourseOriginalPrice').style.display = 'inline';
+        const originalPriceSpan = document.getElementById('selectedCourseOriginalPrice');
+        if (originalPriceSpan) {
+            originalPriceSpan.innerHTML = `<span style="text-decoration: line-through; color: #a0aec0;">${originalPrice} ريال</span> `;
+            originalPriceSpan.style.display = 'inline';
+        }
     } else {
-        document.getElementById('selectedCourseOriginalPrice').style.display = 'none';
+        const originalPriceSpan = document.getElementById('selectedCourseOriginalPrice');
+        if (originalPriceSpan) originalPriceSpan.style.display = 'none';
     }
     
     document.getElementById('paymentSection').style.display = 'block';
@@ -300,7 +326,6 @@ async function loadCourses() {
         event.currentTarget.classList.add('selected');
     }
     
-    // التحقق من زر التأكيد
     updateSubscribeButton();
         }
 // حساب السعر بعد الخصم
