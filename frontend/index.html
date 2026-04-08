@@ -806,6 +806,26 @@
             margin: 0 auto;
             padding: 0 20px;
         }
+        /* ==================== شريط التنبيهات ==================== */
+#announcementBar {
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#announcementTimer {
+    font-family: monospace;
+    font-weight: bold;
+}
     </style>
 </head>
 <body>
@@ -869,6 +889,21 @@
         <!-- الصفحة الرئيسية -->
         <div id="homePage" class="page">
     <div class="container">
+        <!-- ==================== شريط التنبيهات والإعلانات ==================== -->
+<div id="announcementBar" style="display: none; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 16px; margin: 1rem 0; padding: 0.8rem 1.5rem; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <i class="fas fa-bullhorn" style="font-size: 1.5rem; color: white;"></i>
+            <div>
+                <div id="announcementText" style="color: white; font-weight: bold; font-size: 1rem;"></div>
+                <div id="announcementTimer" style="color: rgba(255,255,255,0.9); font-size: 0.8rem; margin-top: 4px;"></div>
+            </div>
+        </div>
+        <button onclick="closeAnnouncement()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 1rem;">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
                 <!-- قسم مميزات EnGo -->
 <div class="features-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 24px; padding: 2rem; margin: 2rem 0; text-align: center; box-shadow: 0 10px 30px rgba(102,126,234,0.3);">
     <h2 style="color: white; margin-bottom: 1rem; font-size: 1.8rem;">
@@ -1466,6 +1501,99 @@ function goToSubscribe(courseId) {
             if (!str) return '';
             return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
+        // ==================== إدارة التنبيهات والإعلانات ====================
+let announcementInterval = null;
+
+// تحميل التنبيه من localStorage أو السيرفر
+function loadAnnouncement() {
+    try {
+        // قراءة التنبيه من localStorage
+        const announcement = localStorage.getItem('site_announcement');
+        if (announcement) {
+            const data = JSON.parse(announcement);
+            
+            // التحقق من صلاحية التنبيه
+            if (data.expiryDate && new Date(data.expiryDate) < new Date()) {
+                // انتهت صلاحية التنبيه
+                localStorage.removeItem('site_announcement');
+                document.getElementById('announcementBar').style.display = 'none';
+                return;
+            }
+            
+            // التحقق إذا كان التنبيه مخفياً مؤقتاً
+            const hiddenUntil = localStorage.getItem('announcement_hidden_until');
+            if (hiddenUntil && new Date(hiddenUntil) > new Date()) {
+                document.getElementById('announcementBar').style.display = 'none';
+                return;
+            }
+            
+            // عرض التنبيه
+            if (data.text && data.text.trim() !== '') {
+                document.getElementById('announcementText').innerHTML = data.text;
+                document.getElementById('announcementBar').style.display = 'flex';
+                
+                // إذا كان هناك عداد تنازلي
+                if (data.countdownDate) {
+                    startCountdown(data.countdownDate);
+                } else if (announcementInterval) {
+                    clearInterval(announcementInterval);
+                    document.getElementById('announcementTimer').innerHTML = '';
+                }
+            } else {
+                document.getElementById('announcementBar').style.display = 'none';
+            }
+        } else {
+            document.getElementById('announcementBar').style.display = 'none';
+        }
+    } catch(e) {
+        console.error('Error loading announcement:', e);
+        document.getElementById('announcementBar').style.display = 'none';
+    }
+}
+
+// تشغيل العداد التنازلي
+function startCountdown(targetDate) {
+    if (announcementInterval) clearInterval(announcementInterval);
+    
+    const updateTimer = () => {
+        const now = new Date().getTime();
+        const target = new Date(targetDate).getTime();
+        const distance = target - now;
+        
+        if (distance <= 0) {
+            clearInterval(announcementInterval);
+            document.getElementById('announcementTimer').innerHTML = '⏰ انتهى الوقت!';
+            return;
+        }
+        
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        let timerText = '';
+        if (days > 0) timerText += `${days} يوم `;
+        if (hours > 0 || days > 0) timerText += `${hours} ساعة `;
+        timerText += `${minutes} دقيقة ${seconds} ثانية`;
+        
+        document.getElementById('announcementTimer').innerHTML = `⏰ ينتهي خلال: ${timerText}`;
+    };
+    
+    updateTimer();
+    announcementInterval = setInterval(updateTimer, 1000);
+}
+
+// إغلاق التنبيه مؤقتاً
+function closeAnnouncement() {
+    // إخفاء التنبيه لمدة 24 ساعة
+    const hiddenUntil = new Date();
+    hiddenUntil.setHours(hiddenUntil.getHours() + 24);
+    localStorage.setItem('announcement_hidden_until', hiddenUntil.toISOString());
+    document.getElementById('announcementBar').style.display = 'none';
+}
+
+// استدعاء تحميل التنبيه عند تحميل الصفحة
+// أضف هذا السطر في دالة init أو DOMContentLoaded
         
         // ==================== Level Test ====================
         async function loadLevelTest() {
