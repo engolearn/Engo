@@ -1572,12 +1572,8 @@ function previewAnnouncement() {
 // نشر التنبيه
 document.getElementById('announcementForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    const text = document.getElementById('announcementText').value.trim();
-    if (!text) {
-        showAlert('❌ أدخل نص التنبيه', 'error');
-        return;
-    }
+    await publishAnnouncement();
+});
     
     const announcementData = {
         text: text,
@@ -1639,7 +1635,134 @@ function loadCurrentAnnouncement() {
 }
 
 // استدعاء loadCurrentAnnouncement عند تحميل صفحة الأدمن
+        // ==================== إدارة التنبيهات (API) ====================
+
+// تحميل التنبيهات من السيرفر
+async function loadAnnouncementsList() {
+    const token = localStorage.getItem('token');
+    const container = document.getElementById('publishedAnnouncements');
+    
+    try {
+        const res = await fetch(API_URL + '/admin/announcements', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
         
+        if (!res.ok) throw new Error('Failed to load');
+        
+        const announcements = await res.json();
+        
+        if (!announcements.length) {
+            container.innerHTML = '<div class="empty-message">📭 لا توجد تنبيهات سابقة</div>';
+            return;
+        }
+        
+        container.innerHTML = announcements.map(ann => `
+            <div class="announcement-card" style="background: #f7fafc; border-radius: 15px; padding: 1rem; margin-bottom: 1rem; border-right: 4px solid ${ann.isActive ? '#48bb78' : '#a0aec0'}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                            ${ann.isActive ? '<span style="background: #48bb78; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;">✅ نشط حالياً</span>' : '<span style="background: #a0aec0; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;">⏸ غير نشط</span>'}
+                            <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem;">${new Date(ann.createdAt).toLocaleDateString('ar')}</span>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 12px; padding: 0.8rem; margin-top: 0.5rem;">
+                            <div style="color: white; font-weight: bold;">${escapeHtml(ann.text)}</div>
+                            ${ann.hasCountdown && ann.countdownDate ? `<div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: 5px;">⏰ ينتهي العداد في: ${new Date(ann.countdownDate).toLocaleString('ar')}</div>` : ''}
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #718096;">
+                            ${ann.expiryDate ? `📅 ينتهي في: ${new Date(ann.expiryDate).toLocaleString('ar')}` : '📅 لا يوجد تاريخ انتهاء'}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-warning btn-sm" onclick="editAnnouncement('${ann._id}')" style="padding: 5px 12px;">✏️ تعديل</button>
+                        <button class="btn-danger btn-sm" onclick="deleteAnnouncement('${ann._id}')" style="padding: 5px 12px;">🗑️ حذف</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading announcements:', error);
+        container.innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل التنبيهات</div>';
+    }
+}
+
+// نشر تنبيه جديد
+async function publishAnnouncement() {
+    const token = localStorage.getItem('token');
+    const text = document.getElementById('announcementText').value.trim();
+    const hasCountdown = document.getElementById('enableCountdown').checked;
+    const countdownDate = document.getElementById('countdownDate').value;
+    const expiryDate = document.getElementById('expiryDate').value;
+    
+    if (!text) {
+        showAlert('❌ أدخل نص التنبيه', 'error');
+        return false;
+    }
+    
+    try {
+        const res = await fetch(API_URL + '/admin/announcements', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                text: text,
+                hasCountdown: hasCountdown,
+                countdownDate: countdownDate || null,
+                expiryDate: expiryDate || null
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            showAlert('✅ تم نشر التنبيه بنجاح', 'success');
+            resetAnnouncementForm();
+            loadAnnouncementsList();
+            return true;
+        } else {
+            showAlert('❌ ' + (data.message || 'حدث خطأ'), 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('❌ خطأ في الاتصال', 'error');
+        return false;
+    }
+}
+
+// حذف تنبيه
+async function deleteAnnouncement(id) {
+    if (!confirm('⚠️ هل أنت متأكد من حذف هذا التنبيه؟')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(API_URL + '/admin/announcements/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            showAlert('✅ تم حذف التنبيه', 'success');
+            loadAnnouncementsList();
+        } else {
+            showAlert('❌ حدث خطأ', 'error');
+        }
+    } catch (error) {
+        showAlert('❌ خطأ في الاتصال', 'error');
+    }
+}
+
+// إعادة تعيين النموذج
+function resetAnnouncementForm() {
+    document.getElementById('announcementText').value = '';
+    document.getElementById('enableCountdown').checked = false;
+    document.getElementById('countdownFields').style.display = 'none';
+    document.getElementById('countdownDate').value = '';
+    document.getElementById('expiryDate').value = '';
+    document.getElementById('announcementPreview').style.display = 'none';
+}
         // ==================== تعديل الدرس ====================
 
 let editLessonParagraphs = [];
@@ -3279,7 +3402,7 @@ function saveNotificationToHistory(notification) {
     if(tabName === 'courses') loadCourses();
     if(tabName === 'subscriptions') loadSubscriptions();
     if(tabName === 'announcements') { 
-        loadPublishedAnnouncements();
+    loadAnnouncementsList();
     }
     if(tabName === 'users') loadUsers();
     if(tabName === 'payments') loadPayments();
