@@ -493,10 +493,37 @@
                 <label><input type="checkbox" id="coursePremium"> دورة مدفوعة</label>
             </div>
             <div class="form-group">
-                <label>عدد الدروس المجانية</label>
-                <input type="number" id="freeLessons" value="5">
-            </div>
-            <button type="submit" class="btn-primary">➕ إضافة الدورة</button>
+    <label>عدد الدروس المجانية</label>
+    <input type="number" id="freeLessons" value="5">
+</div>
+
+<!-- حقل الخصم -->
+<div class="form-group" style="border-top: 1px solid #e2e8f0; padding-top: 1rem; margin-top: 0.5rem;">
+    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+        <input type="checkbox" id="hasDiscount" onchange="toggleDiscountFields()">
+        <span>🏷️ تفعيل الخصم على هذه الدورة</span>
+    </label>
+</div>
+
+<div id="discountFields" style="display: none;">
+    <div class="form-group">
+        <label>💰 السعر الأصلي (ريال)</label>
+        <input type="number" id="originalPrice" value="0" placeholder="السعر قبل الخصم">
+    </div>
+    <div class="form-group">
+        <label>🏷️ سعر الخصم (ريال)</label>
+        <input type="number" id="discountPrice" value="0" placeholder="السعر بعد الخصم">
+    </div>
+    <div class="form-group">
+        <label>📅 تاريخ انتهاء الخصم (اختياري)</label>
+        <input type="date" id="discountEndDate">
+    </div>
+    <div id="discountPreview" style="background: #fef3c7; padding: 0.8rem; border-radius: 12px; margin-bottom: 1rem; font-size: 0.85rem; text-align: center;">
+        🔥 الخصم: 0%
+    </div>
+</div>
+
+<button type="submit" class="btn-primary">➕ إضافة الدورة</button>
         </form>
     </div>
     <div class="admin-section">
@@ -1200,6 +1227,56 @@
         showAlert('❌ خطأ في الاتصال: ' + error.message, 'error');
     }
         }
+        // دوال الخصم
+function toggleDiscountFields() {
+    const hasDiscount = document.getElementById('hasDiscount').checked;
+    const discountFields = document.getElementById('discountFields');
+    discountFields.style.display = hasDiscount ? 'block' : 'none';
+    
+    if (hasDiscount) {
+        updateDiscountPreview();
+    }
+}
+
+function updateDiscountPreview() {
+    const originalPrice = parseFloat(document.getElementById('originalPrice').value) || 0;
+    const discountPrice = parseFloat(document.getElementById('discountPrice').value) || 0;
+    
+    if (originalPrice > 0 && discountPrice > 0) {
+        const discountAmount = originalPrice - discountPrice;
+        const discountPercent = Math.round((discountAmount / originalPrice) * 100);
+        document.getElementById('discountPreview').innerHTML = `🔥 الخصم: -${discountPercent}% (وفر ${discountAmount} ريال)`;
+        document.getElementById('discountPreview').style.color = '#e53e3e';
+        document.getElementById('discountPreview').style.fontWeight = 'bold';
+    } else {
+        document.getElementById('discountPreview').innerHTML = 'أدخل السعر الأصلي وسعر الخصم';
+        document.getElementById('discountPreview').style.color = '#718096';
+    }
+}
+
+// تحديث دالة جمع بيانات الدورة
+function getCourseFormData() {
+    const hasDiscount = document.getElementById('hasDiscount').checked;
+    
+    return {
+        title: document.getElementById('courseTitle').value,
+        description: document.getElementById('courseDesc').value,
+        level: document.getElementById('courseLevel').value,
+        price: hasDiscount ? parseFloat(document.getElementById('originalPrice').value) : parseFloat(document.getElementById('coursePrice').value),
+        isPremium: document.getElementById('isPremium').checked,
+        freeLessons: parseInt(document.getElementById('freeLessons').value) || 5,
+        image: document.getElementById('courseImage').value,
+        hasDiscount: hasDiscount,
+        discountPrice: hasDiscount ? parseFloat(document.getElementById('discountPrice').value) : null,
+        discountEndDate: hasDiscount && document.getElementById('discountEndDate').value ? document.getElementById('discountEndDate').value : null,
+        discountPercentage: hasDiscount ? Math.round(((parseFloat(document.getElementById('originalPrice').value) - parseFloat(document.getElementById('discountPrice').value)) / parseFloat(document.getElementById('originalPrice').value)) * 100) : 0
+    };
+}
+        // ربط الأحداث
+if (document.getElementById('originalPrice')) {
+    document.getElementById('originalPrice').addEventListener('input', updateDiscountPreview);
+    document.getElementById('discountPrice').addEventListener('input', updateDiscountPreview);
+}
         // ==================== معالجة صورة الدورة ====================
 function previewCourseImage(event) {
     const file = event.target.files[0];
@@ -1230,14 +1307,28 @@ document.getElementById('addCourseForm').onsubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     
+    const hasDiscount = document.getElementById('hasDiscount').checked;
+    const originalPrice = parseFloat(document.getElementById('originalPrice').value) || 0;
+    const discountPriceVal = parseFloat(document.getElementById('discountPrice').value) || 0;
+    const discountEndDate = document.getElementById('discountEndDate').value;
+    
+    let discountPercentage = 0;
+    if (hasDiscount && originalPrice > 0 && discountPriceVal > 0 && discountPriceVal < originalPrice) {
+        discountPercentage = Math.round(((originalPrice - discountPriceVal) / originalPrice) * 100);
+    }
+    
     const data = { 
         title: document.getElementById('courseTitle').value,
         description: document.getElementById('courseDescription').value,
         level: document.getElementById('courseLevel').value,
-        price: parseInt(document.getElementById('coursePrice').value) || 0,
+        price: hasDiscount ? originalPrice : (parseFloat(document.getElementById('coursePrice').value) || 0),
         isPremium: document.getElementById('coursePremium').checked,
         freeLessons: parseInt(document.getElementById('freeLessons').value) || 5,
-        image: document.getElementById('courseImageUrl').value || ''  // ✅ أضف الصورة
+        image: document.getElementById('courseImageUrl').value || '',
+        hasDiscount: hasDiscount,
+        discountPrice: hasDiscount && discountPriceVal > 0 ? discountPriceVal : null,
+        discountEndDate: hasDiscount && discountEndDate ? discountEndDate : null,
+        discountPercentage: discountPercentage
     };
     
     console.log('📤 Sending course data:', data);
