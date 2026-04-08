@@ -2583,7 +2583,12 @@ app.get('/api/courses/:courseId/quizzes', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId);
         if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
-        
+        // داخل دالة جلب الاختبارات
+if (midtermResult) {
+    // الاختبار تم بالفعل
+    midtermMessage = `⚠️ لقد قمت بالفعل بإجراء هذا الاختبار. درجتك: ${midtermResult.percentage}% (لا يمكن إعادة الاختبار)`;
+    midtermUnlocked = false; // منع المحاولة مرة أخرى
+}
         const userProgress = await UserProgress.findOne({ 
             userId: req.user._id, 
             courseId: course._id 
@@ -2747,14 +2752,24 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
         
         if (!quiz) return res.status(404).json({ message: 'الاختبار غير موجود' });
         
+        // ✅ التحقق من عدم وجود نتيجة سابقة (منع إعادة الاختبار)
         const existingResult = await QuizResult.findOne({ 
             userId: req.user._id, 
             quizId: quiz._id 
         });
         
         if (existingResult) {
-            return res.status(403).json({ message: 'لقد قمت بالفعل بإجراء هذا الاختبار' });
+            return res.status(403).json({ 
+                message: '❌ لا يمكنك إعادة هذا الاختبار. يتم احتساب الدرجة من أول محاولة فقط.',
+                code: 'ALREADY_SUBMITTED',
+                result: {
+                    score: existingResult.percentage,
+                    passed: existingResult.passed,
+                    completedAt: existingResult.completedAt
+                }
+            });
         }
+        
         
         let totalScore = 0;
         let maxScore = 0;
