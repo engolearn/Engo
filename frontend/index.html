@@ -826,6 +826,80 @@
     font-family: monospace;
     font-weight: bold;
 }
+
+
+
+
+        /* ==================== قائمة علوية ثابتة وصغيرة للهواتف ==================== */
+@media (max-width: 768px) {
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+    
+    .navbar .container {
+        padding: 0.3rem 12px;
+        gap: 0.3rem;
+    }
+    
+    .logo {
+        font-size: 1.1rem;
+    }
+    
+    .logo i {
+        font-size: 0.9rem;
+    }
+    
+    .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        justify-content: center;
+        width: 100%;
+        margin-top: 0.3rem;
+        padding-top: 0.3rem;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .nav-links a {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        white-space: nowrap;
+    }
+    
+    .auth-buttons {
+        display: flex;
+        gap: 0.3rem;
+    }
+    
+    .auth-buttons button {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+    
+    .user-menu {
+        gap: 0.3rem;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+    
+    .user-menu > div:first-child {
+        font-size: 0.8rem;
+    }
+    
+    .dropdown-btn {
+        transform: scale(0.8);
+    }
+    
+    .notifications-dropdown {
+        transform: scale(0.85);
+    }
+}
     </style>
 </head>
 <body>
