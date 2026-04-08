@@ -530,14 +530,14 @@ app.get('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
 });
 
 // تحديث دورة
-// تحديث دورة
 app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
     try {
         const { courseId } = req.params;
-        const { title, description, level, price, isPremium, freeLessons, image } = req.body;
+        const { title, description, level, price, isPremium, freeLessons, image, hasDiscount, discountPrice, discountEndDate, discountPercentage } = req.body;
         
         console.log('📝 Updating course:', courseId);
         console.log('📦 freeLessons value received:', freeLessons);
+        console.log('🏷️ hasDiscount:', hasDiscount);
         
         const course = await Course.findByIdAndUpdate(
             courseId,
@@ -547,12 +547,12 @@ app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
                 level,
                 price,
                 isPremium,
+                freeLessons: freeLessons,
+                image,
                 hasDiscount: hasDiscount || false,
-discountPrice: discountPrice || null,
-discountEndDate: discountEndDate || null,
-discountPercentage: discountPercentage || 0,
-                freeLessons: freeLessons,  // ✅ تأكد من وجود هذا السطر
-                image
+                discountPrice: discountPrice || null,
+                discountEndDate: discountEndDate || null,
+                discountPercentage: discountPercentage || 0
             },
             { new: true }
         );
@@ -562,6 +562,7 @@ discountPercentage: discountPercentage || 0,
         }
         
         console.log('✅ Updated course, freeLessons:', course.freeLessons);
+        console.log('✅ Updated course, hasDiscount:', course.hasDiscount);
         
         res.json({ message: '✅ تم تحديث الدورة بنجاح', course });
     } catch (error) {
