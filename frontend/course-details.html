@@ -82,7 +82,7 @@
         </div>
 
             <!-- قائمة الدروس -->
-    <div class="lessons-container">
+    <div id="lessonsContainer" class="lessons-container">
         <h2><i class="fas fa-list"></i> دروس الدورة</h2>
         <div class="lessons-grid" id="lessonsList">
             <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدروس...</div>
@@ -244,8 +244,8 @@ async function loadCourseDetails() {
             const error = await res.json();
             
             // إخفاء قائمة الدروس
-            document.getElementById('lessonsList').innerHTML = '';
-            document.getElementById('lessonsContainer').style.display = 'none';
+            const lessonsContainer = document.getElementById('lessonsContainer');
+            if (lessonsContainer) lessonsContainer.style.display = 'none';
             
             // عرض رسالة الدورة المدفوعة مع زر الاشتراك
             document.getElementById('courseHeader').innerHTML = `
@@ -271,8 +271,11 @@ async function loadCourseDetails() {
         
         courseData = await res.json();
         
-        // عرض معلومات الدورة بشكل طبيعي
-        document.getElementById('lessonsContainer').style.display = 'block';
+        // ✅ إظهار قائمة الدروس
+        const lessonsContainer = document.getElementById('lessonsContainer');
+        if (lessonsContainer) lessonsContainer.style.display = 'block';
+        
+        // عرض معلومات الدورة
         document.getElementById('courseTitle').innerText = courseData.title;
         document.getElementById('courseDescription').innerText = courseData.description;
         document.getElementById('courseMeta').innerHTML = `
