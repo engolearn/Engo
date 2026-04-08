@@ -1605,7 +1605,7 @@ document.getElementById('announcementForm')?.addEventListener('submit', async (e
 function clearAnnouncement() {
     if (confirm('⚠️ هل أنت متأكد من إزالة التنبيه من الصفحة الرئيسية؟')) {
         localStorage.removeItem('site_announcement');
-        localStorage.removeItem('announcement_hidden_until');
+        // ✅ لا نزيل announcement_hidden_until لأنها لم تعد تستخدم
         showAlert('✅ تم إزالة التنبيه', 'success');
         
         // إعادة تعيين النموذج
@@ -1619,7 +1619,7 @@ function clearAnnouncement() {
         // تحديث قائمة التنبيهات
         loadPublishedAnnouncements();
     }
-        }
+}
 
 // تحميل التنبيه الحالي لعرضه في لوحة الأدمن
 function loadCurrentAnnouncement() {
