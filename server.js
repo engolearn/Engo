@@ -81,6 +81,11 @@ const courseSchema = new mongoose.Schema({
     image: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
     allowedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // ✅ أضف هذا الحقل
+    // أضف هذه الحقول داخل courseSchema
+discountPrice: { type: Number, default: null },  // سعر الخصم (إذا كان null يعني لا يوجد خصم)
+hasDiscount: { type: Boolean, default: false },   // هل يوجد خصم؟
+discountEndDate: { type: Date, default: null },   // تاريخ انتهاء الخصم
+discountPercentage: { type: Number, default: 0 },  // نسبة الخصم (للعرض فقط)
     createdAt: { type: Date, default: Date.now }
 });
 const Course = mongoose.model('Course', courseSchema);
@@ -542,6 +547,10 @@ app.put('/api/admin/courses/:courseId', auth, adminAuth, async (req, res) => {
                 level,
                 price,
                 isPremium,
+                hasDiscount: hasDiscount || false,
+discountPrice: discountPrice || null,
+discountEndDate: discountEndDate || null,
+discountPercentage: discountPercentage || 0,
                 freeLessons: freeLessons,  // ✅ تأكد من وجود هذا السطر
                 image
             },
@@ -2118,8 +2127,7 @@ app.post('/api/admin/courses', auth, adminAuth, async (req, res) => {
     try {
         console.log('📝 Received course data:', req.body);
         
-        const { title, description, level, price, isPremium, freeLessons } = req.body;
-        
+        const { title, description, level, price, isPremium, freeLessons, image, hasDiscount, discountPrice, discountEndDate, discountPercentage } = req.body;
         if (!title || !description) {
             return res.status(400).json({ 
                 message: '⚠️ العنوان والوصف مطلوبان'
@@ -2131,6 +2139,10 @@ app.post('/api/admin/courses', auth, adminAuth, async (req, res) => {
             description: description.trim(),
             level: level || 'beginner',
             price: price || 0,
+            hasDiscount: hasDiscount || false,
+discountPrice: discountPrice || null,
+discountEndDate: discountEndDate || null,
+discountPercentage: discountPercentage || 0,
             isPremium: isPremium || false,
             freeLessons: freeLessons || 5,
             createdAt: new Date()
