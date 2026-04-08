@@ -539,6 +539,9 @@
             justify-content: center;
         }
         
+
+
+        
         .notifications-dropdown-content {
     display: none;
     position: absolute;
@@ -555,11 +558,14 @@
     z-index: 1000;
 }
 
-.notifications-dropdown:hover .notifications-dropdown-content {
-    display: block;
+/* للكمبيوتر: تظهر عند المرور بالفأرة */
+@media (min-width: 769px) {
+    .notifications-dropdown:hover .notifications-dropdown-content {
+        display: block;
+    }
 }
 
-/* تحسين عرض الإشعارات على الهواتف */
+/* للهواتف: تظهر عند الضغط فقط */
 @media (max-width: 768px) {
     .notifications-dropdown-content {
         position: fixed;
@@ -571,24 +577,25 @@
         max-width: 100%;
         min-width: auto;
         border-radius: 20px 20px 0 0;
-        max-height: 70vh;
+        max-height: 60vh;
+        background: white;
+        z-index: 10000;
     }
     
     .notifications-dropdown.active .notifications-dropdown-content {
-        display: block;
+        display: block !important;
         animation: slideUp 0.3s ease;
-    }
-    
-    .notifications-dropdown:hover .notifications-dropdown-content {
-        display: none;
-    }
-    
-    @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
     }
 }
 
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
 
 
 .notif-time {
@@ -2005,11 +2012,12 @@ function formatNotificationTime(dateString) {
 }
 
 // دالة فتح الإشعارات (تظهر فوراً)
-function toggleNotifications() {
+function toggleNotifications(event) {
+    if (event) event.stopPropagation();
     const dropdown = document.querySelector('.notifications-dropdown');
     if (!dropdown) return;
     
-    // للهواتف، نستخدم class active
+    // للهواتف فقط
     if (window.innerWidth <= 768) {
         dropdown.classList.toggle('active');
         
@@ -2024,6 +2032,19 @@ function toggleNotifications() {
     loadNotifications(true);
 }
 
+        // إغلاق الإشعارات عند الضغط خارجها (للهواتف)
+document.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.notifications-dropdown');
+    if (!dropdown) return;
+    
+    const isClickInside = dropdown.contains(event.target);
+    
+    if (!isClickInside && window.innerWidth <= 768) {
+        dropdown.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+        
 function closeNotifications() {
     const dropdown = document.querySelector('.notifications-dropdown');
     if (dropdown) {
