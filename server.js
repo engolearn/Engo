@@ -246,6 +246,12 @@ const userProgressSchema = new mongoose.Schema({
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
     completedLessons: [{ lessonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }, score: { type: Number, default: 0 } }],
     midtermScore: { type: Number, default: null },
+    // في userProgressSchema، أضف هذا الحقل داخل completedLessons
+completedLessons: [{
+    lessonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' },
+    score: { type: Number, default: 0 },
+    completedAt: { type: Date, default: Date.now }  // ✅ أضف هذا الحقل
+}],
     finalScore: { type: Number, default: null }
 });
 const UserProgress = mongoose.model('UserProgress', userProgressSchema);
@@ -1895,7 +1901,7 @@ app.get('/api/courses', async (req, res) => {
 
 
 
-/// جلب تفاصيل الدورة مع التحقق من الاشتراك
+// جلب تفاصيل الدورة مع التحقق من الاشتراك
 app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId).populate('lessons');
@@ -1921,39 +1927,75 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
             });
         }
         
-        // ✅ جلب تقدم المستخدم في هذه الدورة
+        // ✅ جلب تقدم المستخدم في هذه الدورة مع وقت الإكمال
         const progress = await UserProgress.findOne({ userId, courseId: course._id });
-        const completedLessonIds = progress?.completedLessons?.map(l => l.lessonId.toString()) || [];
+        const completedLessonsData = progress?.completedLessons || [];
         
-        // ✅ معرفة إذا كان المستخدم قد اشترى الدورة
+        // ✅ إنشاء خريطة للدروس المكتملة مع وقت الإكمال
+        const completedMap = new Map();
+        completedLessonsData.forEach(item => {
+            completedMap.set(item.lessonId.toString(), {
+                completed: true,
+                completedAt: item.completedAt,
+                score: item.score
+            });
+        });
+        
         const isPurchased = req.user.purchasedCourses?.includes(course._id.toString()) ||
                             course.allowedUsers?.some(id => id.toString() === userId.toString());
         
-        // ✅ حساب الدروس المقفلة بناءً على الترتيب
+        // ✅ إعدادات الوقت بين الدروس (12 ساعة = 43200000 مللي ثانية)
+        const HOURS_BETWEEN_LESSONS = 12;
+        const MS_BETWEEN_LESSONS = HOURS_BETWEEN_LESSONS * 60 * 60 * 1000;
+        
+        // ✅ حساب الدروس المقفلة
         const lessonsWithStatus = course.lessons.map((lesson, index) => {
             const lessonId = lesson._id.toString();
-            const isCompleted = completedLessonIds.includes(lessonId);
+            const completedInfo = completedMap.get(lessonId);
+            const isCompleted = !!completedInfo;
             
             let isLocked = false;
+            let lockReason = '';
+            let availableAt = null;
             
-            // 1. شرط الدروس المجانية (إذا لم يشتري الدورة)
+            // 1. شرط الدروس المجانية
             if (!isPurchased && index >= course.freeLessons) {
                 isLocked = true;
+                lockReason = 'هذا الدرس مدفوع، يرجى الاشتراك في الدورة';
             }
             
-            // 2. ✅ شرط الترتيب الإجباري: إذا كان الدرس السابق غير مكتمل
+            // 2. ✅ شرط الـ 12 ساعة بين الدروس
             if (index > 0 && !isLocked) {
                 const prevLessonId = course.lessons[index - 1]._id.toString();
-                const isPrevCompleted = completedLessonIds.includes(prevLessonId);
-                if (!isPrevCompleted) {
+                const prevCompletedInfo = completedMap.get(prevLessonId);
+                
+                if (!prevCompletedInfo) {
+                    // الدرس السابق غير مكتمل
                     isLocked = true;
+                    lockReason = 'يجب إكمال الدرس السابق أولاً';
+                } else {
+                    // التحقق من مرور 12 ساعة على إكمال الدرس السابق
+                    const prevCompletedAt = new Date(prevCompletedInfo.completedAt);
+                    const now = new Date();
+                    const hoursSincePrev = (now - prevCompletedAt) / (1000 * 60 * 60);
+                    
+                    if (hoursSincePrev < HOURS_BETWEEN_LESSONS) {
+                        isLocked = true;
+                        const remainingHours = Math.ceil(HOURS_BETWEEN_LESSONS - hoursSincePrev);
+                        lockReason = `⏰ هذا الدرس سيتاح بعد ${remainingHours} ساعة (يجب الانتظار ${HOURS_BETWEEN_LESSONS} ساعة بين الدروس)`;
+                        availableAt = new Date(prevCompletedAt.getTime() + MS_BETWEEN_LESSONS);
+                    }
                 }
             }
             
             return {
                 ...lesson.toObject(),
                 isCompleted: isCompleted,
-                isLocked: isLocked
+                completedAt: completedInfo?.completedAt || null,
+                score: completedInfo?.score || null,
+                isLocked: isLocked,
+                lockReason: lockReason,
+                availableAt: availableAt
             };
         });
         
@@ -1962,7 +2004,8 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
             lessons: lessonsWithStatus, 
             isPurchased,
             isSubscribed,
-            completedLessons: completedLessonIds
+            completedLessons: Array.from(completedMap.keys()),
+            hoursBetweenLessons: HOURS_BETWEEN_LESSONS
         });
         
     } catch (error) {
@@ -3258,15 +3301,31 @@ app.put('/api/notifications/:notifId/read', auth, async (req, res) => {
 app.post('/api/progress/:courseId/lessons/:lessonId/complete', auth, async (req, res) => {
     try {
         const { score } = req.body;
-        let progress = await UserProgress.findOne({ userId: req.user._id, courseId: req.params.courseId });
+        let progress = await UserProgress.findOne({ 
+            userId: req.user._id, 
+            courseId: req.params.courseId 
+        });
+        
         if (!progress) {
-            progress = new UserProgress({ userId: req.user._id, courseId: req.params.courseId, completedLessons: [] });
+            progress = new UserProgress({ 
+                userId: req.user._id, 
+                courseId: req.params.courseId, 
+                completedLessons: [] 
+            });
         }
+        
         const exists = progress.completedLessons.some(l => l.lessonId.toString() === req.params.lessonId);
+        
         if (!exists) {
-            progress.completedLessons.push({ lessonId: req.params.lessonId, score: score || 100 });
+            // ✅ حفظ وقت الإكمال
+            progress.completedLessons.push({ 
+                lessonId: req.params.lessonId, 
+                score: score || 100,
+                completedAt: new Date()  // ✅ الوقت الحالي
+            });
             await progress.save();
         }
+        
         res.json({ message: '✅ تم إكمال الدرس', progress });
     } catch (error) {
         res.status(500).json({ message: error.message });
