@@ -627,24 +627,31 @@ function renderLessonsList() {
     container.innerHTML = courseData.lessons.map((lesson, index) => {
         const isCompleted = lesson.isCompleted || false;
         const isLocked = lesson.isLocked || false;
+        const lockReason = lesson.lockReason || '';
+        const availableAt = lesson.availableAt;
         
         let statusHtml = '';
         let buttonHtml = '';
-        let lockReason = '';
+        let timeRemainingHtml = '';
+        
+        // ✅ حساب الوقت المتبقي إذا كان الدرس مقفلاً بسبب الوقت
+        if (isLocked && availableAt) {
+            const now = new Date();
+            const available = new Date(availableAt);
+            const diffMs = available - now;
+            if (diffMs > 0) {
+                const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                timeRemainingHtml = `<div class="time-remaining" style="font-size: 0.7rem; color: #e53e3e; margin-top: 5px;">
+                                        <i class="fas fa-hourglass-half"></i> الوقت المتبقي: ${hoursLeft} ساعة و ${minutesLeft} دقيقة
+                                     </div>`;
+            }
+        }
         
         if (isCompleted) {
             statusHtml = '<span class="status-completed"><i class="fas fa-check-circle"></i> مكتمل ✓</span>';
             buttonHtml = `<button class="btn-start" onclick="startLesson('${lesson._id}', ${index})"><i class="fas fa-redo"></i> مراجعة الدرس</button>`;
         } else if (isLocked) {
-            // ✅ تحديد سبب القفل
-            if (index > 0 && !courseData.lessons[index - 1]?.isCompleted) {
-                lockReason = 'يجب إكمال الدرس السابق أولاً';
-            } else if (!courseData.isPurchased && index >= courseData.freeLessons) {
-                lockReason = 'هذا الدرس مدفوع، يرجى الاشتراك في الدورة';
-            } else {
-                lockReason = 'هذا الدرس غير متاح حالياً';
-            }
-            
             statusHtml = `<span class="status-locked"><i class="fas fa-lock"></i> مقفل</span>`;
             buttonHtml = `<button class="btn-locked" disabled title="${lockReason}"><i class="fas fa-lock"></i> غير متاح</button>`;
         } else {
@@ -660,7 +667,8 @@ function renderLessonsList() {
                         <div class="lesson-title">${escapeHtml(lesson.title)}</div>
                         <div class="lesson-status">
                             ${statusHtml}
-                            ${isLocked && lockReason ? `<span class="lock-reason" style="font-size: 0.7rem; color: #e53e3e; margin-right: 8px;">🔒 ${lockReason}</span>` : ''}
+                            ${lockReason ? `<span class="lock-reason" style="font-size: 0.7rem; color: #e53e3e; margin-right: 8px;">🔒 ${lockReason}</span>` : ''}
+                            ${timeRemainingHtml}
                         </div>
                     </div>
                 </div>
@@ -668,6 +676,12 @@ function renderLessonsList() {
             </div>
         `;
     }).join('');
+    
+    // ✅ تحديث رسالة التقدم
+    const progressMsg = document.getElementById('progressMessage');
+    if (progressMsg) {
+        progressMsg.innerHTML = `⏰ ${courseData.hoursBetweenLessons || 12} ساعة بين كل درس. لا يمكنك الانتقال إلى الدرس التالي إلا بعد مرور ${courseData.hoursBetweenLessons || 12} ساعة من إكمال الدرس السابق.`;
+    }
 }
 
         // بدء الدرس - الانتقال إلى صفحة عرض الدرس
