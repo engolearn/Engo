@@ -840,7 +840,7 @@ async function completeLessonWithoutAssignment() {
             showAlert('🎉 تهانينا! لقد أكملت هذا الدرس بنجاح', 'success');
             setTimeout(() => {
                 window.location.href = '/course-details.html?id=' + courseId;
-            }, 2000);
+            }, 1500);
         } else {
             showAlert('❌ حدث خطأ في تسجيل إكمال الدرس', 'error');
         }
