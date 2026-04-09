@@ -596,6 +596,8 @@ async function loadCourseDetails() {
         
         // عرض قائمة الدروس
         renderLessonsList();
+        // بدء العد التنازلي للدروس المقفلة
+startCountdownForLockedLessons();
         
         // التحقق من أهلية الشهادة
         await checkCertificateEligibility();
@@ -615,7 +617,48 @@ function goToSubscribe(courseId) {
         function isLessonCompleted(lessonId) {
             return completedLessons.includes(lessonId);
         }
+// ==================== تحديث العد التنازلي للدروس ====================
+let countdownInterval = null;
 
+function startCountdownForLockedLessons() {
+    // إيقاف أي عداد سابق
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    // تحديث العد التنازلي لكل درس مقفل
+    function updateCountdowns() {
+        const now = new Date();
+        let hasUpdates = false;
+        
+        // البحث عن جميع عناصر الوقت المتبقي
+        document.querySelectorAll('.time-remaining[data-available]').forEach(el => {
+            const availableDate = new Date(el.getAttribute('data-available'));
+            const diffMs = availableDate - now;
+            
+            if (diffMs <= 0) {
+                // الوقت انتهى - إعادة تحميل الصفحة لتحديث حالة الدرس
+                location.reload();
+                return;
+            }
+            
+            const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const secondsLeft = Math.floor((diffMs % (1000 * 60)) / 1000);
+            
+            el.innerHTML = `<i class="fas fa-hourglass-half"></i> الوقت المتبقي: ${hoursLeft} ساعة و ${minutesLeft} دقيقة و ${secondsLeft} ثانية`;
+            hasUpdates = true;
+        });
+        
+        // إذا لم يعد هناك دروس مقفلة بالوقت، أوقف العداد
+        if (!hasUpdates && countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+    }
+    
+    // تحديث كل ثانية
+    updateCountdowns();
+    countdownInterval = setInterval(updateCountdowns, 1000);
+}
         // عرض قائمة الدروس (مع الترتيب الإجباري)
 function renderLessonsList() {
     const container = document.getElementById('lessonsList');
@@ -634,19 +677,20 @@ function renderLessonsList() {
         let buttonHtml = '';
         let timeRemainingHtml = '';
         
-        // ✅ حساب الوقت المتبقي إذا كان الدرس مقفلاً بسبب الوقت
-        if (isLocked && availableAt) {
-            const now = new Date();
-            const available = new Date(availableAt);
-            const diffMs = available - now;
-            if (diffMs > 0) {
-                const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
-                const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                timeRemainingHtml = `<div class="time-remaining" style="font-size: 0.7rem; color: #e53e3e; margin-top: 5px;">
-                                        <i class="fas fa-hourglass-half"></i> الوقت المتبقي: ${hoursLeft} ساعة و ${minutesLeft} دقيقة
-                                     </div>`;
-            }
-        }
+// داخل renderLessonsList، عند إنشاء timeRemainingHtml
+if (isLocked && availableAt) {
+    const now = new Date();
+    const available = new Date(availableAt);
+    const diffMs = available - now;
+    if (diffMs > 0) {
+        const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const secondsLeft = Math.floor((diffMs % (1000 * 60)) / 1000);
+        timeRemainingHtml = `<div class="time-remaining" data-available="${availableAt}" style="font-size: 0.7rem; color: #e53e3e; margin-top: 5px;">
+                                <i class="fas fa-hourglass-half"></i> الوقت المتبقي: ${hoursLeft} ساعة و ${minutesLeft} دقيقة و ${secondsLeft} ثانية
+                             </div>`;
+    }
+}
         
         if (isCompleted) {
             statusHtml = '<span class="status-completed"><i class="fas fa-check-circle"></i> مكتمل ✓</span>';
