@@ -247,10 +247,24 @@ const userProgressSchema = new mongoose.Schema({
     completedLessons: [{
         lessonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' },
         score: { type: Number, default: 0 },
-        completedAt: { type: Date, default: Date.now }  // ✅ وقت الإكمال
+        completedAt: { type: Date, default: Date.now }
     }],
     midtermScore: { type: Number, default: null },
-    finalScore: { type: Number, default: null }
+    midtermAttempts: [{
+        score: { type: Number },
+        attemptedAt: { type: Date, default: Date.now },
+        passed: { type: Boolean, default: false }
+    }],
+    midtermLastAttemptAt: { type: Date, default: null },
+    midtermPassed: { type: Boolean, default: false },
+    finalScore: { type: Number, default: null },
+    finalAttempts: [{
+        score: { type: Number },
+        attemptedAt: { type: Date, default: Date.now },
+        passed: { type: Boolean, default: false }
+    }],
+    finalLastAttemptAt: { type: Date, default: null },
+    finalPassed: { type: Boolean, default: false }
 });
 const UserProgress = mongoose.model('UserProgress', userProgressSchema);
 // نموذج الشهادات
@@ -1908,7 +1922,21 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
         }
         
         const userId = req.user._id;
-        
+
+        // بعد جلب progress
+const midtermPassed = progress?.midtermPassed || false;
+const finalPassed = progress?.finalPassed || false;
+
+// في حساب الدروس المقفلة، أضف هذا الشرط
+if (isMidterm && !midtermPassed && index >= 10) {
+    isLocked = true;
+    lockReason = '🔒 يجب اجتياز الاختبار النصفي أولاً لمتابعة الدروس';
+}
+
+if (isFinal && !finalPassed && index >= 20) {
+    isLocked = true;
+    lockReason = '🔒 يجب اجتياز الاختبار النهائي أولاً للحصول على الشهادة';
+}
         // ✅ التحقق من أن المستخدم مشترك في الدورة
         const isSubscribed = course.allowedUsers?.some(id => id.toString() === userId.toString()) ||
                              req.user.purchasedCourses?.includes(course._id.toString());
@@ -2823,32 +2851,66 @@ app.get('/api/courses/:courseId/quizzes/:quizType/questions', auth, async (req, 
 });
 
 // تقديم الاختبار
-app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
+
+        
+        app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
     try {
         const { answers, timeSpent } = req.body;
         const quiz = await Quiz.findById(req.params.quizId);
         
         if (!quiz) return res.status(404).json({ message: 'الاختبار غير موجود' });
         
-        // ✅ التحقق من عدم وجود نتيجة سابقة (منع إعادة الاختبار)
-        const existingResult = await QuizResult.findOne({ 
+        // جلب تقدم المستخدم
+        let progress = await UserProgress.findOne({ 
             userId: req.user._id, 
-            quizId: quiz._id 
+            courseId: quiz.courseId 
         });
         
-        if (existingResult) {
-            return res.status(403).json({ 
-                message: '❌ لا يمكنك إعادة هذا الاختبار. يتم احتساب الدرجة من أول محاولة فقط.',
-                code: 'ALREADY_SUBMITTED',
-                result: {
-                    score: existingResult.percentage,
-                    passed: existingResult.passed,
-                    completedAt: existingResult.completedAt
-                }
+        if (!progress) {
+            progress = new UserProgress({ 
+                userId: req.user._id, 
+                courseId: quiz.courseId, 
+                completedLessons: [] 
             });
         }
         
+        const isMidterm = quiz.quizType === 'midterm';
+        const isFinal = quiz.quizType === 'final';
         
+        // ✅ التحقق من عدد المحاولات والوقت بين المحاولات
+        const RETRY_HOURS = 48;
+        const MS_RETRY = RETRY_HOURS * 60 * 60 * 1000;
+        
+        if (isMidterm && progress.midtermPassed) {
+            return res.status(403).json({ 
+                message: '✅ لقد اجتزت هذا الاختبار بالفعل. لا يمكنك إعادته.',
+                code: 'ALREADY_PASSED'
+            });
+        }
+        
+        if (isFinal && progress.finalPassed) {
+            return res.status(403).json({ 
+                message: '✅ لقد اجتزت هذا الاختبار بالفعل. لا يمكنك إعادته.',
+                code: 'ALREADY_PASSED'
+            });
+        }
+        
+        // التحقق من آخر محاولة (48 ساعة)
+        let lastAttemptAt = isMidterm ? progress.midtermLastAttemptAt : progress.finalLastAttemptAt;
+        if (lastAttemptAt) {
+            const now = new Date();
+            const hoursSinceLast = (now - lastAttemptAt) / (1000 * 60 * 60);
+            if (hoursSinceLast < RETRY_HOURS) {
+                const remainingHours = Math.ceil(RETRY_HOURS - hoursSinceLast);
+                return res.status(403).json({ 
+                    message: `⚠️ يمكنك إعادة الاختبار بعد ${remainingHours} ساعة. المحاولة التالية متاحة بعد ${RETRY_HOURS} ساعة من آخر محاولة.`,
+                    code: 'RETRY_LIMIT',
+                    remainingHours: remainingHours
+                });
+            }
+        }
+        
+        // حساب النتيجة
         let totalScore = 0;
         let maxScore = 0;
         const results = [];
@@ -2913,6 +2975,34 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
         const percentage = (totalScore / maxScore) * 100;
         const passed = percentage >= quiz.passingScore;
         
+        // ✅ حفظ محاولة الاختبار
+        const attempt = {
+            score: percentage,
+            attemptedAt: new Date(),
+            passed: passed
+        };
+        
+        if (isMidterm) {
+            progress.midtermAttempts = progress.midtermAttempts || [];
+            progress.midtermAttempts.push(attempt);
+            progress.midtermLastAttemptAt = new Date();
+            progress.midtermScore = percentage;
+            if (passed) {
+                progress.midtermPassed = true;
+            }
+        } else if (isFinal) {
+            progress.finalAttempts = progress.finalAttempts || [];
+            progress.finalAttempts.push(attempt);
+            progress.finalLastAttemptAt = new Date();
+            progress.finalScore = percentage;
+            if (passed) {
+                progress.finalPassed = true;
+            }
+        }
+        
+        await progress.save();
+        
+        // ✅ حفظ النتيجة في QuizResult (للتوافق مع النظام القديم)
         const quizResult = new QuizResult({
             userId: req.user._id,
             quizId: quiz._id,
@@ -2922,26 +3012,17 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
             answers: results,
             timeSpent
         });
-        
         await quizResult.save();
         
-        if (quiz.quizType === 'midterm') {
-            await UserProgress.findOneAndUpdate(
-                { userId: req.user._id, courseId: quiz.courseId },
-                { midtermScore: percentage },
-                { upsert: true }
-            );
-        } else if (quiz.quizType === 'final') {
-            await UserProgress.findOneAndUpdate(
-                { userId: req.user._id, courseId: quiz.courseId },
-                { finalScore: percentage },
-                { upsert: true }
-            );
-        } else if (quiz.quizType === 'level_test') {
-            await User.findByIdAndUpdate(req.user._id, { 
-                level: quiz.level, 
-                levelScore: percentage 
-            });
+        let message = '';
+        if (passed) {
+            message = isMidterm ? 
+                '🎉 تهانينا! لقد اجتزت الاختبار النصفي. يمكنك متابعة الدروس.' :
+                '🎉 تهانينا! لقد اجتزت الاختبار النهائي. يمكنك الآن الحصول على الشهادة.';
+        } else {
+            message = isMidterm ?
+                `📚 للأسف لم تجتز الاختبار النصفي. يمكنك إعادة المحاولة بعد 48 ساعة. (نسبتك: ${Math.round(percentage)}%)` :
+                `📚 للأسف لم تجتز الاختبار النهائي. يمكنك إعادة المحاولة بعد 48 ساعة. (نسبتك: ${Math.round(percentage)}%)`;
         }
         
         res.json({
@@ -2951,7 +3032,9 @@ app.post('/api/quizzes/:quizId/submit', auth, async (req, res) => {
             percentage: Math.round(percentage),
             passed,
             passingScore: quiz.passingScore,
-            message: passed ? '🎉 تهانينا! لقد اجتزت الاختبار' : '📚 للأسف لم تجتز الاختبار، حاول مرة أخرى'
+            message: message,
+            canRetryAfter: !passed ? RETRY_HOURS : null,
+            remainingHours: !passed && lastAttemptAt ? Math.ceil(RETRY_HOURS - ((new Date() - lastAttemptAt) / (1000 * 60 * 60))) : null
         });
         
     } catch (error) {
