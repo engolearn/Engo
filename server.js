@@ -244,14 +244,12 @@ const QuizResult = mongoose.model('QuizResult', quizResultSchema);
 const userProgressSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
-    completedLessons: [{ lessonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }, score: { type: Number, default: 0 } }],
+    completedLessons: [{
+        lessonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' },
+        score: { type: Number, default: 0 },
+        completedAt: { type: Date, default: Date.now }  // ✅ وقت الإكمال
+    }],
     midtermScore: { type: Number, default: null },
-    // في userProgressSchema، أضف هذا الحقل داخل completedLessons
-completedLessons: [{
-    lessonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' },
-    score: { type: Number, default: 0 },
-    completedAt: { type: Date, default: Date.now }  // ✅ أضف هذا الحقل
-}],
     finalScore: { type: Number, default: null }
 });
 const UserProgress = mongoose.model('UserProgress', userProgressSchema);
@@ -2626,18 +2624,16 @@ app.get('/api/courses/:courseId/quizzes', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId);
         if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
-        // داخل دالة جلب الاختبارات
-if (midtermResult) {
-    // الاختبار تم بالفعل
-    midtermMessage = `⚠️ لقد قمت بالفعل بإجراء هذا الاختبار. درجتك: ${midtermResult.percentage}% (لا يمكن إعادة الاختبار)`;
-    midtermUnlocked = false; // منع المحاولة مرة أخرى
-}
+        
         const userProgress = await UserProgress.findOne({ 
             userId: req.user._id, 
             courseId: course._id 
         });
         
         const completedLessons = userProgress?.completedLessons?.length || 0;
+        
+        const MIDTERM_UNLOCK_AFTER = 10;  // ✅ بعد 10 دروس
+        const FINAL_UNLOCK_AFTER = 20;    // ✅ بعد 20 درس
         
         const midterm = await Quiz.findOne({ 
             courseId: course._id, 
@@ -2651,8 +2647,29 @@ if (midtermResult) {
             isActive: true 
         });
         
-        const midtermUnlocked = completedLessons >= 15;
-        const finalUnlocked = completedLessons >= course.totalLessons;
+        let midtermUnlocked = false;
+        let midtermMessage = '';
+        if (midterm) {
+            if (completedLessons >= MIDTERM_UNLOCK_AFTER) {
+                midtermUnlocked = true;
+                midtermMessage = `✅ متاح الآن (أكملت ${completedLessons} درس)`;
+            } else {
+                const remaining = MIDTERM_UNLOCK_AFTER - completedLessons;
+                midtermMessage = `🔒 يفتح بعد إكمال ${remaining} درس إضافي (${completedLessons}/${MIDTERM_UNLOCK_AFTER})`;
+            }
+        }
+        
+        let finalUnlocked = false;
+        let finalMessage = '';
+        if (final) {
+            if (completedLessons >= FINAL_UNLOCK_AFTER) {
+                finalUnlocked = true;
+                finalMessage = `✅ متاح الآن (أكملت ${completedLessons} درس)`;
+            } else {
+                const remaining = FINAL_UNLOCK_AFTER - completedLessons;
+                finalMessage = `🔒 يفتح بعد إكمال ${remaining} درس إضافي (${completedLessons}/${FINAL_UNLOCK_AFTER})`;
+            }
+        }
         
         const midtermResult = midterm ? await QuizResult.findOne({ 
             userId: req.user._id, 
@@ -2664,6 +2681,17 @@ if (midtermResult) {
             quizId: final._id 
         }) : null;
         
+        // ✅ إضافة رسالة "مرة واحدة فقط"
+        if (midtermResult) {
+            midtermMessage = `⚠️ لقد قمت بالفعل بإجراء هذا الاختبار. درجتك: ${midtermResult.percentage}% (لا يمكن إعادة الاختبار)`;
+            midtermUnlocked = false;
+        }
+        
+        if (finalResult) {
+            finalMessage = `⚠️ لقد قمت بالفعل بإجراء هذا الاختبار. درجتك: ${finalResult.percentage}% (لا يمكن إعادة الاختبار)`;
+            finalUnlocked = false;
+        }
+        
         res.json({
             midterm: midterm ? {
                 id: midterm._id,
@@ -2674,9 +2702,12 @@ if (midtermResult) {
                 totalPoints: midterm.totalPoints,
                 questionsCount: midterm.questions.length,
                 unlocked: midtermUnlocked,
+                unlockMessage: midtermMessage,
                 completed: !!midtermResult,
                 score: midtermResult?.percentage || null,
-                passed: midtermResult?.passed || false
+                passed: midtermResult?.passed || false,
+                requiredLessons: MIDTERM_UNLOCK_AFTER,
+                completedLessons: completedLessons
             } : null,
             final: final ? {
                 id: final._id,
@@ -2687,18 +2718,22 @@ if (midtermResult) {
                 totalPoints: final.totalPoints,
                 questionsCount: final.questions.length,
                 unlocked: finalUnlocked,
+                unlockMessage: finalMessage,
                 completed: !!finalResult,
                 score: finalResult?.percentage || null,
-                passed: finalResult?.passed || false
+                passed: finalResult?.passed || false,
+                requiredLessons: FINAL_UNLOCK_AFTER,
+                completedLessons: completedLessons
             } : null,
             progress: {
                 completedLessons,
                 totalLessons: course.totalLessons,
-                remainingForMidterm: Math.max(0, 15 - completedLessons),
-                remainingForFinal: Math.max(0, course.totalLessons - completedLessons)
+                remainingForMidterm: Math.max(0, MIDTERM_UNLOCK_AFTER - completedLessons),
+                remainingForFinal: Math.max(0, FINAL_UNLOCK_AFTER - completedLessons)
             }
         });
     } catch (error) {
+        console.error('Error fetching quizzes:', error);
         res.status(500).json({ message: error.message });
     }
 });
