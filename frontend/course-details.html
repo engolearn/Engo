@@ -624,7 +624,6 @@ function startCountdownForLockedLessons() {
     // إيقاف أي عداد سابق
     if (countdownInterval) clearInterval(countdownInterval);
     
-    // تحديث العد التنازلي لكل درس مقفل
     function updateCountdowns() {
         const now = new Date();
         let hasUpdates = false;
@@ -655,7 +654,6 @@ function startCountdownForLockedLessons() {
         }
     }
     
-    // تحديث كل ثانية
     updateCountdowns();
     countdownInterval = setInterval(updateCountdowns, 1000);
 }
@@ -671,26 +669,27 @@ function renderLessonsList() {
         const isCompleted = lesson.isCompleted || false;
         const isLocked = lesson.isLocked || false;
         const lockReason = lesson.lockReason || '';
-        const availableAt = lesson.availableAt;
+        const availableAt = lesson.availableAt; // ✅ الوقت من السيرفر
         
         let statusHtml = '';
         let buttonHtml = '';
         let timeRemainingHtml = '';
         
-// داخل renderLessonsList، عند إنشاء timeRemainingHtml
-if (isLocked && availableAt) {
-    const now = new Date();
-    const available = new Date(availableAt);
-    const diffMs = available - now;
-    if (diffMs > 0) {
-        const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        const secondsLeft = Math.floor((diffMs % (1000 * 60)) / 1000);
-        timeRemainingHtml = `<div class="time-remaining" data-available="${availableAt}" style="font-size: 0.7rem; color: #e53e3e; margin-top: 5px;">
-                                <i class="fas fa-hourglass-half"></i> الوقت المتبقي: ${hoursLeft} ساعة و ${minutesLeft} دقيقة و ${secondsLeft} ثانية
-                             </div>`;
-    }
-}
+        // ✅ حساب الوقت المتبقي من availableAt (قادم من السيرفر)
+        if (isLocked && availableAt) {
+            const availableDate = new Date(availableAt);
+            const now = new Date();
+            const diffMs = availableDate - now;
+            
+            if (diffMs > 0) {
+                const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const secondsLeft = Math.floor((diffMs % (1000 * 60)) / 1000);
+                timeRemainingHtml = `<div class="time-remaining" data-available="${availableAt}" style="font-size: 0.7rem; color: #e53e3e; margin-top: 5px;">
+                                        <i class="fas fa-hourglass-half"></i> الوقت المتبقي: ${hoursLeft} ساعة و ${minutesLeft} دقيقة و ${secondsLeft} ثانية
+                                     </div>`;
+            }
+        }
         
         if (isCompleted) {
             statusHtml = '<span class="status-completed"><i class="fas fa-check-circle"></i> مكتمل ✓</span>';
@@ -726,6 +725,9 @@ if (isLocked && availableAt) {
     if (progressMsg) {
         progressMsg.innerHTML = `⏰ ${courseData.hoursBetweenLessons || 12} ساعة بين كل درس. لا يمكنك الانتقال إلى الدرس التالي إلا بعد مرور ${courseData.hoursBetweenLessons || 12} ساعة من إكمال الدرس السابق.`;
     }
+    
+    // ✅ بدء العد التنازلي بعد عرض الدروس
+    startCountdownForLockedLessons();
 }
 
         // بدء الدرس - الانتقال إلى صفحة عرض الدرس
