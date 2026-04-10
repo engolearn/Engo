@@ -619,6 +619,7 @@ function goToSubscribe(courseId) {
         }
 // ==================== تحديث العد التنازلي للدروس ====================
 let countdownInterval = null;
+let lastReloadTime = 0;
 
 function startCountdownForLockedLessons() {
     // إيقاف أي عداد سابق
@@ -627,6 +628,7 @@ function startCountdownForLockedLessons() {
     function updateCountdowns() {
         const now = new Date();
         let hasUpdates = false;
+        let shouldReload = false;
         
         // البحث عن جميع عناصر الوقت المتبقي
         document.querySelectorAll('.time-remaining[data-available]').forEach(el => {
@@ -634,8 +636,7 @@ function startCountdownForLockedLessons() {
             const diffMs = availableDate - now;
             
             if (diffMs <= 0) {
-                // الوقت انتهى - إعادة تحميل الصفحة لتحديث حالة الدرس
-                location.reload();
+                shouldReload = true;
                 return;
             }
             
@@ -647,7 +648,13 @@ function startCountdownForLockedLessons() {
             hasUpdates = true;
         });
         
-        // إذا لم يعد هناك دروس مقفلة بالوقت، أوقف العداد
+        // ✅ منع إعادة التحميل المتكررة (مرة كل 30 ثانية على الأقل)
+        if (shouldReload && (Date.now() - lastReloadTime) > 30000) {
+            lastReloadTime = Date.now();
+            console.log('🔄 Time expired, reloading page...');
+            location.reload();
+        }
+        
         if (!hasUpdates && countdownInterval) {
             clearInterval(countdownInterval);
             countdownInterval = null;
