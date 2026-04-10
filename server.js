@@ -4297,6 +4297,9 @@ socket.on('create_room', async (data, callback) => {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
+app.get('/dictionary.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'dictionary.html'));
+});
 
 app.get('/chat', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'chat.html'));
