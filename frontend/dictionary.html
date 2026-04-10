@@ -250,7 +250,26 @@
             font-size: 3rem;
             margin-bottom: 1rem;
         }
-        
+        .word-type {
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    color: white;
+    margin-right: 0.5rem;
+}
+
+.word-type.noun { background: #4299e1; }      /* اسم - أزرق */
+.word-type.verb { background: #48bb78; }       /* فعل - أخضر */
+.word-type.adjective { background: #ed8936; }  /* صفة - برتقالي */
+.word-type.adverb { background: #9f7aea; }     /* ظرف - بنفسجي */
+.word-type.greeting { background: #f6ad55; }   /* تحية - ذهبي */
+
+.example-translation {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-top: 0.3rem;
+    padding-right: 1rem;
+}
         /* مؤشر التحميل */
         .loading-spinner {
             text-align: center;
@@ -330,78 +349,569 @@
 
     <script>
         // ==================== قاعدة بيانات القاموس ====================
-        const dictionaryData = [
-            // الكلمات الأساسية
-            { ar: "مرحباً", en: "Hello", type: "noun", pronunciation: "/həˈləʊ/", example: "مرحباً بك في EnGo" },
-            { ar: "شكراً", en: "Thank you", type: "noun", pronunciation: "/θæŋk juː/", example: "شكراً جزيلاً" },
-            { ar: "كتاب", en: "Book", type: "noun", pronunciation: "/bʊk/", example: "أقرأ كتاباً مفيداً" },
-            { ar: "قلم", en: "Pen", type: "noun", pronunciation: "/pen/", example: "أكتب بالقلم" },
-            { ar: "مدرسة", en: "School", type: "noun", pronunciation: "/skuːl/", example: "أذهب إلى المدرسة" },
-            { ar: "معلم", en: "Teacher", type: "noun", pronunciation: "/ˈtiːtʃər/", example: "المعلم يشرح الدرس" },
-            { ar: "طالب", en: "Student", type: "noun", pronunciation: "/ˈstjuːdnt/", example: "الطالب مجتهد" },
-            { ar: "بيت", en: "House", type: "noun", pronunciation: "/haʊs/", example: "بيتي كبير" },
-            { ar: "سيارة", en: "Car", type: "noun", pronunciation: "/kɑːr/", example: "سيارتي حمراء" },
-            { ar: "مدينة", en: "City", type: "noun", pronunciation: "/ˈsɪti/", example: "أعيش في مدينة كبيرة" },
-            { ar: "ماء", en: "Water", type: "noun", pronunciation: "/ˈwɔːtər/", example: "أشرب الماء" },
-            { ar: "طعام", en: "Food", type: "noun", pronunciation: "/fuːd/", example: "الطعام لذيذ" },
-            { ar: "صداقة", en: "Friendship", type: "noun", pronunciation: "/ˈfrendʃɪp/", example: "الصداقة كنز" },
-            { ar: "حب", en: "Love", type: "noun", pronunciation: "/lʌv/", example: "الحب جميل" },
-            { ar: "سلام", en: "Peace", type: "noun", pronunciation: "/piːs/", example: "السلام عالمي" },
-            { ar: "سماء", en: "Sky", type: "noun", pronunciation: "/skaɪ/", example: "السماء زرقاء" },
-            { ar: "شمس", en: "Sun", type: "noun", pronunciation: "/sʌn/", example: "الشمس مشرقة" },
-            { ar: "قمر", en: "Moon", type: "noun", pronunciation: "/muːn/", example: "القمر جميل" },
-            { ar: "نجم", en: "Star", type: "noun", pronunciation: "/stɑːr/", example: "النجوم تتألق" },
-            { ar: "ورد", en: "Flower", type: "noun", pronunciation: "/ˈflaʊər/", example: "الوردة حمراء" },
-            { ar: "سعيد", en: "Happy", type: "adjective", pronunciation: "/ˈhæpi/", example: "أنا سعيد جداً" },
-            { ar: "حزين", en: "Sad", type: "adjective", pronunciation: "/sæd/", example: "هو حزين اليوم" },
-            { ar: "كبير", en: "Big", type: "adjective", pronunciation: "/bɪɡ/", example: "بيت كبير" },
-            { ar: "صغير", en: "Small", type: "adjective", pronunciation: "/smɔːl/", example: "قط صغير" },
-            { ar: "جميل", en: "Beautiful", type: "adjective", pronunciation: "/ˈbjuːtɪfl/", example: "منظر جميل" },
-            { ar: "سريع", en: "Fast", type: "adjective", pronunciation: "/fɑːst/", example: "سيارة سريعة" },
-            { ar: "بطيء", en: "Slow", type: "adjective", pronunciation: "/sləʊ/", example: "سلحفاة بطيئة" },
-            { ar: "جديد", en: "New", type: "adjective", pronunciation: "/njuː/", example: "هاتف جديد" },
-            { ar: "قديم", en: "Old", type: "adjective", pronunciation: "/əʊld/", example: "منزل قديم" },
-            { ar: "سهل", en: "Easy", type: "adjective", pronunciation: "/ˈiːzi/", example: "امتحان سهل" },
-            { ar: "صعب", en: "Difficult", type: "adjective", pronunciation: "/ˈdɪfɪkəlt/", example: "سؤال صعب" },
-            { ar: "نظيف", en: "Clean", type: "adjective", pronunciation: "/kliːn/", example: "غرفة نظيفة" },
-            { ar: "قذر", en: "Dirty", type: "adjective", pronunciation: "/ˈdɜːti/", example: "ملابس قذرة" },
-            { ar: "غني", en: "Rich", type: "adjective", pronunciation: "/rɪtʃ/", example: "رجل غني" },
-            { ar: "فقير", en: "Poor", type: "adjective", pronunciation: "/pɔːr/", example: "عائلة فقيرة" },
-            { ar: "يذهب", en: "Go", type: "verb", pronunciation: "/ɡəʊ/", example: "أذهب إلى العمل" },
-            { ar: "يأتي", en: "Come", type: "verb", pronunciation: "/kʌm/", example: "تعال إلى هنا" },
-            { ar: "يأكل", en: "Eat", type: "verb", pronunciation: "/iːt/", example: "آكل التفاح" },
-            { ar: "يشرب", en: "Drink", type: "verb", pronunciation: "/drɪŋk/", example: "أشرب القهوة" },
-            { ar: "ينام", en: "Sleep", type: "verb", pronunciation: "/sliːp/", example: "أنام مبكراً" },
-            { ar: "يقرأ", en: "Read", type: "verb", pronunciation: "/riːd/", example: "أقرأ كتاباً" },
-            { ar: "يكتب", en: "Write", type: "verb", pronunciation: "/raɪt/", example: "أكتب رسالة" },
-            { ar: "يتكلم", en: "Speak", type: "verb", pronunciation: "/spiːk/", example: "أتكلم العربية" },
-            { ar: "يفهم", en: "Understand", type: "verb", pronunciation: "/ˌʌndəˈstænd/", example: "أفهم الدرس" },
-            { ar: "يتعلم", en: "Learn", type: "verb", pronunciation: "/lɜːn/", example: "أتعلم الإنجليزية" },
-            { ar: "يلعب", en: "Play", type: "verb", pronunciation: "/pleɪ/", example: "يلعب الأطفال" },
-            { ar: "يعمل", en: "Work", type: "verb", pronunciation: "/wɜːk/", example: "أعمل في مكتب" },
-            { ar: "يساعد", en: "Help", type: "verb", pronunciation: "/help/", example: "أساعد الآخرين" },
-            { ar: "يحب", en: "Like/Love", type: "verb", pronunciation: "/laɪk/", example: "أحب القراءة" },
-            { ar: "بسرعة", en: "Quickly", type: "adverb", pronunciation: "/ˈkwɪkli/", example: "أركض بسرعة" },
-            { ar: "ببطء", en: "Slowly", type: "adverb", pronunciation: "/ˈsləʊli/", example: "يمشي ببطء" },
-            { ar: "جيداً", en: "Well", type: "adverb", pronunciation: "/wel/", example: "أتكلم جيداً" },
-            { ar: "الآن", en: "Now", type: "adverb", pronunciation: "/naʊ/", example: "أنا مشغول الآن" },
-            { ar: "دائماً", en: "Always", type: "adverb", pronunciation: "/ˈɔːlweɪz/", example: "أستيقظ باكراً دائماً" },
-            { ar: "أبداً", en: "Never", type: "adverb", pronunciation: "/ˈnevər/", example: "لا أنام متأخراً أبداً" },
-            
-            // كلمات متقدمة للدروس
-            { ar: "مفردات", en: "Vocabulary", type: "noun", pronunciation: "/vəˈkæbjələri/", example: "أتعلم مفردات جديدة" },
-            { ar: "قاعدة", en: "Grammar", type: "noun", pronunciation: "/ˈɡræmər/", example: "قواعد اللغة مهمة" },
-            { ar: "محادثة", en: "Conversation", type: "noun", pronunciation: "/ˌkɒnvəˈseɪʃn/", example: "أمارس المحادثة" },
-            { ar: "نطق", en: "Pronunciation", type: "noun", pronunciation: "/prəˌnʌnsiˈeɪʃn/", example: "النطق صحيح" },
-            { ar: "اختبار", en: "Exam", type: "noun", pronunciation: "/ɪɡˈzæm/", example: "استعد للاختبار" },
-            { ar: "واجب", en: "Homework", type: "noun", pronunciation: "/ˈhəʊmwɜːk/", example: "أنهيت الواجب" },
-            { ar: "درس", en: "Lesson", type: "noun", pronunciation: "/ˈlesn/", example: "الدرس مفيد" },
-            { ar: "دورة", en: "Course", type: "noun", pronunciation: "/kɔːs/", example: "سجلت في دورة" },
-            { ar: "شهادة", en: "Certificate", type: "noun", pronunciation: "/səˈtɪfɪkət/", example: "حصلت على شهادة" },
-            { ar: "مستوى", en: "Level", type: "noun", pronunciation: "/ˈlevl/", example: "مستواي مبتدئ" },
-            { ar: "تحسين", en: "Improvement", type: "noun", pronunciation: "/ɪmˈpruːvmənt/", example: "أحتاج إلى تحسين" },
-            { ar: "ممارسة", en: "Practice", type: "noun", pronunciation: "/ˈpræktɪs/", example: "الممارسة تجعل الكمال" }
-        ];
+        // ==================== قاعدة بيانات القاموس المتطورة ====================
+const dictionaryData = [
+    // الأسماء (Nouns)
+    { 
+        ar: "كتاب", 
+        en: "Book", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "بُك", 
+        example: "I am reading a book", 
+        exampleTranslation: "أنا أقرأ كتاباً" 
+    },
+    { 
+        ar: "قلم", 
+        en: "Pen", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "بِن", 
+        example: "I write with a pen", 
+        exampleTranslation: "أكتب بالقلم" 
+    },
+    { 
+        ar: "مدرسة", 
+        en: "School", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "سكول", 
+        example: "I go to school every day", 
+        exampleTranslation: "أذهب إلى المدرسة كل يوم" 
+    },
+    { 
+        ar: "معلم", 
+        en: "Teacher", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "تيتشر", 
+        example: "The teacher explains the lesson", 
+        exampleTranslation: "المعلم يشرح الدرس" 
+    },
+    { 
+        ar: "طالب", 
+        en: "Student", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "ستيودنت", 
+        example: "The student is hardworking", 
+        exampleTranslation: "الطالب مجتهد" 
+    },
+    { 
+        ar: "بيت", 
+        en: "House", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "هاوس", 
+        example: "My house is big", 
+        exampleTranslation: "بيتي كبير" 
+    },
+    { 
+        ar: "سيارة", 
+        en: "Car", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "كار", 
+        example: "My car is red", 
+        exampleTranslation: "سيارتي حمراء" 
+    },
+    { 
+        ar: "مدينة", 
+        en: "City", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "سيتي", 
+        example: "I live in a big city", 
+        exampleTranslation: "أعيش في مدينة كبيرة" 
+    },
+    { 
+        ar: "ماء", 
+        en: "Water", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "ووتر", 
+        example: "I drink water", 
+        exampleTranslation: "أشرب الماء" 
+    },
+    { 
+        ar: "طعام", 
+        en: "Food", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "فود", 
+        example: "The food is delicious", 
+        exampleTranslation: "الطعام لذيذ" 
+    },
+    { 
+        ar: "صداقة", 
+        en: "Friendship", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "فريندشيب", 
+        example: "Friendship is a treasure", 
+        exampleTranslation: "الصداقة كنز" 
+    },
+    { 
+        ar: "حب", 
+        en: "Love", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "لوف", 
+        example: "Love is beautiful", 
+        exampleTranslation: "الحب جميل" 
+    },
+    { 
+        ar: "سلام", 
+        en: "Peace", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "بيس", 
+        example: "Peace is important", 
+        exampleTranslation: "السلام مهم" 
+    },
+    { 
+        ar: "سماء", 
+        en: "Sky", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "سكاي", 
+        example: "The sky is blue", 
+        exampleTranslation: "السماء زرقاء" 
+    },
+    { 
+        ar: "شمس", 
+        en: "Sun", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "سان", 
+        example: "The sun is shining", 
+        exampleTranslation: "الشمس مشرقة" 
+    },
+    { 
+        ar: "قمر", 
+        en: "Moon", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "مون", 
+        example: "The moon is beautiful", 
+        exampleTranslation: "القمر جميل" 
+    },
+    
+    // الصفات (Adjectives)
+    { 
+        ar: "سعيد", 
+        en: "Happy", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "هابي", 
+        example: "I am very happy today", 
+        exampleTranslation: "أنا سعيد جداً اليوم" 
+    },
+    { 
+        ar: "حزين", 
+        en: "Sad", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "ساد", 
+        example: "He is sad", 
+        exampleTranslation: "هو حزين" 
+    },
+    { 
+        ar: "كبير", 
+        en: "Big", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "بِغ", 
+        example: "This is a big house", 
+        exampleTranslation: "هذا منزل كبير" 
+    },
+    { 
+        ar: "صغير", 
+        en: "Small", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "سمول", 
+        example: "I have a small cat", 
+        exampleTranslation: "لدي قط صغير" 
+    },
+    { 
+        ar: "جميل", 
+        en: "Beautiful", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "بيوتيفول", 
+        example: "The view is beautiful", 
+        exampleTranslation: "المنظر جميل" 
+    },
+    { 
+        ar: "سريع", 
+        en: "Fast", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "فاست", 
+        example: "He runs fast", 
+        exampleTranslation: "يركض بسرعة" 
+    },
+    { 
+        ar: "بطيء", 
+        en: "Slow", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "سلو", 
+        example: "The turtle is slow", 
+        exampleTranslation: "السلحفاة بطيئة" 
+    },
+    { 
+        ar: "جديد", 
+        en: "New", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "نيو", 
+        example: "I bought a new phone", 
+        exampleTranslation: "اشتريت هاتفاً جديداً" 
+    },
+    { 
+        ar: "قديم", 
+        en: "Old", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "أولد", 
+        example: "This is an old house", 
+        exampleTranslation: "هذا منزل قديم" 
+    },
+    { 
+        ar: "سهل", 
+        en: "Easy", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "إيزي", 
+        example: "The exam was easy", 
+        exampleTranslation: "الامتحان كان سهلاً" 
+    },
+    { 
+        ar: "صعب", 
+        en: "Difficult", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "ديفيكالت", 
+        example: "The question is difficult", 
+        exampleTranslation: "السؤال صعب" 
+    },
+    { 
+        ar: "نظيف", 
+        en: "Clean", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "كلين", 
+        example: "The room is clean", 
+        exampleTranslation: "الغرفة نظيفة" 
+    },
+    { 
+        ar: "قذر", 
+        en: "Dirty", 
+        type: "صفة", 
+        typeEn: "Adjective",
+        pronunciation: "ديرتي", 
+        example: "The clothes are dirty", 
+        exampleTranslation: "الملابس قذرة" 
+    },
+    
+    // الأفعال (Verbs)
+    { 
+        ar: "يذهب", 
+        en: "Go", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "جو", 
+        example: "I go to work every morning", 
+        exampleTranslation: "أذهب إلى العمل كل صباح" 
+    },
+    { 
+        ar: "يأتي", 
+        en: "Come", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "كام", 
+        example: "Please come here", 
+        exampleTranslation: "من فضلك تعال إلى هنا" 
+    },
+    { 
+        ar: "يأكل", 
+        en: "Eat", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "إيت", 
+        example: "I eat an apple every day", 
+        exampleTranslation: "آكل تفاحة كل يوم" 
+    },
+    { 
+        ar: "يشرب", 
+        en: "Drink", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "درينك", 
+        example: "I drink coffee in the morning", 
+        exampleTranslation: "أشرب القهوة في الصباح" 
+    },
+    { 
+        ar: "ينام", 
+        en: "Sleep", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "سليب", 
+        example: "I sleep early", 
+        exampleTranslation: "أنام مبكراً" 
+    },
+    { 
+        ar: "يقرأ", 
+        en: "Read", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "ريد", 
+        example: "I read a book before bed", 
+        exampleTranslation: "أقرأ كتاباً قبل النوم" 
+    },
+    { 
+        ar: "يكتب", 
+        en: "Write", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "رايت", 
+        example: "I write a letter to my friend", 
+        exampleTranslation: "أكتب رسالة إلى صديقي" 
+    },
+    { 
+        ar: "يتكلم", 
+        en: "Speak", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "سبيك", 
+        example: "I speak Arabic", 
+        exampleTranslation: "أتحدث العربية" 
+    },
+    { 
+        ar: "يفهم", 
+        en: "Understand", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "أندرستاند", 
+        example: "I understand the lesson", 
+        exampleTranslation: "أفهم الدرس" 
+    },
+    { 
+        ar: "يتعلم", 
+        en: "Learn", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "ليرن", 
+        example: "I learn English", 
+        exampleTranslation: "أتعلم الإنجليزية" 
+    },
+    { 
+        ar: "يلعب", 
+        en: "Play", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "بلاي", 
+        example: "The children play outside", 
+        exampleTranslation: "الأطفال يلعبون في الخارج" 
+    },
+    { 
+        ar: "يعمل", 
+        en: "Work", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "ورك", 
+        example: "I work in an office", 
+        exampleTranslation: "أعمل في مكتب" 
+    },
+    { 
+        ar: "يساعد", 
+        en: "Help", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "هيلب", 
+        example: "I help my friends", 
+        exampleTranslation: "أساعد أصدقائي" 
+    },
+    { 
+        ar: "يحب", 
+        en: "Like/Love", 
+        type: "فعل", 
+        typeEn: "Verb",
+        pronunciation: "لايك", 
+        example: "I like reading books", 
+        exampleTranslation: "أحب قراءة الكتب" 
+    },
+    
+    // الظروف (Adverbs)
+    { 
+        ar: "بسرعة", 
+        en: "Quickly", 
+        type: "ظرف", 
+        typeEn: "Adverb",
+        pronunciation: "كويكلي", 
+        example: "He runs quickly", 
+        exampleTranslation: "يركض بسرعة" 
+    },
+    { 
+        ar: "ببطء", 
+        en: "Slowly", 
+        type: "ظرف", 
+        typeEn: "Adverb",
+        pronunciation: "سلوولي", 
+        example: "He walks slowly", 
+        exampleTranslation: "يمشي ببطء" 
+    },
+    { 
+        ar: "جيداً", 
+        en: "Well", 
+        type: "ظرف", 
+        typeEn: "Adverb",
+        pronunciation: "ويل", 
+        example: "I speak English well", 
+        exampleTranslation: "أتحدث الإنجليزية جيداً" 
+    },
+    { 
+        ar: "الآن", 
+        en: "Now", 
+        type: "ظرف", 
+        typeEn: "Adverb",
+        pronunciation: "ناو", 
+        example: "I am busy now", 
+        exampleTranslation: "أنا مشغول الآن" 
+    },
+    { 
+        ar: "دائماً", 
+        en: "Always", 
+        type: "ظرف", 
+        typeEn: "Adverb",
+        pronunciation: "أولويز", 
+        example: "I always wake up early", 
+        exampleTranslation: "أستيقظ باكراً دائماً" 
+    },
+    
+    // التحيات (Greetings)
+    { 
+        ar: "مرحباً", 
+        en: "Hello", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "هَلو", 
+        example: "Hello, how are you?", 
+        exampleTranslation: "مرحباً، كيف حالك؟" 
+    },
+    { 
+        ar: "شكراً", 
+        en: "Thank you", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "ثانك يو", 
+        example: "Thank you for your help", 
+        exampleTranslation: "شكراً لمساعدتك" 
+    },
+    { 
+        ar: "من فضلك", 
+        en: "Please", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "بليز", 
+        example: "Please help me", 
+        exampleTranslation: "من فضلك ساعدني" 
+    },
+    { 
+        ar: "عفواً", 
+        en: "You're welcome", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "يور ويلكم", 
+        example: "Thank you! - You're welcome", 
+        exampleTranslation: "شكراً! - عفواً" 
+    },
+    { 
+        ar: "صباح الخير", 
+        en: "Good morning", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "جود مورنينغ", 
+        example: "Good morning, teacher", 
+        exampleTranslation: "صباح الخير، يا معلم" 
+    },
+    { 
+        ar: "مساء الخير", 
+        en: "Good evening", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "جود إيفنينغ", 
+        example: "Good evening, everyone", 
+        exampleTranslation: "مساء الخير جميعاً" 
+    },
+    { 
+        ar: "تصبح على خير", 
+        en: "Good night", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "جود نايت", 
+        example: "Good night, sleep well", 
+        exampleTranslation: "تصبح على خير، نم جيداً" 
+    },
+    { 
+        ar: "مع السلامة", 
+        en: "Goodbye", 
+        type: "تحية", 
+        typeEn: "Greeting",
+        pronunciation: "جودباي", 
+        example: "Goodbye, see you tomorrow", 
+        exampleTranslation: "مع السلامة، أراك غداً" 
+    },
+    
+    // كلمات متقدمة للدروس
+    { 
+        ar: "مفردات", 
+        en: "Vocabulary", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "فوكابيلري", 
+        example: "I learn new vocabulary every day", 
+        exampleTranslation: "أتعلم مفردات جديدة كل يوم" 
+    },
+    { 
+        ar: "قاعدة", 
+        en: "Grammar", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "غرامر", 
+        example: "Grammar is important", 
+        exampleTranslation: "القواعد مهمة" 
+    },
+    { 
+        ar: "محادثة", 
+        en: "Conversation", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "كونفرسيشن", 
+        example: "I practice conversation", 
+        exampleTranslation: "أمارس المحادثة" 
+    },
+    { 
+        ar: "نطق", 
+        en: "Pronunciation", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "برنانسييشن", 
+        example: "My pronunciation is good", 
+        exampleTranslation: "نطقي جيد" 
+    },
+    { 
+        ar: "اختبار", 
+        en: "Exam", 
+        type: "اسم", 
+        typeEn: "Noun",
+        pronunciation: "إكزام", 
+        example: "I am preparing for the exam", 
+        exampleTranslation: "أنا أستعد للاختبار" 
+    }
+];
 
         let currentResults = [];
         let currentFilter = "all";
@@ -461,49 +971,60 @@
         }
 
         // عرض النتائج
-        function renderResults(results = null) {
-            const container = document.getElementById('resultsContainer');
-            const resultsCount = document.getElementById('resultsCount');
-            const displayResults = results || currentResults;
-            
-            resultsCount.innerHTML = `${displayResults.length} نتيجة`;
-            
-            if (displayResults.length === 0) {
-                container.innerHTML = `
-                    <div class="no-results">
-                        <i class="fas fa-search"></i>
-                        <p>لا توجد نتائج لـ "${currentSearchTerm || 'بحثك'}"</p>
-                        <p style="font-size: 0.8rem;">جرب كلمة أخرى</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = displayResults.map(item => `
-                <div class="word-card" onclick="speakWord('${item.en}', '${item.ar}')">
-                    <div class="word-header">
-                        <div>
-                            <span class="word-arabic">${item.ar}</span>
-                            <span class="word-type">${getTypeName(item.type)}</span>
-                        </div>
-                        <span class="word-english">${item.en}</span>
-                    </div>
-                    ${item.pronunciation ? `<div class="word-pronunciation"><i class="fas fa-volume-up"></i> ${item.pronunciation}</div>` : ''}
-                    ${item.example ? `<div class="word-example"><i class="fas fa-quote-right"></i> ${item.example}</div>` : ''}
+        // عرض النتائج
+function renderResults(results = null) {
+    const container = document.getElementById('resultsContainer');
+    const resultsCount = document.getElementById('resultsCount');
+    const displayResults = results || currentResults;
+    
+    resultsCount.innerHTML = `${displayResults.length} نتيجة`;
+    
+    if (displayResults.length === 0) {
+        container.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-search"></i>
+                <p>لا توجد نتائج لـ "${currentSearchTerm || 'بحثك'}"</p>
+                <p style="font-size: 0.8rem;">جرب كلمة أخرى</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = displayResults.map(item => `
+        <div class="word-card" onclick="speakWord('${item.en}', '${item.ar}')">
+            <div class="word-header">
+                <div>
+                    <span class="word-arabic">${item.ar}</span>
+                    <span class="word-type ${item.type === 'فعل' ? 'verb' : (item.type === 'صفة' ? 'adjective' : (item.type === 'ظرف' ? 'adverb' : 'noun'))}">
+                        ${getTypeIcon(item.type)} ${item.type}
+                    </span>
                 </div>
-            `).join('');
-        }
+                <span class="word-english">${item.en}</span>
+            </div>
+            
+            <div class="word-pronunciation">
+                <i class="fas fa-microphone-alt"></i> النطق: ${item.pronunciation}
+            </div>
+            
+            <div class="word-example">
+                <div><i class="fas fa-quote-right"></i> مثال: ${item.example}</div>
+                <div class="example-translation">📖 الترجمة: ${item.exampleTranslation}</div>
+            </div>
+        </div>
+    `).join('');
+}
 
-        // الحصول على اسم النوع بالعربية
-        function getTypeName(type) {
-            const types = {
-                'noun': 'اسم',
-                'verb': 'فعل',
-                'adjective': 'صفة',
-                'adverb': 'ظرف'
-            };
-            return types[type] || type;
-        }
+// إضافة أيقونة لكل نوع
+function getTypeIcon(type) {
+    switch(type) {
+        case 'اسم': return '📖';
+        case 'فعل': return '🏃';
+        case 'صفة': return '🎨';
+        case 'ظرف': return '⏱️';
+        case 'تحية': return '👋';
+        default: return '📝';
+    }
+}
 
         // نطق الكلمة (باستخدام Web Speech API)
         function speakWord(english, arabic) {
