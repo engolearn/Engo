@@ -3352,13 +3352,14 @@ app.post('/api/progress/:courseId/lessons/:lessonId/complete', auth, async (req,
         const exists = progress.completedLessons.some(l => l.lessonId.toString() === req.params.lessonId);
         
         if (!exists) {
-            // ✅ حفظ وقت الإكمال
+            // ✅ تأكد من أن completedAt يُحفظ
             progress.completedLessons.push({ 
                 lessonId: req.params.lessonId, 
                 score: score || 100,
-                completedAt: new Date()  // ✅ الوقت الحالي
+                completedAt: new Date()  // ✅ وقت السيرفر
             });
             await progress.save();
+            console.log('✅ Lesson completed at:', new Date());
         }
         
         res.json({ message: '✅ تم إكمال الدرس', progress });
