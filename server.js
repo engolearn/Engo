@@ -1913,7 +1913,8 @@ app.get('/api/courses', async (req, res) => {
 
 
 
-// جلب تفاصيل الدورة مع التحقق من الاشتراك
+
+        // جلب تفاصيل الدورة مع التحقق من الاشتراك
 app.get('/api/courses/:courseId', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId).populate('lessons');
@@ -1922,21 +1923,7 @@ app.get('/api/courses/:courseId', auth, async (req, res) => {
         }
         
         const userId = req.user._id;
-
-        // بعد جلب progress
-const midtermPassed = progress?.midtermPassed || false;
-const finalPassed = progress?.finalPassed || false;
-
-// في حساب الدروس المقفلة، أضف هذا الشرط
-if (isMidterm && !midtermPassed && index >= 10) {
-    isLocked = true;
-    lockReason = '🔒 يجب اجتياز الاختبار النصفي أولاً لمتابعة الدروس';
-}
-
-if (isFinal && !finalPassed && index >= 20) {
-    isLocked = true;
-    lockReason = '🔒 يجب اجتياز الاختبار النهائي أولاً للحصول على الشهادة';
-}
+        
         // ✅ التحقق من أن المستخدم مشترك في الدورة
         const isSubscribed = course.allowedUsers?.some(id => id.toString() === userId.toString()) ||
                              req.user.purchasedCourses?.includes(course._id.toString());
@@ -1953,7 +1940,7 @@ if (isFinal && !finalPassed && index >= 20) {
             });
         }
         
-        // ✅ جلب تقدم المستخدم في هذه الدورة مع وقت الإكمال
+        // ✅ جلب تقدم المستخدم في هذه الدورة مع وقت الإكمال (يجب أن يكون قبل استخدامه)
         const progress = await UserProgress.findOne({ userId, courseId: course._id });
         const completedLessonsData = progress?.completedLessons || [];
         
@@ -1970,12 +1957,13 @@ if (isFinal && !finalPassed && index >= 20) {
         const isPurchased = req.user.purchasedCourses?.includes(course._id.toString()) ||
                             course.allowedUsers?.some(id => id.toString() === userId.toString());
         
-        // ✅ إعدادات الوقت بين الدروس (12 ساعة = 43200000 مللي ثانية)
+        // ✅ إعدادات الوقت بين الدروس (12 ساعة)
         const HOURS_BETWEEN_LESSONS = 12;
         const MS_BETWEEN_LESSONS = HOURS_BETWEEN_LESSONS * 60 * 60 * 1000;
         
         // ✅ حساب الدروس المقفلة
         const lessonsWithStatus = course.lessons.map((lesson, index) => {
+            // ... باقي الكود
             const lessonId = lesson._id.toString();
             const completedInfo = completedMap.get(lessonId);
             const isCompleted = !!completedInfo;
