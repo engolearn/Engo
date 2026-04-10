@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>القاموس - EnGo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .btn-back {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        
+        .dictionary-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+        
+        /* بطاقة القاموس الرئيسية */
+        .dictionary-card {
+            background: white;
+            border-radius: 30px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .search-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .search-section h1 {
+            font-size: 1.8rem;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .search-section p {
+            color: #718096;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* حقل البحث */
+        .search-box {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        .search-input-wrapper i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 1rem 3rem 1rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+        }
+        
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .search-btn:hover {
+            transform: scale(1.02);
+        }
+        
+        /* أزرار التصفية */
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-btn {
+            background: #edf2f7;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* النتائج */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .results-count {
+            color: #718096;
+            font-size: 0.85rem;
+        }
+        
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* بطاقة الكلمة */
+        .word-card {
+            background: #f7fafc;
+            border-radius: 16px;
+            padding: 1rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .word-card:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .word-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .word-arabic {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .word-english {
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .word-pronunciation {
+            font-size: 0.8rem;
+            color: #a0aec0;
+            margin-top: 0.3rem;
+        }
+        
+        .word-type {
+            background: #e2e8f0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: #4a5568;
+        }
+        
+        .word-example {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed #e2e8f0;
+        }
+        
+        /* حالة عدم وجود نتائج */
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #a0aec0;
+        }
+        
+        .no-results i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* مؤشر التحميل */
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: #667eea;
+        }
+        
+        .loading-spinner i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .dictionary-card {
+                padding: 1.5rem;
+            }
+            .search-box {
+                flex-direction: column;
+            }
+            .search-btn {
+                padding: 0.8rem;
+            }
+            .word-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo"><i class="fas fa-language"></i> EnGo</div>
+            <button class="btn-back" onclick="window.location.href='/'">← العودة للرئيسية</button>
+        </div>
+    </nav>
+
+    <div class="dictionary-container">
+        <div class="dictionary-card">
+            <div class="search-section">
+                <h1><i class="fas fa-book"></i> القاموس العربي الإنجليزي</h1>
+                <p>ابحث عن الكلمات بالعربية أو الإنجليزية</p>
+                
+                <div class="search-box">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" class="search-input" placeholder="اكتب كلمة بالعربية أو الإنجليزية..." onkeyup="handleSearchKey(event)">
+                    </div>
+                    <button class="search-btn" onclick="searchWord()">
+                        <i class="fas fa-search"></i> بحث
+                    </button>
+                </div>
+                
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterResults('all')">الكل</button>
+                    <button class="filter-btn" onclick="filterResults('noun')">📖 اسم</button>
+                    <button class="filter-btn" onclick="filterResults('verb')">🏃 فعل</button>
+                    <button class="filter-btn" onclick="filterResults('adjective')">🎨 صفة</button>
+                    <button class="filter-btn" onclick="filterResults('adverb')">⏱️ ظرف</button>
+                </div>
+            </div>
+            
+            <div class="results-header">
+                <div class="results-count" id="resultsCount">0 نتيجة</div>
+                <div id="currentFilter">الكل</div>
+            </div>
+            
+            <div id="resultsContainer" class="results-grid">
+                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري تحميل القاموس...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== قاعدة بيانات القاموس ====================
+        const dictionaryData = [
+            // الكلمات الأساسية
+            { ar: "مرحباً", en: "Hello", type: "noun", pronunciation: "/həˈləʊ/", example: "مرحباً بك في EnGo" },
+            { ar: "شكراً", en: "Thank you", type: "noun", pronunciation: "/θæŋk juː/", example: "شكراً جزيلاً" },
+            { ar: "كتاب", en: "Book", type: "noun", pronunciation: "/bʊk/", example: "أقرأ كتاباً مفيداً" },
+            { ar: "قلم", en: "Pen", type: "noun", pronunciation: "/pen/", example: "أكتب بالقلم" },
+            { ar: "مدرسة", en: "School", type: "noun", pronunciation: "/skuːl/", example: "أذهب إلى المدرسة" },
+            { ar: "معلم", en: "Teacher", type: "noun", pronunciation: "/ˈtiːtʃər/", example: "المعلم يشرح الدرس" },
+            { ar: "طالب", en: "Student", type: "noun", pronunciation: "/ˈstjuːdnt/", example: "الطالب مجتهد" },
+            { ar: "بيت", en: "House", type: "noun", pronunciation: "/haʊs/", example: "بيتي كبير" },
+            { ar: "سيارة", en: "Car", type: "noun", pronunciation: "/kɑːr/", example: "سيارتي حمراء" },
+            { ar: "مدينة", en: "City", type: "noun", pronunciation: "/ˈsɪti/", example: "أعيش في مدينة كبيرة" },
+            { ar: "ماء", en: "Water", type: "noun", pronunciation: "/ˈwɔːtər/", example: "أشرب الماء" },
+            { ar: "طعام", en: "Food", type: "noun", pronunciation: "/fuːd/", example: "الطعام لذيذ" },
+            { ar: "صداقة", en: "Friendship", type: "noun", pronunciation: "/ˈfrendʃɪp/", example: "الصداقة كنز" },
+            { ar: "حب", en: "Love", type: "noun", pronunciation: "/lʌv/", example: "الحب جميل" },
+            { ar: "سلام", en: "Peace", type: "noun", pronunciation: "/piːs/", example: "السلام عالمي" },
+            { ar: "سماء", en: "Sky", type: "noun", pronunciation: "/skaɪ/", example: "السماء زرقاء" },
+            { ar: "شمس", en: "Sun", type: "noun", pronunciation: "/sʌn/", example: "الشمس مشرقة" },
+            { ar: "قمر", en: "Moon", type: "noun", pronunciation: "/muːn/", example: "القمر جميل" },
+            { ar: "نجم", en: "Star", type: "noun", pronunciation: "/stɑːr/", example: "النجوم تتألق" },
+            { ar: "ورد", en: "Flower", type: "noun", pronunciation: "/ˈflaʊər/", example: "الوردة حمراء" },
+            { ar: "سعيد", en: "Happy", type: "adjective", pronunciation: "/ˈhæpi/", example: "أنا سعيد جداً" },
+            { ar: "حزين", en: "Sad", type: "adjective", pronunciation: "/sæd/", example: "هو حزين اليوم" },
+            { ar: "كبير", en: "Big", type: "adjective", pronunciation: "/bɪɡ/", example: "بيت كبير" },
+            { ar: "صغير", en: "Small", type: "adjective", pronunciation: "/smɔːl/", example: "قط صغير" },
+            { ar: "جميل", en: "Beautiful", type: "adjective", pronunciation: "/ˈbjuːtɪfl/", example: "منظر جميل" },
+            { ar: "سريع", en: "Fast", type: "adjective", pronunciation: "/fɑːst/", example: "سيارة سريعة" },
+            { ar: "بطيء", en: "Slow", type: "adjective", pronunciation: "/sləʊ/", example: "سلحفاة بطيئة" },
+            { ar: "جديد", en: "New", type: "adjective", pronunciation: "/njuː/", example: "هاتف جديد" },
+            { ar: "قديم", en: "Old", type: "adjective", pronunciation: "/əʊld/", example: "منزل قديم" },
+            { ar: "سهل", en: "Easy", type: "adjective", pronunciation: "/ˈiːzi/", example: "امتحان سهل" },
+            { ar: "صعب", en: "Difficult", type: "adjective", pronunciation: "/ˈdɪfɪkəlt/", example: "سؤال صعب" },
+            { ar: "نظيف", en: "Clean", type: "adjective", pronunciation: "/kliːn/", example: "غرفة نظيفة" },
+            { ar: "قذر", en: "Dirty", type: "adjective", pronunciation: "/ˈdɜːti/", example: "ملابس قذرة" },
+            { ar: "غني", en: "Rich", type: "adjective", pronunciation: "/rɪtʃ/", example: "رجل غني" },
+            { ar: "فقير", en: "Poor", type: "adjective", pronunciation: "/pɔːr/", example: "عائلة فقيرة" },
+            { ar: "يذهب", en: "Go", type: "verb", pronunciation: "/ɡəʊ/", example: "أذهب إلى العمل" },
+            { ar: "يأتي", en: "Come", type: "verb", pronunciation: "/kʌm/", example: "تعال إلى هنا" },
+            { ar: "يأكل", en: "Eat", type: "verb", pronunciation: "/iːt/", example: "آكل التفاح" },
+            { ar: "يشرب", en: "Drink", type: "verb", pronunciation: "/drɪŋk/", example: "أشرب القهوة" },
+            { ar: "ينام", en: "Sleep", type: "verb", pronunciation: "/sliːp/", example: "أنام مبكراً" },
+            { ar: "يقرأ", en: "Read", type: "verb", pronunciation: "/riːd/", example: "أقرأ كتاباً" },
+            { ar: "يكتب", en: "Write", type: "verb", pronunciation: "/raɪt/", example: "أكتب رسالة" },
+            { ar: "يتكلم", en: "Speak", type: "verb", pronunciation: "/spiːk/", example: "أتكلم العربية" },
+            { ar: "يفهم", en: "Understand", type: "verb", pronunciation: "/ˌʌndəˈstænd/", example: "أفهم الدرس" },
+            { ar: "يتعلم", en: "Learn", type: "verb", pronunciation: "/lɜːn/", example: "أتعلم الإنجليزية" },
+            { ar: "يلعب", en: "Play", type: "verb", pronunciation: "/pleɪ/", example: "يلعب الأطفال" },
+            { ar: "يعمل", en: "Work", type: "verb", pronunciation: "/wɜːk/", example: "أعمل في مكتب" },
+            { ar: "يساعد", en: "Help", type: "verb", pronunciation: "/help/", example: "أساعد الآخرين" },
+            { ar: "يحب", en: "Like/Love", type: "verb", pronunciation: "/laɪk/", example: "أحب القراءة" },
+            { ar: "بسرعة", en: "Quickly", type: "adverb", pronunciation: "/ˈkwɪkli/", example: "أركض بسرعة" },
+            { ar: "ببطء", en: "Slowly", type: "adverb", pronunciation: "/ˈsləʊli/", example: "يمشي ببطء" },
+            { ar: "جيداً", en: "Well", type: "adverb", pronunciation: "/wel/", example: "أتكلم جيداً" },
+            { ar: "الآن", en: "Now", type: "adverb", pronunciation: "/naʊ/", example: "أنا مشغول الآن" },
+            { ar: "دائماً", en: "Always", type: "adverb", pronunciation: "/ˈɔːlweɪz/", example: "أستيقظ باكراً دائماً" },
+            { ar: "أبداً", en: "Never", type: "adverb", pronunciation: "/ˈnevər/", example: "لا أنام متأخراً أبداً" },
+            
+            // كلمات متقدمة للدروس
+            { ar: "مفردات", en: "Vocabulary", type: "noun", pronunciation: "/vəˈkæbjələri/", example: "أتعلم مفردات جديدة" },
+            { ar: "قاعدة", en: "Grammar", type: "noun", pronunciation: "/ˈɡræmər/", example: "قواعد اللغة مهمة" },
+            { ar: "محادثة", en: "Conversation", type: "noun", pronunciation: "/ˌkɒnvəˈseɪʃn/", example: "أمارس المحادثة" },
+            { ar: "نطق", en: "Pronunciation", type: "noun", pronunciation: "/prəˌnʌnsiˈeɪʃn/", example: "النطق صحيح" },
+            { ar: "اختبار", en: "Exam", type: "noun", pronunciation: "/ɪɡˈzæm/", example: "استعد للاختبار" },
+            { ar: "واجب", en: "Homework", type: "noun", pronunciation: "/ˈhəʊmwɜːk/", example: "أنهيت الواجب" },
+            { ar: "درس", en: "Lesson", type: "noun", pronunciation: "/ˈlesn/", example: "الدرس مفيد" },
+            { ar: "دورة", en: "Course", type: "noun", pronunciation: "/kɔːs/", example: "سجلت في دورة" },
+            { ar: "شهادة", en: "Certificate", type: "noun", pronunciation: "/səˈtɪfɪkət/", example: "حصلت على شهادة" },
+            { ar: "مستوى", en: "Level", type: "noun", pronunciation: "/ˈlevl/", example: "مستواي مبتدئ" },
+            { ar: "تحسين", en: "Improvement", type: "noun", pronunciation: "/ɪmˈpruːvmənt/", example: "أحتاج إلى تحسين" },
+            { ar: "ممارسة", en: "Practice", type: "noun", pronunciation: "/ˈpræktɪs/", example: "الممارسة تجعل الكمال" }
+        ];
+
+        let currentResults = [];
+        let currentFilter = "all";
+        let currentSearchTerm = "";
+
+        // تهيئة الصفحة
+        function init() {
+            currentResults = [...dictionaryData];
+            renderResults();
+        }
+
+        // البحث
+        function searchWord() {
+            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+            currentSearchTerm = searchTerm;
+            
+            if (searchTerm === "") {
+                currentResults = [...dictionaryData];
+            } else {
+                currentResults = dictionaryData.filter(item => 
+                    item.ar.includes(searchTerm) || 
+                    item.en.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            applyFilter();
+        }
+
+        // معالجة ضغط Enter
+        function handleSearchKey(event) {
+            if (event.key === 'Enter') {
+                searchWord();
+            }
+        }
+
+        // تصفية النتائج حسب النوع
+        function filterResults(type) {
+            currentFilter = type;
+            
+            // تحديث شكل الأزرار
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            applyFilter();
+        }
+
+        function applyFilter() {
+            let filtered = [...currentResults];
+            
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(item => item.type === currentFilter);
+            }
+            
+            renderResults(filtered);
+        }
+
+        // عرض النتائج
+        function renderResults(results = null) {
+            const container = document.getElementById('resultsContainer');
+            const resultsCount = document.getElementById('resultsCount');
+            const displayResults = results || currentResults;
+            
+            resultsCount.innerHTML = `${displayResults.length} نتيجة`;
+            
+            if (displayResults.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <p>لا توجد نتائج لـ "${currentSearchTerm || 'بحثك'}"</p>
+                        <p style="font-size: 0.8rem;">جرب كلمة أخرى</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = displayResults.map(item => `
+                <div class="word-card" onclick="speakWord('${item.en}', '${item.ar}')">
+                    <div class="word-header">
+                        <div>
+                            <span class="word-arabic">${item.ar}</span>
+                            <span class="word-type">${getTypeName(item.type)}</span>
+                        </div>
+                        <span class="word-english">${item.en}</span>
+                    </div>
+                    ${item.pronunciation ? `<div class="word-pronunciation"><i class="fas fa-volume-up"></i> ${item.pronunciation}</div>` : ''}
+                    ${item.example ? `<div class="word-example"><i class="fas fa-quote-right"></i> ${item.example}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // الحصول على اسم النوع بالعربية
+        function getTypeName(type) {
+            const types = {
+                'noun': 'اسم',
+                'verb': 'فعل',
+                'adjective': 'صفة',
+                'adverb': 'ظرف'
+            };
+            return types[type] || type;
+        }
+
+        // نطق الكلمة (باستخدام Web Speech API)
+        function speakWord(english, arabic) {
+            if ('speechSynthesis' in window) {
+                // إيقاف أي نطق جاري
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance();
+                utterance.text = `${english} - ${arabic}`;
+                utterance.lang = 'ar-SA';
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // بدء التطبيق
+        init();
+    </script>
+</body>
+</html>
