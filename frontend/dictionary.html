@@ -157,6 +157,26 @@
             background: #667eea;
             color: white;
         }
+        /* كلمة اليوم */
+.word-of-day-card {
+    transition: transform 0.3s;
+}
+.word-of-day-card:hover {
+    transform: translateY(-5px);
+}
+.word-of-day-section {
+    animation: fadeInUp 0.5s ease;
+}
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
         
         /* النتائج */
         .results-header {
@@ -326,6 +346,36 @@
                         <i class="fas fa-search"></i> بحث
                     </button>
                 </div>
+                <!-- بطاقة كلمة اليوم -->
+<div class="word-of-day-section" style="margin-bottom: 2rem;">
+    <div class="word-of-day-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 1.5rem; color: white; box-shadow: 0 10px 25px rgba(102,126,234,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem;">
+                    <i class="fas fa-calendar-day"></i> كلمة اليوم
+                </span>
+                <h2 id="wordOfDayTitle" style="margin: 0.5rem 0; font-size: 1.8rem;">جاري التحميل...</h2>
+                <p id="wordOfDayMeaning" style="opacity: 0.9; margin-bottom: 0.5rem;"></p>
+            </div>
+            <button onclick="speakWordOfDay()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;">
+                <i class="fas fa-volume-up"></i>
+            </button>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <span><i class="fas fa-tag"></i> <span id="wordOfDayType"></span></span>
+                <span><i class="fas fa-microphone-alt"></i> النطق: <span id="wordOfDayPronunciation"></span></span>
+            </div>
+            <div style="margin-top: 0.8rem;">
+                <p><i class="fas fa-quote-right"></i> مثال: <span id="wordOfDayExample"></span></p>
+                <p style="font-size: 0.85rem; opacity: 0.8;">📖 الترجمة: <span id="wordOfDayExampleTranslation"></span></p>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; text-align: left;">
+            <small><i class="fas fa-clock"></i> يتم تحديث الكلمة يومياً</small>
+        </div>
+    </div>
+</div>
                 
                 <div class="filter-buttons">
                     <button class="filter-btn active" onclick="filterResults('all')">الكل</button>
@@ -1559,7 +1609,143 @@ const dictionaryData = [
             
             renderResults(filtered);
         }
+// ==================== كلمة اليوم (من القاموس) ====================
+let currentWordOfDay = null;
 
+// الحصول على كلمة عشوائية من القاموس
+function getRandomWordFromDictionary() {
+    if (!dictionaryData || dictionaryData.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * dictionaryData.length);
+    return dictionaryData[randomIndex];
+}
+
+// حفظ كلمة اليوم في localStorage
+function saveWordOfDay(word) {
+    const wordOfDayData = {
+        word: word,
+        date: new Date().toDateString()
+    };
+    localStorage.setItem('wordOfDay', JSON.stringify(wordOfDayData));
+}
+
+// تحميل كلمة اليوم المخزنة
+function loadSavedWordOfDay() {
+    const saved = localStorage.getItem('wordOfDay');
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    return null;
+}
+
+// التحقق مما إذا كانت الكلمة بحاجة للتحديث (كل 24 ساعة)
+function needsUpdate() {
+    const saved = loadSavedWordOfDay();
+    if (!saved) return true;
+    const today = new Date().toDateString();
+    return saved.date !== today;
+}
+
+// تحديث وعرض كلمة اليوم
+function updateWordOfDay() {
+    // التحقق من الحاجة للتحديث
+    if (needsUpdate()) {
+        // اختيار كلمة جديدة عشوائية من القاموس
+        const newWord = getRandomWordFromDictionary();
+        if (newWord) {
+            currentWordOfDay = newWord;
+            saveWordOfDay(newWord);
+            displayWordOfDay(newWord);
+            
+            // ✅ إرسال إشعار للمستخدم (إذا كان مسموحاً)
+            sendWordOfDayNotification(newWord);
+        }
+    } else {
+        // استخدام الكلمة المخزنة
+        const saved = loadSavedWordOfDay();
+        if (saved && saved.word) {
+            currentWordOfDay = saved.word;
+            displayWordOfDay(saved.word);
+        } else {
+            // إذا لم تكن هناك كلمة مخزنة، اختر واحدة
+            const newWord = getRandomWordFromDictionary();
+            if (newWord) {
+                currentWordOfDay = newWord;
+                saveWordOfDay(newWord);
+                displayWordOfDay(newWord);
+            }
+        }
+    }
+}
+
+// عرض كلمة اليوم في الواجهة
+function displayWordOfDay(word) {
+    if (!word) return;
+    
+    document.getElementById('wordOfDayTitle').innerHTML = `${word.ar} (${word.en})`;
+    document.getElementById('wordOfDayMeaning').innerHTML = word.ar;
+    document.getElementById('wordOfDayType').innerHTML = `${word.type} / ${word.typeEn}`;
+    document.getElementById('wordOfDayPronunciation').innerHTML = word.pronunciation;
+    document.getElementById('wordOfDayExample').innerHTML = word.example;
+    document.getElementById('wordOfDayExampleTranslation').innerHTML = word.exampleTranslation;
+}
+
+// نطق كلمة اليوم
+function speakWordOfDay() {
+    if (!currentWordOfDay) return;
+    
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance();
+        utterance.text = `${currentWordOfDay.en} - ${currentWordOfDay.ar}`;
+        utterance.lang = 'ar-SA';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+// إرسال إشعار كلمة اليوم
+function sendWordOfDayNotification(word) {
+    if (!word) return;
+    
+    // التحقق من إذن الإشعارات
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification('📖 كلمة اليوم من EnGo', {
+            body: `${word.ar} (${word.en})\n${word.example}`,
+            icon: '/favicon.ico',
+            silent: false
+        });
+        
+        notification.onclick = function() {
+            window.focus();
+            // التمرير إلى كلمة اليوم
+            document.querySelector('.word-of-day-section')?.scrollIntoView({ behavior: 'smooth' });
+        };
+    }
+}
+
+// طلب إذن الإشعارات لكلمة اليوم
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        setTimeout(() => {
+            if (confirm('🔔 هل تريد تفعيل الإشعارات اليومية لكلمة جديدة كل يوم؟')) {
+                Notification.requestPermission();
+            }
+        }, 2000);
+    }
+}
+
+// التحقق من كلمة اليوم كل ساعة (للتأكد من عدم تغيير التاريخ)
+let wordOfDayCheckInterval = null;
+function startWordOfDayChecker() {
+    if (wordOfDayCheckInterval) clearInterval(wordOfDayCheckInterval);
+    
+    // التحقق كل ساعة إذا كانت الكلمة بحاجة للتحديث
+    wordOfDayCheckInterval = setInterval(() => {
+        if (needsUpdate()) {
+            updateWordOfDay();
+        }
+    }, 60 * 60 * 1000); // كل ساعة
+}
         // عرض النتائج
         // عرض النتائج
 function renderResults(results = null) {
@@ -1633,7 +1819,17 @@ function getTypeIcon(type) {
         }
 
         // بدء التطبيق
-        init();
+function init() {
+    // تهيئة كلمة اليوم
+    updateWordOfDay();
+    startWordOfDayChecker();
+    requestNotificationPermission();
+    
+    // تهيئة القاموس
+    init();
+}
+
+init();
     </script>
 </body>
 </html>
