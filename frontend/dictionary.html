@@ -352,19 +352,33 @@
                         <i class="fas fa-search"></i> بحث
                     </button>
                 </div>
-<!-- بطاقة كلمة اليوم - نسخة مصغرة -->
+<!-- بطاقة كلمة اليوم - نسخة قابلة للتوسيع -->
 <div class="word-of-day-section" style="margin-bottom: 1rem;">
-    <div class="word-of-day-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 0.8rem 1.2rem; color: white; box-shadow: 0 5px 15px rgba(102,126,234,0.3); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;">
-        <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
-            <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.65rem;">
-                <i class="fas fa-calendar-day"></i> كلمة اليوم
-            </span>
-            <h2 id="wordOfDayTitle" style="margin: 0; font-size: 1.2rem; display: inline-block;">جاري التحميل...</h2>
-            <span style="font-size: 0.85rem; opacity: 0.9;"><i class="fas fa-microphone-alt"></i> <span id="wordOfDayPronunciation"></span></span>
+    <div class="word-of-day-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; box-shadow: 0 5px 15px rgba(102,126,234,0.3); overflow: hidden;">
+        <!-- الرأس المصغر (دائماً ظاهر) -->
+        <div onclick="toggleWordOfDayDetails()" style="padding: 0.8rem 1.2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.65rem;">
+                    <i class="fas fa-calendar-day"></i> كلمة اليوم
+                </span>
+                <h2 id="wordOfDayTitle" style="margin: 0; font-size: 1.2rem; display: inline-block;">جاري التحميل...</h2>
+                <span style="font-size: 0.85rem; opacity: 0.9;"><i class="fas fa-microphone-alt"></i> <span id="wordOfDayPronunciation"></span></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span style="font-size: 0.75rem;"><i class="fas fa-tag"></i> <span id="wordOfDayType"></span></span>
+                <i id="toggleIcon" class="fas fa-chevron-down" style="transition: transform 0.3s;"></i>
+            </div>
         </div>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem;">
-            <span><i class="fas fa-tag"></i> <span id="wordOfDayType"></span></span>
-            <span><i class="fas fa-quote-right"></i> <span id="wordOfDayExample" style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;"></span></span>
+        
+        <!-- التفاصيل الكاملة (تظهر عند الضغط) -->
+        <div id="wordOfDayDetails" style="display: none; padding: 0 1.2rem 1rem 1.2rem; border-top: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.1);">
+            <div style="margin-top: 0.8rem;">
+                <p><i class="fas fa-quote-right"></i> <strong>مثال:</strong> <span id="wordOfDayExample"></span></p>
+                <p style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">📖 <strong>الترجمة:</strong> <span id="wordOfDayExampleTranslation"></span></p>
+            </div>
+            <div style="margin-top: 0.8rem; font-size: 0.75rem; opacity: 0.7;">
+                <i class="fas fa-clock"></i> يتم تحديث الكلمة يومياً
+            </div>
         </div>
     </div>
 </div>
@@ -1794,6 +1808,20 @@ function getTypeIcon(type) {
     }
 }
 
+        // إظهار/إخفاء تفاصيل كلمة اليوم
+function toggleWordOfDayDetails() {
+    const details = document.getElementById('wordOfDayDetails');
+    const icon = document.getElementById('toggleIcon');
+    
+    if (details.style.display === 'none' || details.style.display === '') {
+        details.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        details.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+        
         // نطق الكلمة (باستخدام Web Speech API)
         function speakWord(english, arabic) {
             if ('speechSynthesis' in window) {
