@@ -309,7 +309,8 @@
                 console.error('Error loading progress:', error);
             }
         }
-    // ==================== تحميل الاختبارات ====================
+
+                        // ==================== تحميل الاختبارات ====================
 async function loadQuizzes() {
     const courseId = getCourseId();
     const token = localStorage.getItem('token');
@@ -355,20 +356,47 @@ async function loadQuizzes() {
             if (mid.completed) {
                 cardClass = 'completed';
                 const passed = mid.passed;
-                statusHtml = `<span class="quiz-status ${passed ? 'status-passed' : 'status-failed'}">
-                                <i class="fas ${passed ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-                                ${passed ? 'اجتزت' : 'لم تجتز'} (${mid.score}%)
-                             </span>`;
-                buttonHtml = `<button class="btn-view-result" onclick="viewQuizResult('${mid.id}', 'midterm')">
-                                <i class="fas fa-chart-line"></i> عرض النتيجة
-                            </button>`;
+                
+                // ✅ التحقق من وجود بيانات الرسوب
+                if (!passed && courseData && courseData.midtermLastAttemptAt) {
+                    const remainingHours = getRemainingHours(courseData.midtermLastAttemptAt, 48);
+                    if (remainingHours > 0) {
+                        statusHtml = `<span class="quiz-status status-failed">
+                                        <i class="fas fa-times-circle"></i> راسب (${mid.score}%) - يمكنك إعادة المحاولة بعد ${remainingHours} ساعة
+                                      </span>`;
+                        buttonHtml = `<button class="btn-start-quiz" disabled>
+                                        <i class="fas fa-clock"></i> انتظر ${remainingHours} ساعة
+                                      </button>`;
+                    } else {
+                        statusHtml = `<span class="quiz-status status-pending">
+                                        <i class="fas fa-clock"></i> يمكنك إعادة المحاولة الآن
+                                      </span>`;
+                        buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${mid.id}', '${mid.name}', ${mid.duration})">
+                                        <i class="fas fa-redo"></i> إعادة الاختبار
+                                      </button>`;
+                    }
+                } else if (passed) {
+                    statusHtml = `<span class="quiz-status status-passed">
+                                    <i class="fas fa-check-circle"></i> اجتزت (${mid.score}%)
+                                  </span>`;
+                    buttonHtml = `<button class="btn-view-result" onclick="viewQuizResult('${mid.id}', 'midterm')">
+                                    <i class="fas fa-chart-line"></i> عرض النتيجة
+                                  </button>`;
+                } else {
+                    statusHtml = `<span class="quiz-status status-failed">
+                                    <i class="fas fa-times-circle"></i> لم تجتز (${mid.score}%)
+                                  </span>`;
+                    buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${mid.id}', '${mid.name}', ${mid.duration})">
+                                    <i class="fas fa-redo"></i> إعادة الاختبار
+                                  </button>`;
+                }
             } else if (mid.unlocked) {
                 statusHtml = `<span class="quiz-status status-pending">
                                 <i class="fas fa-clock"></i> متاح الآن - ${mid.unlockMessage || 'يمكنك البدء'}
                               </span>`;
                 buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${mid.id}', '${mid.name}', ${mid.duration})">
                                 <i class="fas fa-play"></i> بدء الاختبار
-                            </button>`;
+                              </button>`;
             } else {
                 cardClass = 'locked';
                 statusHtml = `<span class="quiz-status status-locked">
@@ -376,7 +404,7 @@ async function loadQuizzes() {
                               </span>`;
                 buttonHtml = `<button class="btn-start-quiz" disabled>
                                 <i class="fas fa-lock"></i> غير متاح
-                            </button>`;
+                              </button>`;
             }
             
             quizzesHtml += `
@@ -400,18 +428,8 @@ async function loadQuizzes() {
                 </div>
             `;
         }
-        // في دالة loadQuizzes، أضف رسالة للمستخدم إذا رسب
-if (mid.completed && !mid.passed) {
-    const remainingHours = getRemainingHours(courseData.midtermLastAttemptAt, 48);
-    statusHtml = `<span class="quiz-status status-failed">
-                    <i class="fas fa-times-circle"></i> راسب (${mid.score}%) - يمكنك إعادة المحاولة بعد ${remainingHours} ساعة
-                  </span>`;
-    buttonHtml = `<button class="btn-start-quiz" disabled>
-                    <i class="fas fa-clock"></i> انتظر ${remainingHours} ساعة
-                  </button>`;
-}
         
-        // ✅ اختبار نهائي (نفس المنطق مع تنبيه لمرة واحدة)
+        // ✅ اختبار نهائي
         if (quizzes.final) {
             const fin = quizzes.final;
             let statusHtml = '';
@@ -422,20 +440,47 @@ if (mid.completed && !mid.passed) {
             if (fin.completed) {
                 cardClass = 'completed';
                 const passed = fin.passed;
-                statusHtml = `<span class="quiz-status ${passed ? 'status-passed' : 'status-failed'}">
-                                <i class="fas ${passed ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-                                ${passed ? 'اجتزت' : 'لم تجتز'} (${fin.score}%)
-                             </span>`;
-                buttonHtml = `<button class="btn-view-result" onclick="viewQuizResult('${fin.id}', 'final')">
-                                <i class="fas fa-chart-line"></i> عرض النتيجة
-                            </button>`;
+                
+                // ✅ التحقق من وجود بيانات الرسوب للنهائي
+                if (!passed && courseData && courseData.finalLastAttemptAt) {
+                    const remainingHours = getRemainingHours(courseData.finalLastAttemptAt, 48);
+                    if (remainingHours > 0) {
+                        statusHtml = `<span class="quiz-status status-failed">
+                                        <i class="fas fa-times-circle"></i> راسب (${fin.score}%) - يمكنك إعادة المحاولة بعد ${remainingHours} ساعة
+                                      </span>`;
+                        buttonHtml = `<button class="btn-start-quiz" disabled>
+                                        <i class="fas fa-clock"></i> انتظر ${remainingHours} ساعة
+                                      </button>`;
+                    } else {
+                        statusHtml = `<span class="quiz-status status-pending">
+                                        <i class="fas fa-clock"></i> يمكنك إعادة المحاولة الآن
+                                      </span>`;
+                        buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${fin.id}', '${fin.name}', ${fin.duration})">
+                                        <i class="fas fa-redo"></i> إعادة الاختبار
+                                      </button>`;
+                    }
+                } else if (passed) {
+                    statusHtml = `<span class="quiz-status status-passed">
+                                    <i class="fas fa-check-circle"></i> اجتزت (${fin.score}%)
+                                  </span>`;
+                    buttonHtml = `<button class="btn-view-result" onclick="viewQuizResult('${fin.id}', 'final')">
+                                    <i class="fas fa-chart-line"></i> عرض النتيجة
+                                  </button>`;
+                } else {
+                    statusHtml = `<span class="quiz-status status-failed">
+                                    <i class="fas fa-times-circle"></i> لم تجتز (${fin.score}%)
+                                  </span>`;
+                    buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${fin.id}', '${fin.name}', ${fin.duration})">
+                                    <i class="fas fa-redo"></i> إعادة الاختبار
+                                  </button>`;
+                }
             } else if (fin.unlocked) {
                 statusHtml = `<span class="quiz-status status-pending">
                                 <i class="fas fa-clock"></i> متاح الآن - ${fin.unlockMessage || 'يمكنك البدء'}
                               </span>`;
                 buttonHtml = `<button class="btn-start-quiz" onclick="startQuiz('${fin.id}', '${fin.name}', ${fin.duration})">
                                 <i class="fas fa-play"></i> بدء الاختبار
-                            </button>`;
+                              </button>`;
             } else {
                 cardClass = 'locked';
                 statusHtml = `<span class="quiz-status status-locked">
@@ -443,7 +488,7 @@ if (mid.completed && !mid.passed) {
                               </span>`;
                 buttonHtml = `<button class="btn-start-quiz" disabled>
                                 <i class="fas fa-lock"></i> غير متاح
-                            </button>`;
+                              </button>`;
             }
             
             quizzesHtml += `
@@ -474,6 +519,15 @@ if (mid.completed && !mid.passed) {
         console.error('Error loading quizzes:', error);
         document.getElementById('quizzesList').innerHTML = '<div class="empty-message">⚠️ حدث خطأ في تحميل الاختبارات</div>';
     }
+}
+
+// دالة حساب الوقت المتبقي
+function getRemainingHours(lastAttemptAt, retryHours) {
+    if (!lastAttemptAt) return 0;
+    const now = new Date();
+    const last = new Date(lastAttemptAt);
+    const hoursSince = (now - last) / (1000 * 60 * 60);
+    return Math.max(0, Math.ceil(retryHours - hoursSince));
 }
 
 // بدء الاختبار
@@ -690,12 +744,7 @@ function renderQuizInfo() {
     }
 }
 
-function getRemainingHours(lastAttemptAt, retryHours) {
-    const now = new Date();
-    const last = new Date(lastAttemptAt);
-    const hoursSince = (now - last) / (1000 * 60 * 60);
-    return Math.max(0, Math.ceil(retryHours - hoursSince));
-}
+
     
         // عرض قائمة الدروس (مع الترتيب الإجباري)
 function renderLessonsList() {
