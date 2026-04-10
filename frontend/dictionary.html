@@ -157,6 +157,12 @@
             background: #667eea;
             color: white;
         }
+.word-of-day-card .word-example,
+.word-of-day-card [style*="margin-top: 0.8rem"] p,
+.word-of-day-card #wordOfDayExample,
+.word-of-day-card #wordOfDayExampleTranslation {
+    font-family: 'Cairo', sans-serif;
+}
         /* كلمة اليوم */
 .word-of-day-card {
     transition: transform 0.3s;
@@ -357,10 +363,7 @@
                 <h2 id="wordOfDayTitle" style="margin: 0.5rem 0; font-size: 1.8rem;">جاري التحميل...</h2>
                 <p id="wordOfDayMeaning" style="opacity: 0.9; margin-bottom: 0.5rem;"></p>
             </div>
-            <button onclick="speakWordOfDay()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;">
-                <i class="fas fa-volume-up"></i>
-            </button>
-        </div>
+            
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                 <span><i class="fas fa-tag"></i> <span id="wordOfDayType"></span></span>
@@ -1820,13 +1823,10 @@ function getTypeIcon(type) {
 
         // بدء التطبيق
 function init() {
-    // تهيئة كلمة اليوم
     updateWordOfDay();
     startWordOfDayChecker();
     requestNotificationPermission();
-    
-    // تهيئة القاموس
-    init();
+    renderResults();  // ✅ أضف هذا السطر لعرض البيانات
 }
 
 init();
