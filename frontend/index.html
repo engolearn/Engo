@@ -2265,22 +2265,94 @@ if (featureTextElement) {
         
     
 
-        // تسجيل Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('✅ Service Worker registered'))
-                .catch(err => console.error('❌ Service Worker error:', err));
-        }
-        
-        // طلب إذن الإشعارات
-        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            setTimeout(() => {
-                if (confirm('🔔 هل تريد تفعيل الإشعارات لتلقي تنبيهات الرسائل الجديدة؟')) {
-                    Notification.requestPermission();
-                }
-            }, 2000);
-        }
+
     </script>
+    <script>
+    // التحقق من وجود إنترنت وحذف الكاش عند الاتصال
+    if ('serviceWorker' in navigator) {
+        // تسجيل Service Worker
+        navigator.serviceWorker.register('/sw.js').then(function(registration) {
+            console.log('Service Worker registered');
+        });
+        
+        // مراقبة حالة الاتصال
+        window.addEventListener('online', function() {
+            console.log('Online - Clearing cache');
+            
+            // حذف الكاش عند العودة للإنترنت
+            if ('caches' in window) {
+                caches.keys().then(function(cacheNames) {
+                    cacheNames.forEach(function(cacheName) {
+                        caches.delete(cacheName);
+                        console.log('Cache deleted:', cacheName);
+                    });
+                });
+            }
+            
+            // إعادة تحميل الصفحة بعد 1 ثانية
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
+        });
+        
+        window.addEventListener('offline', function() {
+            console.log('Offline - Using cached pages only');
+        });
+    }
+    </script>
+    <style>
+    .connection-status {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #2d3748;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .connection-status.online {
+        background: #38a169;
+    }
+    
+    .connection-status.offline {
+        background: #e53e3e;
+    }
+    
+    .connection-status i {
+        font-size: 0.8rem;
+    }
+</style>
+
+<div id="connectionStatus" class="connection-status">
+    <i class="fas fa-circle"></i>
+    <span id="statusText">جاري التحقق...</span>
+</div>
+
+<script>
+    function updateConnectionStatus() {
+        const statusDiv = document.getElementById('connectionStatus');
+        const statusText = document.getElementById('statusText');
+        
+        if (navigator.onLine) {
+            statusDiv.className = 'connection-status online';
+            statusText.innerHTML = 'متصل بالإنترنت';
+        } else {
+            statusDiv.className = 'connection-status offline';
+            statusText.innerHTML = 'غير متصل - وضع الطوارئ';
+        }
+    }
+    
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    updateConnectionStatus();
+</script>
 <!-- Modal الإشعارات -->
 <div id="notificationsModal" class="notifications-modal">
     <div class="notifications-modal-content">
